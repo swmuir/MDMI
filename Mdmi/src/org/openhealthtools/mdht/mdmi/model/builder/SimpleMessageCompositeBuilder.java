@@ -1,0 +1,43 @@
+/*******************************************************************************
+* Copyright (c) 2012 Firestar Software, Inc.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v10.html
+*
+* Contributors:
+*     Firestar Software, Inc. - initial API and implementation
+*
+* Author:
+*     Gabriel Oancea
+*
+*******************************************************************************/
+package org.openhealthtools.mdht.mdmi.model.builder;
+
+import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.model.raw.*;
+
+public class SimpleMessageCompositeBuilder extends ModelBuilderAssociationOnly<SimpleMessageComposite> {
+   @Override
+   protected SimpleMessageComposite buildMessageModelObject( ClassDef classDef, RawRoot root ) {
+      SimpleMessageComposite simple = new SimpleMessageComposite();
+      simple.setName(BuilderUtil.getNameAttribVal(classDef));
+      simple.setDescription(BuilderUtil.getDescriptionAttribVal(classDef));
+      return simple;
+   }
+
+   @Override
+   protected boolean processAssociation( SimpleMessageComposite modelObject, Object assocObject, String stereotypeName,
+         Attribute attrib ) {
+      boolean rv = true;
+      if( stereotypeName.equals(StereotypeNames.SEMANTIC_ELEMENT) ) {
+         SemanticElement msgElem = (SemanticElement)assocObject;
+         msgElem.setComposite(modelObject);
+         modelObject.addSemanticElement(msgElem);
+      }
+      else {
+         rv = false;
+      }
+      return rv;
+   }
+}

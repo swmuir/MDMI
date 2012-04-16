@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/NRL/antlr-runtime-3.2.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/NRL/nrl.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/resolver.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/serializer.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/xalan.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/xercesImpl.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/xml-apis.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  This xml file is used for creating application menus and toolbars.
+  There are 3 sections to this file:
+  
+  - The actions section defines action names, and the implementing class.
+  - The menubar section defines the menu structure, using the actions defined
+    above
+  - The toolbar section groups specific actions into toolbar groups.
+  
+  The menu text, and the icons used for the toolbar buttons are defined in the
+  acompanying resource file.
+  
+  The ActionRegistry can be used to access the actions specified here. Typically this is to
+  enable/disable a menu. It can also be used to set action properties. For example,
+  to enable the LoginAction, the code would look like:
+       ActionRegistry.getActionInstance("login").setEnabled(enable)
+-->
+
+<system resource="org.openhealthtools.mdht.mdmi.editor.map.appres">
+	<actions>	
+    <!-- Be sure to  changes to the action names in the Actions.java file -->
+		<!-- File Menu -->
+		<action name="file" class="org.openhealthtools.mdht.mdmi.editor.common.actions.FileMenuAction"/>
+		<action name="newModel" class="org.openhealthtools.mdht.mdmi.editor.map.actions.NewMDMIModelAction"/>
+      <action name="openFile" class="org.openhealthtools.mdht.mdmi.editor.map.actions.OpenFileAction"/>
+      <action name="loadDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.LoadDatatypesAction"/>
+      <action name="importDictionary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportDomainDictionaryAction"/>
+		
+      <action name="exit" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExitAction"/>
+      <action name="accept" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptChangesAction"/>
+      <action name="acceptAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptAllChangesAction"/>
+      <action name="save" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SaveChangesAction"/>
+		
+		
+		<!-- New Menu -->
+        <action name="new" class="org.openhealthtools.mdht.mdmi.editor.map.actions.FileNewMenuAction"/>
+        <action name="newChild" class="org.openhealthtools.mdht.mdmi.editor.map.actions.NewAction"/>
+		
+		<!-- Edit Menu -->
+        <action name="edit" class="org.openhealthtools.mdht.mdmi.editor.common.actions.EditMenuAction"/>
+        <action name="openEditor" class="org.openhealthtools.mdht.mdmi.editor.map.actions.OpenEditorAction"/>
+        <action name="cut" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CutAction"/>
+        <action name="copy" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CopyAction"/>
+        <action name="paste" class="org.openhealthtools.mdht.mdmi.editor.map.actions.PasteAction"/>
+        <action name="delete" class="org.openhealthtools.mdht.mdmi.editor.map.actions.DeleteObjectAction"/>
+        <action name="moveUp" class="org.openhealthtools.mdht.mdmi.editor.map.actions.MoveUpAction"/>
+        <action name="moveDown" class="org.openhealthtools.mdht.mdmi.editor.map.actions.MoveDownAction"/>
+		
+		
+		<!-- Admin Menu -->
+		<action name="admin" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AdminMenuAction"/>
+		
+		<!-- View Menu -->
+		<action name="view" class="org.openhealthtools.mdht.mdmi.editor.common.actions.ViewMenuAction"/>
+      <action name="expandAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExpandAllAction"/>
+      <action name="collapseAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CollapseAllAction"/>
+      
+      <action name="viewDescriptions" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewDescriptionsAction"/>
+      
+      <action name="viewDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewDatatypesMenuAction"/>
+      <action name="viewTypeHierarchy" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeHierarchyAction"/>
+      <action name="viewTypeUsageSummary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeUsageSummaryAction"/>
+      <action name="viewTypeUsage" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeUsageAction"/>
+      <action name="viewTypeDiagram" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeDiagramAction"/>
+      
+      <action name="viewSyntaxTree" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewSyntaxDataAction"/>
+      <action name="viewToFrom" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewToFromDiagramAction"/>
+      <action name="viewRelationships" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewRelationshipDiagramAction"/>
+      <action name="viewChildren" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewSEHeirarchyDiagramAction"/>
+		
+		<!-- Tools Menu -->
+		<action name="tools" class="org.openhealthtools.mdht.mdmi.editor.common.actions.ToolsMenuAction"/>	
+      <action name="findReferences" class="org.openhealthtools.mdht.mdmi.editor.map.actions.FindReferenceAction"/>
+      <action name="search" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SearchAction"/>
+      <action name="changeType" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ChangeTypeAction"/>
+		
+		
+		<!-- Help Menu -->
+		<action name="help" class="org.openhealthtools.mdht.mdmi.editor.common.actions.HelpMenuAction"/>
+		<action name="helpAbout" class="org.openhealthtools.mdht.mdmi.editor.map.help.HelpAboutAction"/>
+	</actions>
+	
+	
+	<!-- Menu Bar -->
+	<menubar>
+		<menu action="file">
+		<!--
+         <menu action="new">
+                <item action="newChild"/>
+         </menu>
+       -->
+         <item action="newModel"/>
+         <item action="newChild"/>
+         <item action="openFile"/>
+         
+         <separator/>
+         <item action="loadDatatypes"/>
+         <item action="importDictionary"/>
+		     
+         <separator/>
+         <item action="accept"/>
+         <item action="acceptAll"/>
+			
+         <separator/>
+         <item action="save"/>
+			
+			<separator/>
+			<item action="exit"/>
+		</menu>
+      
+      <menu action="edit">
+         <item action="openEditor"/>
+         <separator/>
+         <item action="cut"/>
+         <item action="copy"/>
+         <item action="paste"/>
+         <separator/>
+         <item action="delete"/>
+         <separator/>
+         <item action="moveUp"/>
+         <item action="moveDown"/>
+      </menu>
+      
+      <menu action="view">
+         <item action="viewDescriptions"/>
+         <separator/>
+         <!-- <menu action="viewDatatypes"> -->
+             <item action="viewTypeHierarchy"/>
+             <item action="viewTypeDiagram"/>
+             <item action="viewTypeUsage"/>
+             <item action="viewTypeUsageSummary"/>
+         <!-- </menu> -->
+         <separator/>
+             <item action="viewSyntaxTree"/>
+             <item action="viewToFrom"/>
+             <item action="viewRelationships"/>
+             <item action="viewChildren"/>
+         
+         <separator/>
+         <item action="expandAll"/>
+         <item action="collapseAll"/>
+      </menu>
+		
+		<menu action="admin">
+		</menu>
+		
+		<menu action="tools">
+		   <item action="findReferences"/>
+		   <item action="search"/>
+		</menu>
+
+		<menu action="help">
+		   <item action="helpAbout"/>
+		</menu>
+	</menubar>
+
+	<!-- Tool Bar -->
+	<toolbars>		
+        <toolbar id="edit" action="edit">
+            <button action="expandAll"/>
+            <button action="collapseAll"/>
+            <separator/>
+            <button action="newChild"/>
+            <button action="openEditor"/>
+            <separator/>
+            <button action="cut"/>
+            <button action="copy"/>
+            <button action="paste"/>
+            <separator/>
+            <button action="moveUp"/>
+            <button action="moveDown"/>
+            <separator/>
+            <button action="findReferences"/>
+            <button action="search"/>
+            <separator/>
+            <button action="acceptAll"/>
+        </toolbar>
+	</toolbars>
+</system>

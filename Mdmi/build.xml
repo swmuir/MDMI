@@ -1,0 +1,56 @@
+<project name="mdmi" default="package-jar" basedir=".">
+	<property name="src.dir" location="src"/>
+	<property name="build.dir" location="bin"/>
+   <property name="ThirdParty.dir" location="../ThirdParty" />
+	<property name="dist.dir" location="../bin"/>
+
+   <fileset id="lib.classpath" dir="${ThirdParty.dir}">
+      <include name="NRL/nrl.jar" />
+      <include name="NRL/antlr-runtime-3.2.jar" />
+      <include name="XML/resolver.jar" />
+      <include name="XML/serializer.jar" />
+      <include name="XML/xalan.jar" />
+      <include name="XML/xercesImpl.jar" />
+      <include name="XML/xml-apis.jar" />
+   </fileset>
+
+	<path id="javac.classpath">
+      <pathelement location="${build.dir}" />
+      <path>
+         <fileset refid="lib.classpath" />
+      </path>
+	</path>
+
+	<target name="init" >
+		<tstamp/>
+		<property name="dist.jar" value="${ant.project.name}.jar"/>
+	</target>
+
+	<target name="clean" depends="init">
+		<delete file="${dist.dir}/${dist.jar}" />
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="prepare" depends="clean">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${dist.dir}" />
+	</target>
+
+	<target name="compile" depends="prepare">
+		<javac srcdir="src" destdir="${build.dir}" debug="on" optimize="off" deprecation="off" includeantruntime="false" >
+			<classpath refid="javac.classpath" />
+		</javac>
+		<copy todir="${build.dir}">
+			<fileset dir="src" includes="**/*.properties,**/*.settings,**/*.xml,**/*.xsd,**/*.mf,**/*.gif,**/*.png,**/*.jpg,**/*.jpeg"/>
+		</copy>
+	</target>
+
+	<target name="package-jar" depends="compile">
+		<jar jarfile="${dist.dir}/${dist.jar}"
+         basedir="${build.dir}" 
+         includes="*,org/**,com/**" />
+		<copy todir="${dist.dir}">
+         <fileset refid="lib.classpath" />
+		</copy>
+	</target>
+</project>

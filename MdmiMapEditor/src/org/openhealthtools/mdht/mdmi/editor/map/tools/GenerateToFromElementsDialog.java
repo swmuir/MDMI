@@ -1,0 +1,521 @@
+/*******************************************************************************
+* Copyright (c) 2012 Firestar Software, Inc.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v10.html
+*
+* Contributors:
+*     Firestar Software, Inc. - initial API and implementation
+*
+* Author:
+*     Sally Conway
+*
+*******************************************************************************/
+package org.openhealthtools.mdht.mdmi.editor.map.tools;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
+
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.tree.DefaultMutableTreeNode;
+
+import org.openhealthtools.mdht.mdmi.editor.common.Standards;
+import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
+import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.ConversionRuleNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.SemanticElementNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.ToBusinessElementNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.ToBusinessElementSetNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.ToMessageElementNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.ToMessageElementSetNode;
+import org.openhealthtools.mdht.mdmi.model.ConversionRule;
+import org.openhealthtools.mdht.mdmi.model.DTComplex;
+import org.openhealthtools.mdht.mdmi.model.Field;
+import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
+import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
+import org.openhealthtools.mdht.mdmi.model.MessageGroup;
+import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
+import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
+
+/** A dialog used for selecting a MessageGroup, MessageModel, and one or more
+ * Semantic Elements within that message model
+ * @author Conway
+ *
+ */
+public class GenerateToFromElementsDialog extends BaseDialog {
+	private static final String UNDEFINED_TYPE = " - ";
+
+	/** Resource for localization */
+	protected static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.tools.Local");
+
+	private SemanticElement m_semanticElement = null;
+
+	private JComboBox m_businessElementSelector  = new JComboBox();
+	private JComboBox m_SEfieldNameSelector  = new JComboBox();
+	private JComboBox m_BEfieldNameSelector  = new JComboBox();
+
+	private ButtonGroup  m_direction = new ButtonGroup();
+	private JRadioButton m_fromBERButton = new JRadioButton("From");
+	private JRadioButton m_toBERButton = new JRadioButton("To");
+	
+	private JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
+	private JTextField  m_name = new JTextField();
+
+	private ModelRenderers.BusinessElementRenderer m_businessElementRenderer = new ModelRenderers.BusinessElementRenderer();
+	
+	private ActionListener m_businessElementListener = new BusinessElementListener();
+	private ActionListener m_directionListener = new DirectionListener();
+
+	public GenerateToFromElementsDialog(Frame owner, SemanticElement semanticElement) {
+		super(owner, BaseDialog.OK_CANCEL_OPTION);
+		m_semanticElement = semanticElement;
+		buildUI();
+		setTitle(s_res.getString("GenerateToFromElementsDialog.title"));
+		pack(new Dimension(400,300));
+	}
+
+	
+	private void buildUI() {
+		// 
+		// Direction:            ( ) From   ( ) To
+		// Business Element Ref: [__________________|v]
+		// Name:                 [                    ]
+		//  -- Semantic Element ------------------------
+		// | Data Type:         text                    |
+		// | Field Name:       [__________________|v]   |
+		//  --------------------------------------------
+		//  -- Business Element Ref --------------------
+		// | Data Type:         text                    |
+		// | Field Name:       [__________________|v]   |
+		//  --------------------------------------------
+		
+		
+		MdmiDatatype dataType = m_semanticElement.getDatatype();
+
+		m_fromBERButton.setSelected(true);
+		m_toBERButton.setSelected(false);
+		m_fromBERButton.setText(s_res.getString("GenerateToFromElementsDialog.toMdmi"));
+		m_toBERButton.setText(s_res.getString("GenerateToFromElementsDialog.toBE"));
+		m_direction.add(m_fromBERButton);
+		m_direction.add(m_toBERButton);
+		m_fromBERButton.addActionListener(m_directionListener);
+		m_toBERButton.addActionListener(m_directionListener);
+		
+		
+		m_businessElementSelector.setRenderer(m_businessElementRenderer);
+		m_businessElementSelector.addActionListener(m_businessElementListener);
+		
+		// get all business elements in the group
+		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
+		for (MdmiBusinessElementReference bizElem : group.getDomainDictionary().getBusinessElements()) {
+			m_businessElementSelector.addItem(bizElem);
+		}
+		
+		// get all fields in the SE's datatype
+		m_SEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		if (dataType instanceof DTComplex) {
+			for (Field field : ((DTComplex)dataType).getFields()) {
+				m_SEfieldNameSelector.addItem(field.getName());
+			}
+		}
+		
+		m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		
+		JPanel mainPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = Standards.getInsets();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.weightx = 0;
+		gbc.weighty = 0;
+
+		// Direction 
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.NONE;
+		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.direction")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		buttons.add(m_fromBERButton);
+		buttons.add(m_toBERButton);
+		mainPanel.add(buttons, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
+
+		// Business Element
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.businessElement")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
+		mainPanel.add(m_businessElementSelector, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
+		
+		
+		// Name
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.name")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
+		mainPanel.add(m_name, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
+		
+		//////////////////////////////////////////
+		//  Semantic Element Data
+		//////////////////////////////////////////
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = 2;
+
+		JLabel seDatatypeLabel = new JLabel(UNDEFINED_TYPE);
+		if (dataType != null) {
+			seDatatypeLabel.setText(dataType.getName());
+		}
+		JPanel pSE = createDataTypePanel(s_res.getString("GenerateToFromElementsDialog.semanticElement"),
+				seDatatypeLabel, m_SEfieldNameSelector);
+		mainPanel.add(pSE, gbc);
+		gbc.gridwidth = 1;
+
+		
+		//////////////////////////////////////////
+		//  Business Element Data
+		//////////////////////////////////////////
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = 2;
+		JPanel pBE = createDataTypePanel(s_res.getString("GenerateToFromElementsDialog.businessElement"),
+				m_beDatatype, m_BEfieldNameSelector);
+		mainPanel.add(pBE, gbc);
+		gbc.gridwidth = 1;
+
+		
+		
+		setDirty(true);	// allow OK button
+		
+		getContentPane().add(mainPanel, BorderLayout.CENTER);
+	}
+	
+	private JPanel createDataTypePanel(String label, JLabel datatypeLabel, JComboBox fieldSelector) {
+		//  -- label ---------------------
+		// |  Datatype:   xxxxxx          |
+		// |  Field Name: [           |v] |
+		//  ------------------------------
+		//
+		JPanel panel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = Standards.getInsets();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.weightx = 0;
+		gbc.weighty = 0;
+		
+		panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), 
+				label));
+		
+
+		// Data type
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		panel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.dataType")), gbc);
+		gbc.gridx++;
+		gbc.insets.left = 0;
+		panel.add(datatypeLabel, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
+		
+		// Field Name 
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		panel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.fieldName")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
+		panel.add(fieldSelector, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
+		
+		return panel;
+	}
+
+
+
+	@Override
+	public void dispose() {
+		m_businessElementSelector.removeActionListener(m_businessElementListener);
+		m_toBERButton.removeActionListener(m_directionListener);
+		m_fromBERButton.removeActionListener(m_directionListener);
+		
+		m_businessElementSelector.setRenderer(null);
+		super.dispose();
+	}
+
+	@Override
+	public boolean isDataValid() {
+		// must have a name
+		if (m_name.getText().trim().length() == 0) {
+			return false;
+		}
+		//must have a BE with a datatype
+		MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
+		if (businessElement != null &&
+				businessElement.getReferenceDatatype() != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	// get the selected business element
+	public MdmiBusinessElementReference getMdmiBusinessElementReference() {
+		Object item = m_businessElementSelector.getSelectedItem();
+		if (item instanceof MdmiBusinessElementReference) {
+			return (MdmiBusinessElementReference)item;
+		}
+		return null;
+	}
+	
+	@Override
+	protected void okButtonAction() {
+		// create data
+		MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
+		if (businessElement == null) {
+			// shouldn't be here anyway
+			return;
+		}
+		
+		String ruleName = m_name.getText().trim();
+		
+
+		MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
+		DefaultMutableTreeNode treeNode = entitySelector.findNode(m_semanticElement);
+		if (!(treeNode instanceof SemanticElementNode))
+		{
+			// shouldn't get here
+			return;
+		}
+		SemanticElementNode seNode = (SemanticElementNode)treeNode;
+		
+
+		// parent of the node we'll be creating
+		EditableObjectNode parentNode = null;
+		ConversionRuleNode childNode = null;
+		
+		boolean existingRule = false;
+		
+		// Rule will be of the form: Set <target> to <source>
+		StringBuilder newRule = new StringBuilder();
+		String target = "value";
+		String source = "value";
+		
+		String beFieldName = m_BEfieldNameSelector.getSelectedItem().toString().trim();
+		String seFieldName = m_SEfieldNameSelector.getSelectedItem().toString().trim();
+		
+		ConversionRule conversionRule = null;
+		
+		if (m_toBERButton.isSelected()) {
+			// check if it exists already
+			for (ToBusinessElement existing : m_semanticElement.getFromMdmi()) {
+				if (ruleName.equalsIgnoreCase(existing.getName())) {
+					existingRule = true;
+					conversionRule = existing;
+					break;
+				}
+			}
+			
+			if (conversionRule == null) {
+				// Create a new ToBusinessElement
+				conversionRule = new ToBusinessElement();
+				((ToBusinessElement) conversionRule).setBusinessElement(businessElement);
+				m_semanticElement.addFromMdmi((ToBusinessElement) conversionRule);
+				conversionRule.setOwner(m_semanticElement);
+				conversionRule.setName(ruleName);	// need to set name before creating node
+				
+				// create the tree node
+				childNode = new ToBusinessElementNode((ToBusinessElement) conversionRule);
+				
+				// Find the parent node
+				for (int i=0; i<seNode.getChildCount(); i++) {
+					if (seNode.getChildAt(i) instanceof ToBusinessElementSetNode) {
+						parentNode = (ToBusinessElementSetNode)seNode.getChildAt(i);
+						break;
+					}
+				}
+			}
+			
+
+			//  Set <ruleName>[.BEfieldName] to value
+			//  Set <ruleName>[.BEfieldName] to seFieldName
+			target = ruleName;
+			if (beFieldName.length() > 0) {
+				target += "." + beFieldName;
+			}
+			if (seFieldName.length() > 0) {
+				source = seFieldName;
+			}
+			
+		} else {
+			// check if it exists already
+			for (ToMessageElement existing : m_semanticElement.getToMdmi()) {
+				if (ruleName.equalsIgnoreCase(existing.getName())) {
+					existingRule = true;
+					conversionRule = existing;
+					break;
+				}
+			}
+
+			if (conversionRule == null) {
+				conversionRule = new ToMessageElement();
+				((ToMessageElement) conversionRule).setBusinessElement(businessElement);
+				m_semanticElement.addToMdmi((ToMessageElement) conversionRule);
+				conversionRule.setOwner(m_semanticElement);
+				conversionRule.setName(ruleName);	// need to set name before creating node
+
+				// create the tree node
+				childNode = new ToMessageElementNode((ToMessageElement) conversionRule);
+				
+				// Find the parent node
+				for (int i=0; i<seNode.getChildCount(); i++) {
+					if (seNode.getChildAt(i) instanceof ToMessageElementSetNode) {
+						parentNode = (ToMessageElementSetNode)seNode.getChildAt(i);
+						break;
+					}
+				}
+			}
+
+			//  Set value to <ruleName>[.BEfieldName]
+			//  Set <SEfieldName> to <ruleName>[.BEfieldName]
+			if (seFieldName.length() > 0) {
+				target = seFieldName;
+			}
+			
+			source = ruleName;
+			if (beFieldName.length() > 0) {
+				source += "." + beFieldName;
+			}
+			
+		}
+		
+		
+		// Set <target> to <source>
+		newRule.append("set ").append(target).append(" to ").append(source);
+		
+		String rule = conversionRule.getRule();
+		// append new rule
+		if (rule != null && rule.length() > 0) {
+			newRule.insert(0, "\r\n");
+			newRule.insert(0, rule);
+		}
+		conversionRule.setRule(newRule.toString());
+
+		
+		if (!existingRule) {
+			entitySelector.insertAndOpen(parentNode, childNode);
+		} else {
+			// if open - close
+			SelectionManager.getInstance().getEntityEditor().stopEditing(conversionRule);
+			
+			//open it
+			childNode = (ConversionRuleNode) entitySelector.findNode(conversionRule);
+
+			entitySelector.selectNode(childNode);
+			SelectionManager.getInstance().editItem(childNode);
+			
+
+		}
+		
+		super.okButtonAction();
+	}
+
+	
+	// auto-fill the name
+	private void fillInName() {
+		MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
+		if (businessElement != null) {
+			String beRefName = businessElement.getName();
+			if (m_toBERButton.isSelected()) {
+				m_name.setText("To_" + beRefName);
+			} else {
+				m_name.setText("From_" + beRefName);
+			}
+		} else {
+			m_name.setText("");
+		}
+	}
+
+	////////////////////////////////
+	private class DirectionListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			fillInName();
+		}
+	}
+
+	private class BusinessElementListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			fillInName();
+			
+			// fill data type name
+			MdmiDatatype dataType = null;
+			MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
+			if (businessElement != null) {
+				dataType = businessElement.getReferenceDatatype();
+			}
+			
+			// empty field list
+			m_BEfieldNameSelector.removeAllItems();
+			m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+			
+			if (dataType != null) {
+				m_beDatatype.setText(dataType.getName());
+			} else {
+				m_beDatatype.setText(UNDEFINED_TYPE);
+			}
+
+			// fill fields
+			if (dataType instanceof DTComplex) {
+				for (Field field : ((DTComplex)dataType).getFields()) {
+					m_BEfieldNameSelector.addItem(field.getName());
+				}
+			}
+			
+			setDirty(true);	// enable/disable OK button
+		}
+	}
+
+}
