@@ -16,12 +16,18 @@ package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
 import javax.swing.tree.MutableTreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode.AbstractNewBag;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode.AbstractNewChoice;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode.AbstractNewLeaf;
@@ -102,6 +108,28 @@ public class MessageSyntaxModelNode extends EditableObjectNode {
 		return new CustomEditor(getMessageGroup());
 	}
 
+	/** Add a menu to show the semantic element in a new view */
+	@Override
+	public List<JComponent> getAdditionalPopuMenus() {
+		List<JComponent> menus = super.getAdditionalPopuMenus();
+		if (menus == null) {
+			menus = new ArrayList<JComponent>();
+		}
+		
+		// Add Import menu ONLY if there's no root yet
+		if (this.getChildCount() == 0) {
+			final MessageSyntaxModelNode syntaxModelNode = this;
+			menus.add(new JMenuItem(new AbstractAction(s_res.getString("MessageSyntaxModelNode.importXMLSchema")) {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModelIOUtilities.importSyntaxModelFromFile(syntaxModelNode);
+				}
+				
+			}));
+		}
+		
+		return menus;
+	}
 
 	//////////////////////////////////////////////////////////////////
 	// Custom Classes

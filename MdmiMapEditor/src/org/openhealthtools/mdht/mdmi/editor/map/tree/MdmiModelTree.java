@@ -288,6 +288,10 @@ public class MdmiModelTree extends JPanel {
 		return nodes;
 	}
 
+	public void refreshNode(EditableObjectNode node) {
+		m_treeModel.nodeStructureChanged(node);
+	}
+	
 	/** refresh the user object currently in the tree with the new one */
 	public DefaultMutableTreeNode refreshUserObject(Object userObject) {
 		DefaultMutableTreeNode node = findNode(userObject);

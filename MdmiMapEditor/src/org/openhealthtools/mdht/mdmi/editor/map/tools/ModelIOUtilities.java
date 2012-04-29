@@ -25,9 +25,12 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import javax.swing.JFileChooser;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.ListSelectionModel;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.MutableTreeNode;
 import javax.xml.stream.XMLStreamException;
 
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
@@ -41,7 +44,9 @@ import org.openhealthtools.mdht.mdmi.editor.map.tree.DomainDictionaryReferenceNo
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MessageGroupNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.MessageSyntaxModelNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.NewObjectInfo;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode;
 import org.openhealthtools.mdht.mdmi.model.DTComplex;
 import org.openhealthtools.mdht.mdmi.model.DTSPrimitive;
 import org.openhealthtools.mdht.mdmi.model.Field;
@@ -54,6 +59,10 @@ import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.reader.MapBuilderXMIDirect;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.writer.XMIWriterDirect;
+import org.openhealthtools.mdht.mdmi.model.MessageModel;
+import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
+import org.openhealthtools.mdht.mdmi.model.Node;
+import org.openhealthtools.mdht.mdmi.model.syntax.XSDReader;
 
 
 /** A collection of methods for reading and writing model data */
@@ -66,6 +75,7 @@ public class ModelIOUtilities {
 	
 	public static final String XMI_Extension = ".xmi";
 	public static final String CSV_Extension = ".csv";
+	public static final String XSD_Extension = ".xsd";
 
 	public static final String[] SupportedExtensions = {
 		XMI_Extension,
@@ -476,6 +486,59 @@ public class ModelIOUtilities {
 		}
 	}
 
+	/** Import Syntax Model from a file; determine input format based on file extension */
+	public static void importSyntaxModelFromFile(MessageSyntaxModelNode syntaxModelNode) {
+		Frame applicationFrame = SystemContext.getApplicationFrame();
+		// set cursor
+		CursorManager cm = CursorManager.getInstance(applicationFrame);
+		cm.setWaitCursor();
+		try {
+			// open preferences to re-use directory name
+			UserPreferences preferences = getUserPreferences();
+			String lastFileName = preferences.getValue(LAST_FILE_OPENED, null);
+
+			// create a file chooser
+			JFileChooser chooser = new JFileChooser(lastFileName == null ?  "." : lastFileName);
+			// Select the data file, or the directory containing the data files
+			chooser.setDialogTitle(s_res.getString("ModelIOUtilities.readTitle"));
+			chooser.setFileFilter(new SupportedSyntaxFileFilter());
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+			// prompt for a file
+			int opt = chooser.showOpenDialog(SystemContext.getApplicationFrame());
+			if (opt == JFileChooser.APPROVE_OPTION) {
+				File file = chooser.getSelectedFile();
+				lastFileName = file.getAbsolutePath();
+
+				// create model from file
+				if (fileNameEndsWith(file, XSD_Extension)) {
+					List<Node> roots = XSDReader.parse("file://localhost/"+lastFileName);
+
+					if (!roots.isEmpty()) {
+						MdmiModelTree tree = SelectionManager.getInstance().getEntitySelector();
+						Node root = roots.get(0);
+						SyntaxNodeNode rootNode = SyntaxNodeNode.createSyntaxNode(root);
+
+						// add to the model
+						MessageSyntaxModel syntaxModel = (MessageSyntaxModel) syntaxModelNode.getUserObject();
+						syntaxModel.setRoot(root);
+
+						// add to tree
+						syntaxModelNode.removeAllChildren();
+						syntaxModelNode.addSorted(rootNode);
+						tree.refreshNode(syntaxModelNode);
+					}
+				}
+				
+				// save file name
+				preferences.putValue(LAST_FILE_OPENED, lastFileName);
+			}			
+		} finally {
+			cm.restoreCursor();
+		}
+	}
+
 	/** Add business element references from the groups into the tree. 
 	 * New businessElementReferences will be marked as "imported".
 	 * Datatypes will be added if necessary */
@@ -569,6 +632,16 @@ public class ModelIOUtilities {
 				// XMI or CSV files
 				return s_res.getString("ModelIOUtilities.fileTypesDescription");
 			}
-			
+	}
+	
+	public static class SupportedSyntaxFileFilter extends FileFilter {
+		@Override
+		public boolean accept(File f) {
+			return f.isDirectory() || f.getName().toLowerCase().endsWith(".xsd");			
+		}
+		@Override
+		public String getDescription() {
+			return "XML Schema (.xsd)";
+		}
 	}
 }
