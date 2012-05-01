@@ -206,7 +206,7 @@ public class SpreadSheetModelBuilder {
 	// Make a field name from an element name (first letter lower-case)
 	private static String normalizeFieldName(String name) {
 		String newName;
-		// capitalize first letter
+		// make first letter lower case
 		if (name.length() > 0) {
 			char firstLetter = name.charAt(0);
 			newName = new String();
@@ -968,7 +968,7 @@ public class SpreadSheetModelBuilder {
 	   				SemanticElement parentElement = se.getParent();
 	   				// see if we can set the syntax node's parent
 	   				if (parentElement != null) {
-	   					// set SE's node to be a child of SE's parent's noe
+	   					// set SE's node to be a child of SE's parent's node
 	   					Node parentSyntaxNode = parentElement.getSyntaxNode();
 	   					if (parentSyntaxNode != null) {
 	   						addSyntaxNodeToParent(syntaxNode, parentSyntaxNode);

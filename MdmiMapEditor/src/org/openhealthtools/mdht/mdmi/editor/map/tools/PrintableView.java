@@ -31,6 +31,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
 import org.openhealthtools.mdht.mdmi.editor.common.components.WindowUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.*;
 
 /** a Frame with a print button. Derived classes must set the center panel
@@ -85,6 +86,8 @@ public abstract class PrintableView extends JFrame  {
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		
 		buttons.add(m_printButton);
+		m_printButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
+				s_res.getString("ViewDataObject.printIcon")));
 		m_printButton.addActionListener(m_printAction);
 		
 		return buttons;

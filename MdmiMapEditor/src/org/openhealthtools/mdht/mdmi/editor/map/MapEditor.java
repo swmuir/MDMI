@@ -39,7 +39,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 
-import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -408,9 +407,8 @@ public class MapEditor extends JFrame {
 		@Override
 		public void windowClosing(WindowEvent e) {
 			try {
-				Action action = Actions.getActionInstance(Actions.EXIT_ACTION);
 				// check and save changes
-				boolean okayToExit = ((ExitAction)action).checkForChanges();
+				boolean okayToExit = ExitAction.checkForChanges();
 				if (!okayToExit) {
 					return;
 				}

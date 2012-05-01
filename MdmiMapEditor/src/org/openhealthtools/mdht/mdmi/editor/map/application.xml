@@ -54,27 +54,29 @@
 		
 		<!-- View Menu -->
 		<action name="view" class="org.openhealthtools.mdht.mdmi.editor.common.actions.ViewMenuAction"/>
-      <action name="expandAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExpandAllAction"/>
-      <action name="collapseAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CollapseAllAction"/>
+        <action name="expandAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExpandAllAction"/>
+        <action name="collapseAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CollapseAllAction"/>
       
-      <action name="viewDescriptions" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewDescriptionsAction"/>
+        <action name="viewDescriptions" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewDescriptionsAction"/>
       
-      <action name="viewDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewDatatypesMenuAction"/>
-      <action name="viewTypeHierarchy" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeHierarchyAction"/>
-      <action name="viewTypeUsageSummary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeUsageSummaryAction"/>
-      <action name="viewTypeUsage" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeUsageAction"/>
-      <action name="viewTypeDiagram" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeDiagramAction"/>
+        <action name="viewDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewDatatypesMenuAction"/>
+        <action name="viewTypeHierarchy" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeHierarchyAction"/>
+        <action name="viewTypeUsageSummary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeUsageSummaryAction"/>
+        <action name="viewTypeUsage" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeUsageAction"/>
+        <action name="viewTypeDiagram" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewTypeDiagramAction"/>
       
-      <action name="viewSyntaxTree" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewSyntaxDataAction"/>
-      <action name="viewToFrom" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewToFromDiagramAction"/>
-      <action name="viewRelationships" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewRelationshipDiagramAction"/>
-      <action name="viewChildren" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewSEHeirarchyDiagramAction"/>
+        <action name="viewSyntaxTree" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewSyntaxDataAction"/>
+        <action name="viewToFrom" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewToFromDiagramAction"/>
+        <action name="viewRelationships" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewRelationshipDiagramAction"/>
+        <action name="viewChildren" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ViewSEHeirarchyDiagramAction"/>
 		
 		<!-- Tools Menu -->
 		<action name="tools" class="org.openhealthtools.mdht.mdmi.editor.common.actions.ToolsMenuAction"/>	
-      <action name="findReferences" class="org.openhealthtools.mdht.mdmi.editor.map.actions.FindReferenceAction"/>
-      <action name="search" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SearchAction"/>
-      <action name="changeType" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ChangeTypeAction"/>
+        <action name="findReferences" class="org.openhealthtools.mdht.mdmi.editor.map.actions.FindReferenceAction"/>
+        <action name="search" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SearchAction"/>
+        <action name="changeType" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ChangeTypeAction"/>
+        <action name="tableView" class="org.openhealthtools.mdht.mdmi.editor.map.actions.TableViewAction"/>
+      
 		
 		
 		<!-- Help Menu -->
@@ -149,6 +151,7 @@
 		<menu action="tools">
 		   <item action="findReferences"/>
 		   <item action="search"/>
+		   <item action="tableView"/>
 		</menu>
 
 		<menu action="help">
@@ -176,6 +179,8 @@
             <button action="search"/>
             <separator/>
             <button action="acceptAll"/>
+            <separator/>
+            <button action="tableView"/>
         </toolbar>
 	</toolbars>
 </system>

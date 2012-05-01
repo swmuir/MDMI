@@ -227,7 +227,7 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 		return null;
 	}
 
-	public class TreeComboBox extends JTreeComboBox {
+	public static class TreeComboBox extends JTreeComboBox {
 
 		public TreeComboBox(TreeModel treeModel) {
 			super(treeModel);

@@ -15,6 +15,7 @@
 package org.openhealthtools.mdht.mdmi.editor.map.tools;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -26,8 +27,11 @@ import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
@@ -45,6 +49,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.tree.ToBusinessElementNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.ToBusinessElementSetNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.ToMessageElementNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.ToMessageElementSetNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.TreeNodeIcon;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.DTComplex;
 import org.openhealthtools.mdht.mdmi.model.Field;
@@ -80,6 +85,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private JTextField  m_name = new JTextField();
 
 	private ModelRenderers.BusinessElementRenderer m_businessElementRenderer = new ModelRenderers.BusinessElementRenderer();
+
+	private FieldNameComboBoxItemRenderer m_fieldNameRenderer = new FieldNameComboBoxItemRenderer();
 	
 	private ActionListener m_businessElementListener = new BusinessElementListener();
 	private ActionListener m_directionListener = new DirectionListener();
@@ -118,7 +125,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_direction.add(m_toBERButton);
 		m_fromBERButton.addActionListener(m_directionListener);
 		m_toBERButton.addActionListener(m_directionListener);
-		
+
+		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
+		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
 		
 		m_businessElementSelector.setRenderer(m_businessElementRenderer);
 		m_businessElementSelector.addActionListener(m_businessElementListener);
@@ -132,11 +141,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		
 		// get all fields in the SE's datatype
 		m_SEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
-		if (dataType instanceof DTComplex) {
-			for (Field field : ((DTComplex)dataType).getFields()) {
-				m_SEfieldNameSelector.addItem(field.getName());
-			}
-		}
+		populateFieldNames(m_SEfieldNameSelector, dataType, null);
 		
 		m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
 		
@@ -229,6 +234,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		getContentPane().add(mainPanel, BorderLayout.CENTER);
 	}
 	
+	
+	
 	private JPanel createDataTypePanel(String label, JLabel datatypeLabel, JComboBox fieldSelector) {
 		//  -- label ---------------------
 		// |  Datatype:   xxxxxx          |
@@ -282,6 +289,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_fromBERButton.removeActionListener(m_directionListener);
 		
 		m_businessElementSelector.setRenderer(null);
+		m_BEfieldNameSelector.setRenderer(null);
+		m_SEfieldNameSelector.setRenderer(null);
 		super.dispose();
 	}
 
@@ -476,6 +485,51 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			m_name.setText("");
 		}
 	}
+	
+	/** object inside a combo box of field names */
+	private class FieldNameComboBoxItem {
+		private String m_path = null;
+		private Field m_field = null;
+		public FieldNameComboBoxItem(String path, Field field) {
+			m_path = path;
+			m_field = field;
+		}
+		
+		public Field getField() {
+			return m_field;
+		}
+		
+		/** return <path>.fieldName */
+		public String getPath() {
+			StringBuilder fieldPath = new StringBuilder();
+			if (m_path != null && !m_path.isEmpty()) {
+				fieldPath.append(m_path).append('.');
+			}
+			fieldPath.append(m_field.getName());
+			return fieldPath.toString();
+		}
+		
+		/** return the path */
+		@Override
+		public String toString() {
+			return getPath();
+		}
+		
+	}
+
+	/** populate the combo box with the fields from the datatype */
+	private void populateFieldNames(JComboBox comboBox, MdmiDatatype dataType, String path) {
+		if (dataType instanceof DTComplex) {
+			for (Field field : ((DTComplex)dataType).getFields()) {
+				FieldNameComboBoxItem item = new FieldNameComboBoxItem(path, field);
+				comboBox.addItem(item);
+				
+				// if field is a complex type, go further
+				MdmiDatatype fieldDataType = field.getDatatype();
+				populateFieldNames(comboBox, fieldDataType, item.getPath());
+			}
+		}
+	}
 
 	////////////////////////////////
 	private class DirectionListener implements ActionListener {
@@ -508,13 +562,39 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			}
 
 			// fill fields
-			if (dataType instanceof DTComplex) {
-				for (Field field : ((DTComplex)dataType).getFields()) {
-					m_BEfieldNameSelector.addItem(field.getName());
-				}
-			}
+			populateFieldNames(m_BEfieldNameSelector, dataType, null);
 			
 			setDirty(true);	// enable/disable OK button
+		}
+	}
+	
+	/** FieldNameComboBoxItem renderer */
+	private class FieldNameComboBoxItemRenderer extends DefaultListCellRenderer {
+
+		@Override
+		public Component getListCellRendererComponent(JList list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+			
+			Icon icon = null;
+			
+			// append datatype
+			if (value instanceof FieldNameComboBoxItem) {
+				FieldNameComboBoxItem item = (FieldNameComboBoxItem)value;
+				StringBuilder text = new StringBuilder(item.getPath());
+				// show as "<path> : <datatype>"
+				Field field = item.getField();
+				text.append(" : ").append(field.getDatatype().getName());
+				value = text;
+				
+				icon = TreeNodeIcon.getTreeIcon(field.getDatatype().getClass());
+			}
+
+			Component comp = super.getListCellRendererComponent(list, value, index, isSelected,
+					cellHasFocus);
+
+			
+			setIcon(icon);
+			return comp;
 		}
 	}
 

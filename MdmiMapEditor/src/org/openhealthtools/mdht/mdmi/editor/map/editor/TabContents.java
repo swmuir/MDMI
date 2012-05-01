@@ -20,7 +20,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -40,12 +39,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import org.openhealthtools.mdht.mdmi.MdmiException;
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.console.LinkedObject;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
-import org.openhealthtools.mdht.mdmi.MdmiException;
 
 /** The component that is shown in each tab of the EditorPanel */
 public class TabContents extends JPanel {
@@ -348,7 +347,6 @@ public class TabContents extends JPanel {
 	
 	/** Hybrid icon with a provided icon, over-layed with a large red X */
 	private static class AcceptAndCloseIcon implements Icon {
-		private static String xMarker = "X";
 		
 		private Icon m_acceptIcon;
 		
@@ -370,15 +368,23 @@ public class TabContents extends JPanel {
 		public void paintIcon(Component c, Graphics g, int x, int y) {
 			m_acceptIcon.paintIcon(c, g, x, y);
 
-			// red X 
-			g.setColor(Color.red);
-			Font font = c.getFont().deriveFont(Font.BOLD + Font.ITALIC, 14);
-			g.setFont(font);
-			FontMetrics fm = c.getFontMetrics(font);
+			// white X
+			int width = 5;
+			g.setColor(Color.white);
+
 			// bottom right
-			int x1 = x + (getIconWidth() - fm.stringWidth(xMarker));
-			int y1 = y + getIconHeight();
-			g.drawString(xMarker, x1, y1);
+			int x1 = x + getIconWidth() - width - 5;
+			int y1 = y + getIconHeight() - width - 2;
+			
+			// three x's - first white, next two black
+			for (int i=0; i<3; i++) {
+				g.drawLine(x1, y1, x1+width, y1+width);
+				g.drawLine(x1+width, y1, x1, y1+width);
+
+				// black X 
+				g.setColor(Color.black);
+				x1 += 1;
+			}
 		}
 
 	}
