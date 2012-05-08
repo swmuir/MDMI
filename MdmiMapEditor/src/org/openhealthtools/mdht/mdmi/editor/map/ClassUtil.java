@@ -84,9 +84,14 @@ public class ClassUtil {
 		
 		return buf.toString();
 	}
-	
+
 	/** Get the name attribute (or equivalent) from a data model object */
 	public static String getItemName(Object item) {
+		return getItemName(item, s_unNamedItem);
+	}
+	
+	/** Get the name attribute (or equivalent) from a data model object */
+	public static String getItemName(Object item, String defaultName) {
 
 		String itemName = null;
 		if (item == null) {
@@ -108,7 +113,7 @@ public class ClassUtil {
 			}
 		}
 		if (itemName == null || itemName.length() == 0) {
-			itemName = s_unNamedItem;
+			itemName = defaultName;
 		}
 		return itemName;
 	}

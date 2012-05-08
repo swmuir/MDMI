@@ -350,15 +350,25 @@ public abstract class EditableObjectNode extends DefaultMutableTreeNode {
 		return new GenericEditor(getMessageGroup(), getUserObject().getClass());
 	}
 
-	/** Get the MessageGroup at the top of the tree */
-	public MessageGroup getMessageGroup() {
+	/** Get the MessageGroupNode at the top of the tree */
+	public MessageGroupNode getMessageGroupNode() {
 		if (this instanceof MessageGroupNode) {
-			return (MessageGroup)getUserObject();
+			return (MessageGroupNode)this;
 		}
 		// check parent
 		if (getParent() instanceof EditableObjectNode) {
 			EditableObjectNode parent = (EditableObjectNode)getParent();
-			return parent.getMessageGroup();
+			return parent.getMessageGroupNode();
+		}
+		
+		return null;
+	}
+
+	/** Get the MessageGroup at the top of the tree */
+	public MessageGroup getMessageGroup() {
+		MessageGroupNode messageGroupNode = getMessageGroupNode();
+		if (messageGroupNode != null) {
+			return (MessageGroup)messageGroupNode.getUserObject();
 		}
 		
 		return null;

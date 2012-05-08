@@ -294,7 +294,7 @@ public class SelectionManager {
 	
 	/** Delete the item(s) at this node */
 	public void deleteItem(List<TreeNode> treeNodes) {
-		m_selector.deleteNodes(treeNodes);
+		m_selector.deleteNodes(treeNodes, true);	// prompt user
 	}
 
 

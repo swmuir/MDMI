@@ -35,7 +35,6 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -66,10 +65,10 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 
 	private static final String s_blankText = s_res.getString("SyntaxNodeField.blankText");
 	private static final Icon s_blankIcon = TreeNodeIcon.getIcon(s_res.getString("SyntaxNodeField.blankIcon"));
-
+	private static final DefaultMutableTreeNode s_blankNode = new DefaultMutableTreeNode(BLANK_ENTRY);
+	
 	private SemanticElement m_semanticElement = null;
 	private MessageModel m_messageModel = null;
-	private DefaultMutableTreeNode m_blankNode;
 
 	public SyntaxNodeField(GenericEditor parentEditor) {
 		super(parentEditor);	
@@ -97,32 +96,31 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 	
 	@Override
 	protected void loadComboBox() {
-		if (m_blankNode == null) {
-			m_blankNode = new DefaultMutableTreeNode(BLANK_ENTRY);
-		}
+
+		((SyntaxNodeComboBox)getComboBox()).fillComboBox(getMessageModels());
 		
-		JTree tree = ((JTreeComboBox)getComboBox()).getTree();
-		DefaultTreeModel treeModel = (DefaultTreeModel)tree.getModel();
-		DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode)treeModel.getRoot();
-		treeRoot.removeAllChildren();
-		
-		treeRoot.add(m_blankNode);
-		for (MessageModel messageModel : getMessageModels()) {
-			if (messageModel.getSyntaxModel() != null 
-					&& messageModel.getSyntaxModel().getRoot() != null) {
-				Node syntaxRoot = messageModel.getSyntaxModel().getRoot();
-				SyntaxNodeNode treeNode = SyntaxNodeNode.createSyntaxNode(syntaxRoot);
-				treeRoot.add(treeNode);
-			}
-		}
-		
-		// expand first level children
-		for (int i=0; i<treeRoot.getChildCount(); i++) {
-			TreeNode child = treeRoot.getChildAt(i);
-			tree.expandPath(new TreePath(((DefaultMutableTreeNode)child).getPath()));
-		}
-		
-		treeModel.nodeStructureChanged(treeRoot);
+//		JTree tree = ((JTreeComboBox)getComboBox()).getTree();
+//		DefaultTreeModel treeModel = (DefaultTreeModel)tree.getModel();
+//		DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode)treeModel.getRoot();
+//		treeRoot.removeAllChildren();
+//		
+//		treeRoot.add(s_blankNode);
+//		for (MessageModel messageModel : getMessageModels()) {
+//			if (messageModel.getSyntaxModel() != null 
+//					&& messageModel.getSyntaxModel().getRoot() != null) {
+//				Node syntaxRoot = messageModel.getSyntaxModel().getRoot();
+//				SyntaxNodeNode treeNode = SyntaxNodeNode.createSyntaxNode(syntaxRoot);
+//				treeRoot.add(treeNode);
+//			}
+//		}
+//		
+//		// expand first level children
+//		for (int i=0; i<treeRoot.getChildCount(); i++) {
+//			TreeNode child = treeRoot.getChildAt(i);
+//			tree.expandPath(new TreePath(((DefaultMutableTreeNode)child).getPath()));
+//		}
+//		
+//		treeModel.nodeStructureChanged(treeRoot);
 		
 	}
 
@@ -153,9 +151,7 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 	
 	@Override
 	protected JComboBox createComboBox() {
-		DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
-		DefaultTreeModel treeModel = new DefaultTreeModel(root);
-		JTreeComboBox comboBox = new TreeComboBox(treeModel);
+		JTreeComboBox comboBox = new SyntaxNodeComboBox();
 		JTree tree = comboBox.getTree();
 		tree.setRootVisible(false);
 		tree.setCellRenderer(new TreeRenderer(tree));
@@ -227,10 +223,39 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 		return null;
 	}
 
-	public static class TreeComboBox extends JTreeComboBox {
+	
+	/** Combo box that uses a tree model */
+	public static class SyntaxNodeComboBox extends JTreeComboBox {
 
-		public TreeComboBox(TreeModel treeModel) {
-			super(treeModel);
+		public SyntaxNodeComboBox() {
+			super( new DefaultTreeModel(new DefaultMutableTreeNode("root")));
+		}
+		
+		public void fillComboBox(Collection<MessageModel> messageModels) {
+
+			JTree tree = getTree();
+			DefaultTreeModel treeModel = (DefaultTreeModel)tree.getModel();
+			DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode)treeModel.getRoot();
+			treeRoot.removeAllChildren();
+						
+			treeRoot.add(s_blankNode);
+			for (MessageModel messageModel : messageModels) {
+				if (messageModel.getSyntaxModel() != null 
+						&& messageModel.getSyntaxModel().getRoot() != null) {
+					Node syntaxRoot = messageModel.getSyntaxModel().getRoot();
+					SyntaxNodeNode treeNode = SyntaxNodeNode.createSyntaxNode(syntaxRoot);
+					treeRoot.add(treeNode);
+				}
+			}
+			
+			// expand first level children
+			for (int i=0; i<treeRoot.getChildCount(); i++) {
+				TreeNode child = treeRoot.getChildAt(i);
+				tree.expandPath(new TreePath(((DefaultMutableTreeNode)child).getPath()));
+			}
+			
+			treeModel.nodeStructureChanged(treeRoot);
+
 		}
 
 		@Override
@@ -263,10 +288,12 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 		}
 		
 	}
-	
-	public class TreeRenderer extends JTreeComboBox.CustomTreeRenderer {
 
-		public TreeRenderer(JTree tree) {
+
+	/** Tree Renderer for SyntaxNodeComboBox */
+	public static class SyntaxNodeTreeRenderer extends JTreeComboBox.CustomTreeRenderer {
+
+		public SyntaxNodeTreeRenderer(JTree tree) {
 			super(tree);
 		}
 
@@ -279,25 +306,13 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 			
 			JLabel label = (JLabel)super.getTreeCellRendererComponent(tree, value, isSelected, isExpanded,
 					isLeaf, row, hasFocus);
-			if (value == m_blankNode) {
+			if (value == s_blankNode) {
 				// display as "(not set)"
 				label.setText(s_blankText);
 				icon = s_blankIcon;
 			}
 			if (value instanceof SyntaxNodeNode) {
 				icon = ((SyntaxNodeNode)value).getNodeIcon();
-
-				// change color of invalid value
-				if (((SyntaxNodeNode)value).getUserObject() == m_invalidValue) {
-					Color background = label.getBackground();
-					if (background == m_selectedBackground) {
-						// change selection background
-						label.setBackground(Color.red.darker());
-					} else {
-						// change foreground 
-						label.setForeground(Color.red);
-					}
-				}
 			}
 
 			
@@ -308,7 +323,38 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 		}
 		
 	}
-	
+
+	public class TreeRenderer extends SyntaxNodeTreeRenderer {
+
+		public TreeRenderer(JTree tree) {
+			super(tree);
+		}
+
+		@Override
+		public Component getTreeCellRendererComponent(JTree tree, Object value,
+				boolean isSelected, boolean isExpanded, boolean isLeaf, int row,
+				boolean hasFocus) {
+			
+			JLabel label = (JLabel)super.getTreeCellRendererComponent(tree, value, isSelected, isExpanded,
+					isLeaf, row, hasFocus);
+
+			// change color of invalid value
+			if (value instanceof SyntaxNodeNode &&
+					((SyntaxNodeNode)value).getUserObject() == m_invalidValue) {
+				Color background = label.getBackground();
+				if (background == m_selectedBackground) {
+					// change selection background
+					label.setBackground(Color.red.darker());
+				} else {
+					// change foreground 
+					label.setForeground(Color.red);
+				}
+			}
+
+			return label;
+		}
+		
+	}	
 	private class NewSyntaxNodeDialog extends BaseDialog implements TreeSelectionListener {
 		private  final String BagType = ClassUtil.beautifyName(Bag.class);
 		private  final String ChoiceType = ClassUtil.beautifyName(Choice.class);

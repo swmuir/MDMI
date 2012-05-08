@@ -346,11 +346,6 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		
 		boolean existingRule = false;
 		
-		// Rule will be of the form: Set <target> to <source>
-		StringBuilder newRule = new StringBuilder();
-		String target = "value";
-		String source = "value";
-		
 		String beFieldName = m_BEfieldNameSelector.getSelectedItem().toString().trim();
 		String seFieldName = m_SEfieldNameSelector.getSelectedItem().toString().trim();
 		
@@ -385,18 +380,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 					}
 				}
 			}
-			
-
-			//  Set <ruleName>[.BEfieldName] to value
-			//  Set <ruleName>[.BEfieldName] to seFieldName
-			target = ruleName;
-			if (beFieldName.length() > 0) {
-				target += "." + beFieldName;
-			}
-			if (seFieldName.length() > 0) {
-				source = seFieldName;
-			}
-			
+						
 		} else {
 			// check if it exists already
 			for (ToMessageElement existing : m_semanticElement.getToMdmi()) {
@@ -425,8 +409,60 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 					}
 				}
 			}
+			
+		}
 
+		// Rule will be of the form: Set <target> to <source>
+		String newRule =  generateRuleText(m_toBERButton.isSelected(), ruleName, seFieldName, beFieldName);
+				
+		// append new rule to existing rule
+		String rule = conversionRule.getRule();
+		if (rule != null && rule.length() > 0) {
+			StringBuilder buf = new StringBuilder(rule);
+			buf.append("\r\n").append(newRule);
+			newRule = buf.toString();
+		}
+		
+		conversionRule.setRule(newRule);
+
+		
+		if (!existingRule) {
+			entitySelector.insertAndOpen(parentNode, childNode);
+		} else {
+			// if open - close
+			SelectionManager.getInstance().getEntityEditor().stopEditing(conversionRule);
+			
+			//open it
+			childNode = (ConversionRuleNode) entitySelector.findNode(conversionRule);
+
+			entitySelector.selectNode(childNode);
+			SelectionManager.getInstance().editItem(childNode);
+		}
+		
+		super.okButtonAction();
+	}
+	
+	public static String generateRuleText(boolean toBER, String ruleName, String seFieldName, String beFieldName) {
+		// Rule will be of the form: Set <target> to <source>
+		StringBuilder newRule = new StringBuilder();
+		String target = "value";
+		String source = "value";
+		
+		if (toBER) {
+			//  Set <ruleName>[.BEfieldName] to value
+			// or
+			//  Set <ruleName>[.BEfieldName] to <seFieldName>
+			target = ruleName;
+			if (beFieldName.length() > 0) {
+				target += "." + beFieldName;
+			}
+			if (seFieldName.length() > 0) {
+				source = seFieldName;
+			}
+			
+		} else {
 			//  Set value to <ruleName>[.BEfieldName]
+			// or
 			//  Set <SEfieldName> to <ruleName>[.BEfieldName]
 			if (seFieldName.length() > 0) {
 				target = seFieldName;
@@ -443,31 +479,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		// Set <target> to <source>
 		newRule.append("set ").append(target).append(" to ").append(source);
 		
-		String rule = conversionRule.getRule();
-		// append new rule
-		if (rule != null && rule.length() > 0) {
-			newRule.insert(0, "\r\n");
-			newRule.insert(0, rule);
-		}
-		conversionRule.setRule(newRule.toString());
-
-		
-		if (!existingRule) {
-			entitySelector.insertAndOpen(parentNode, childNode);
-		} else {
-			// if open - close
-			SelectionManager.getInstance().getEntityEditor().stopEditing(conversionRule);
-			
-			//open it
-			childNode = (ConversionRuleNode) entitySelector.findNode(conversionRule);
-
-			entitySelector.selectNode(childNode);
-			SelectionManager.getInstance().editItem(childNode);
-			
-
-		}
-		
-		super.okButtonAction();
+		return newRule.toString();
 	}
 
 	
@@ -487,7 +499,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 	
 	/** object inside a combo box of field names */
-	private class FieldNameComboBoxItem {
+	public static class FieldNameComboBoxItem {
 		private String m_path = null;
 		private Field m_field = null;
 		public FieldNameComboBoxItem(String path, Field field) {
@@ -518,7 +530,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 
 	/** populate the combo box with the fields from the datatype */
-	private void populateFieldNames(JComboBox comboBox, MdmiDatatype dataType, String path) {
+	public static void populateFieldNames(JComboBox comboBox, MdmiDatatype dataType, String path) {
 		if (dataType instanceof DTComplex) {
 			for (Field field : ((DTComplex)dataType).getFields()) {
 				FieldNameComboBoxItem item = new FieldNameComboBoxItem(path, field);
@@ -569,7 +581,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 	
 	/** FieldNameComboBoxItem renderer */
-	private class FieldNameComboBoxItemRenderer extends DefaultListCellRenderer {
+	public static class FieldNameComboBoxItemRenderer extends DefaultListCellRenderer {
 
 		@Override
 		public Component getListCellRendererComponent(JList list, Object value,

@@ -25,12 +25,9 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import javax.swing.JFileChooser;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
-import javax.swing.ListSelectionModel;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.MutableTreeNode;
 import javax.xml.stream.XMLStreamException;
 
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
@@ -55,14 +52,13 @@ import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MdmiDomainDictionaryReference;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
+import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
+import org.openhealthtools.mdht.mdmi.model.Node;
+import org.openhealthtools.mdht.mdmi.model.syntax.XSDReader;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.reader.MapBuilderXMIDirect;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.writer.XMIWriterDirect;
-import org.openhealthtools.mdht.mdmi.model.MessageModel;
-import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
-import org.openhealthtools.mdht.mdmi.model.Node;
-import org.openhealthtools.mdht.mdmi.model.syntax.XSDReader;
 
 
 /** A collection of methods for reading and writing model data */

@@ -749,14 +749,22 @@ public class MdmiModelTree extends JPanel {
 	}
 
 	/** Delete the specified node(s) */
+	public boolean deleteNode(TreeNode node, boolean prompt) {
+		List<TreeNode> nodes = new ArrayList<TreeNode>();
+		nodes.add(node);
+		return deleteNodes(nodes, prompt);
+	}
+
+	/** Prompt the user to delete the specified node(s) */
 	public boolean deleteNode(TreeNode node) {
 		List<TreeNode> nodes = new ArrayList<TreeNode>();
 		nodes.add(node);
-		return deleteNodes(nodes);
+		return deleteNodes(nodes, true);	// prompt
 	}
 
-	/** Delete the specified node(s) */
-	public boolean deleteNodes(List<TreeNode> nodes) {
+
+	/** Delete the specified node(s) in the tree, as well as in the model */
+	public boolean deleteNodes(List<TreeNode> nodes, boolean prompt) {
 		List<EditableObjectNode> editableObjNodes = new ArrayList<EditableObjectNode>();
 
 		// check that all nodes are removeable
@@ -775,7 +783,10 @@ public class MdmiModelTree extends JPanel {
 		// Confirm
 		// Do you really want to delete <type> <name>?
 		// [Yes] [No]
-		int confirm = confirmDelete(nodes, affectedNodes);
+		int confirm = JOptionPane.YES_OPTION;
+		if (prompt) {
+			confirm = confirmDelete(nodes, affectedNodes);
+		}
 
 		if (confirm == JOptionPane.YES_OPTION) {
 

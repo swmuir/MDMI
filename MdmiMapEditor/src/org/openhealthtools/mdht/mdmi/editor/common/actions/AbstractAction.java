@@ -31,7 +31,8 @@ import org.openhealthtools.mdht.mdmi.editor.common.components.ExceptionDetailsDi
 
 /**
  *
- * AbstractAction that handles cursor and exceptions
+ * AbstractAction that handles cursor and exceptions. Instead of implementing the
+ * <i>actionPerformed</i> method, derived classes must implement <i>execute</i>.
  */
 public abstract class AbstractAction extends javax.swing.AbstractAction {
 	
@@ -40,8 +41,13 @@ public abstract class AbstractAction extends javax.swing.AbstractAction {
 	 */
 	private static final long serialVersionUID = 5385542095934495513L;
 
-	/** Creates a new instance of AbstractTreeNodeAction */
+	/** Creates a new instance of AbstractAction */
 	public AbstractAction() {
+	}
+
+	/** Creates a new instance of AbstractAction */
+	public AbstractAction(String text) {
+		super(text);
 	}
 
 	/** get the value of the NAME attribute if set. Otherwise return
@@ -65,6 +71,7 @@ public abstract class AbstractAction extends javax.swing.AbstractAction {
 	}
 
 	/** perform the action by calling execute() */
+	@Override
 	public void actionPerformed(ActionEvent actionEvent) {
 
 		Frame frame = getApplicationFrame();

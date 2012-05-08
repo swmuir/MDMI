@@ -38,7 +38,7 @@ public class MessageGroupNode extends EditableObjectNode {
 		loadChildren(group);
 	}
 	
-	private void loadChildren(MessageGroup group) {
+	protected void loadChildren(MessageGroup group) {
 		// Data Types
 		DefaultMutableTreeNode dataTypesNode = new DataTypeSetNode(group);
 		add(dataTypesNode);

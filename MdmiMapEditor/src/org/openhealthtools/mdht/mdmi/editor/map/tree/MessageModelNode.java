@@ -29,7 +29,7 @@ public class MessageModelNode extends EditableObjectNode {
 		loadChildren(model);
 	}
 	
-	private void loadChildren(MessageModel model) {
+	protected void loadChildren(MessageModel model) {
 		
 		// Semantic Element Set
 		SemanticElementSet elemSet = model.getElementSet();

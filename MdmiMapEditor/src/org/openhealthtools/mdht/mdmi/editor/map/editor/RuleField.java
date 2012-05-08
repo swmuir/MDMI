@@ -19,29 +19,24 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
 
 import net.sourceforge.nrl.parser.NRLError;
-import net.sourceforge.nrl.parser.model.*;
 
 import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
 import org.openhealthtools.mdht.mdmi.engine.NrlAdapter;
@@ -73,31 +68,17 @@ public class RuleField extends JPanel implements IEditorField, DocumentListener,
 	
 	
 	private GenericEditor m_parentEditor;
-	private DefaultStyledDocument m_document;
-	private JTextPane     m_textPane;
+	private Document m_document;
+	private RuleTextPane  m_textPane;
 	private TextSearcher  m_searcher = null;
 
 
 	private boolean m_isListening = false;
 	
-	private static final String [] s_KeyWords = {
-		"AND", "OR", "IF", "THEN", "ELSE", "SET",
-		"=", "<>"
-	};
-	
-	private static boolean isKeyWord(String word) {
-		for (String keyWord: s_KeyWords) {
-			if (keyWord.equalsIgnoreCase(word)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
 	public RuleField(GenericEditor parentEditor) {
 		setLayout(new BorderLayout());
-		m_document = new DefaultStyledDocument();
-		m_textPane = new CustomTextPane(m_document);
+		m_textPane = new RuleTextPane();
+		m_document = m_textPane.getDocument();
 
 		JScrollPane scroller = new JScrollPane( m_textPane );
 		scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -110,29 +91,7 @@ public class RuleField extends JPanel implements IEditorField, DocumentListener,
 		add(scroller, BorderLayout.CENTER);
 		
 	}
-	
-	private class CustomTextPane extends JTextPane {
-		public CustomTextPane(StyledDocument doc) {
-			super(doc);
-		}
-
-		/** ignore Tab key as text entry - use it to move focus to next field */
-		@Override
-		protected void processComponentKeyEvent( KeyEvent e ) {  
-			if (e.getID() == KeyEvent.KEY_PRESSED &&  e.getKeyCode() == KeyEvent.VK_TAB ) {
-				e.consume();
-				if (e.isShiftDown()) {
-					transferFocusBackward();
-				} else {
-					transferFocus();
-				}
-			}  
-			else {  
-				super.processComponentKeyEvent( e );  
-			}  
-		} 
-	}
-	
+		
 	@Override
 	public JComponent getComponent() {
 		return this;
@@ -157,66 +116,13 @@ public class RuleField extends JPanel implements IEditorField, DocumentListener,
 	}
 	
 	private void parseText() {
-		String text = m_textPane.getText();
-
-		int dot = m_textPane.getCaretPosition(); //m_textPane.getCaret().getDot();
-		DefaultStyledDocument doc = new DefaultStyledDocument();	//RuleDocument();
 		
-		Pattern quotePattern = Pattern.compile("'[^']*'");
-
-		// tokenize text to find keywords
-		StringTokenizer tok = new StringTokenizer(text, " \t\n\r\f", true);
-		while (tok.hasMoreElements()) {
-			String token = tok.nextToken();
-			SimpleAttributeSet attrS = s_normalAttr;
-			if ("\r".equals(token)) {
-				// strip these out - they mess up editing
-				continue;
-			}
-			Matcher matcher = quotePattern.matcher(token);
-			if (isKeyWord(token)) {
-				attrS = s_keyWordAttr;
-			}
-			
-			// look for text in quotes
-			try {
-				String subToken;
-				int startIdx = 0;
-				while (matcher.find()) {
-					int matchStart = matcher.start();
-					int matchEnd = matcher.end();
-					
-					// show everything up-to the match
-					if (matchStart != startIdx) {
-						subToken = token.substring(startIdx, matchStart);
-						doc.insertString(doc.getLength(), subToken, attrS);
-					}
-					
-					// show matching segment
-					subToken = token.substring(matchStart, matchEnd);
-					doc.insertString(doc.getLength(), subToken, s_textAttr);
-					
-					// adjust 
-					startIdx = matchEnd;
-				}
-				
-				// show everything after the match
-				if (startIdx != token.length()) {
-					subToken = token.substring(startIdx);
-					doc.insertString(doc.getLength(), subToken, attrS);
-				}
-				
-			} catch (BadLocationException e) {
-				e.printStackTrace();
-			}
-		}
-		
+		// adjust document listener since document gets changed
 		m_document.removeDocumentListener(this);
 		
-		// replace document
-		m_textPane.setDocument(doc);
-		m_textPane.setCaretPosition(dot);
+		DefaultStyledDocument doc = m_textPane.parseText();
 		
+		// save new document
 		m_document = doc;
 		if (m_isListening) {
 			m_document.addDocumentListener(this);
