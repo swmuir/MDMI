@@ -87,6 +87,7 @@ public class TableViewer extends PrintableView {
 	
 	// extra buttons
 	private JButton m_refreshButton;
+	private JButton m_mainWindowButton;
 //	private JButton m_saveButton;
 	private ActionListener m_buttonAction;
 
@@ -231,6 +232,7 @@ public class TableViewer extends PrintableView {
 		JPanel buttonPanel = super.createButtonPanel();
 
 		m_refreshButton = new JButton(s_res.getString("TableViewer.refresh"));
+		m_mainWindowButton = new JButton(s_res.getString("TableViewer.mainWindow"));
 //		m_saveButton = new JButton(s_res.getString("TableViewer.save"));
 		m_buttonAction = new ButtonAction();
 		
@@ -238,6 +240,11 @@ public class TableViewer extends PrintableView {
 				s_res.getString("TableViewer.refreshIcon")));
 		m_refreshButton.setToolTipText(s_res.getString("TableViewer.refreshToolTip"));
 		m_refreshButton.addActionListener(m_buttonAction);
+		
+		m_mainWindowButton.setToolTipText(s_res.getString("TableViewer.mainWindowToolTip"));
+		m_mainWindowButton.addActionListener(m_buttonAction);
+		m_mainWindowButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
+				s_res.getString("TableViewer.mainWindowIcon")));
 
 //		m_saveButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
 //				s_res.getString("TableViewer.saveIcon")));
@@ -245,6 +252,7 @@ public class TableViewer extends PrintableView {
 //		m_saveButton.addActionListener(m_buttonAction);
 
 		buttonPanel.add(m_refreshButton);
+		buttonPanel.add(m_mainWindowButton);
 //		buttonPanel.add(m_saveButton);
 		return buttonPanel;
 	}
@@ -574,6 +582,8 @@ public class TableViewer extends PrintableView {
 		// remove listeners
 		m_refreshButton.setToolTipText(null);
 		m_refreshButton.removeActionListener(m_buttonAction);
+		m_mainWindowButton.setToolTipText(null);
+		m_mainWindowButton.removeActionListener(m_buttonAction);
 		removeComponentListener(m_windowSizeListener);
 		removeWindowStateListener(m_windowStateListener);
 		
@@ -1557,6 +1567,9 @@ public class TableViewer extends PrintableView {
 			try {
 				if (e.getSource() == m_refreshButton) {
 					refreshTable();
+				} else if (e.getSource() == m_mainWindowButton) {
+					SystemContext.getApplicationFrame().toFront();
+					
 //				} else if (e.getSource() == m_saveButton) {
 //					saveData();
 				}
