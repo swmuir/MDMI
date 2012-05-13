@@ -36,6 +36,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
@@ -351,6 +352,7 @@ public class EditorPanel extends JPanel {
 		}
 	}
 	
+	/** Listener when a tab is selected */
 	private class TabChangeListener implements ChangeListener {
 		private TabContents  m_prevSelection = null;
 		
@@ -367,6 +369,13 @@ public class EditorPanel extends JPanel {
 				setTitleFor(idx, m_prevSelection);
 			}
 			m_prevSelection = newSelection;
+			
+			// show in tree
+			DefaultMutableTreeNode treeNode = SelectionManager.getInstance().getEntitySelector().findNode(newSelection.getObjectBeingEdited());
+			if (treeNode != null) {
+				// select it (this will expand if necessary)
+				SelectionManager.getInstance().getEntitySelector().selectNode(treeNode);
+			}
 		}
 	}
 
