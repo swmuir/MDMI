@@ -231,10 +231,10 @@ public class SemanticElementNode extends EditableObjectNode {
 			if (fromMdmiExists && toMdmiExists) {
 				// <-->
 				arrow = DOUBLE_ARROW ;
-			} else if (fromMdmiExists) {
+			} else if (toMdmiExists) {
 				// <---
 				arrow = LEFT_ARROW ;
-			} else if (toMdmiExists) {
+			} else if (fromMdmiExists) {
 				// --->
 				arrow = RIGHT_ARROW ;
 			} else {
