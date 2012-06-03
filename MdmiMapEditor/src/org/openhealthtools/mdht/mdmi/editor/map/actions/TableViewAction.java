@@ -14,6 +14,7 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.actions;
 
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 
 import org.openhealthtools.mdht.mdmi.editor.common.actions.AbstractMenuAction;
@@ -30,8 +31,15 @@ public class TableViewAction extends AbstractMenuAction {
 		if (s_TableViewer == null) {
 			s_TableViewer = new TableViewer();
 		}
-		s_TableViewer.setVisible(true);
-		s_TableViewer.toFront();
+		EventQueue.invokeLater(new Runnable() {
+		    @Override
+		    public void run() {
+				s_TableViewer.setVisible(true);
+				s_TableViewer.toFront();
+				s_TableViewer.repaint();
+		    }
+		});
+
 	}
 	
 }

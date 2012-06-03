@@ -3,6 +3,7 @@ package org.openhealthtools.mdht.mdmi.editor.map.tools;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Toolkit;
@@ -1788,7 +1789,16 @@ public class TableViewer extends PrintableView {
 				if (e.getSource() == m_refreshButton) {
 					refreshTable();
 				} else if (e.getSource() == m_mainWindowButton) {
-					SystemContext.getApplicationFrame().toFront();
+					final Frame appFrame = SystemContext.getApplicationFrame();
+
+					EventQueue.invokeLater(new Runnable() {
+					    @Override
+					    public void run() {
+					    	appFrame.setVisible(true);
+					    	appFrame.toFront();
+					    	appFrame.repaint();
+					    }
+					});
 					
 //				} else if (e.getSource() == m_saveButton) {
 //					saveData();
