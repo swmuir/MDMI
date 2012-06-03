@@ -78,7 +78,7 @@ public class ViewObjectDescriptions extends PrintableView {
 		//      Semantic Elements
 		//      Syntax Model
 		//   ...
-		//   Domain Dictionary
+		//   Referent Index
 		
 		// Datatypes
 		DescriptionPanel p = getDatatypes(messageGroup);

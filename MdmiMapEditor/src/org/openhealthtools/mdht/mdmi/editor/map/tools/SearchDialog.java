@@ -266,7 +266,7 @@ public class SearchDialog extends BaseDialog {
       //   [ ] DTSDerived	  [ ] Semantic Element Rel		 [ ] Choice
       //   [ ] DTCStructured										 [ ] Leaf
       //   [ ] ...			  [ ] Conversion Rule					
-      //   [ ] ...			    [ ] To Message Element	  [ ] Domain Dictionary Ref
+      //   [ ] ...			    [ ] To Message Element	  [ ] Referent Index Ref
       //							    [ ] To Business Element
       // [ ] Message Model										  [ ] Business Element Ref
 

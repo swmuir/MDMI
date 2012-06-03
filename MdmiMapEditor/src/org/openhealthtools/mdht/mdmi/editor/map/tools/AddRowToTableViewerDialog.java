@@ -305,38 +305,18 @@ public class AddRowToTableViewerDialog extends BaseDialog implements TreeSelecti
 
 		// Create and add the Semantic Element
 		if (m_semanticElementName.getText().trim().length() > 0) {
-			// create a semantic element
-			SemanticElement semanticElement = new SemanticElement();
-			semanticElement.setName(m_semanticElementName.getText().trim());
+			// create a semantic element, and add it to the tree
+			MessageGroup messageGroup = parentSyntaxNode.getSyntaxModel().getModel().getGroup();
+			
+			SemanticElement semanticElement = createSemanticElement(m_semanticElementName.getText().trim(),
+					m_node, messageGroup);	
+			
+			// set the datatype
 			Object selection = m_dataTypes.getSelectedItem();
 			if (selection instanceof MdmiDatatype) {
 				MdmiDatatype datatype = (MdmiDatatype)selection;
 				semanticElement.setDatatype(datatype);
 			}
-			// add node to SE
-			semanticElement.setSyntaxNode(m_node);
-			// add SE to node
-			m_node.setSemanticElement(semanticElement);
-			
-			// add semantic element to selection tree
-			SemanticElementNode seNode = new SemanticElementNode(semanticElement);
-			MessageGroupNode messageGroupNode = parentTreeNode.getMessageGroupNode();
-			// find SemanticElementSetNode
-			for (Enumeration<?> en = messageGroupNode.depthFirstEnumeration(); en != null
-					&& en.hasMoreElements();) {
-				TreeNode node = (TreeNode) en.nextElement();
-				// found where to place it
-				if (node instanceof SemanticElementSetNode) {
-					SemanticElementSet set = (SemanticElementSet)((SemanticElementSetNode)node).getUserObject();
-					set.addSemanticElement(semanticElement);
-					semanticElement.setElementSet(set);
-					
-					((SemanticElementSetNode)node).addSorted(seNode);
-					treeModel.nodeStructureChanged(node);
-					break;
-				}
-			}
-			
 		}
 	
 		
@@ -384,6 +364,51 @@ public class AddRowToTableViewerDialog extends BaseDialog implements TreeSelecti
 		super.okButtonAction();
 	}
 
+	/** Create a semantic element connected to the syntax node, and insert it in the tree. The SE datatype is not set */
+	public static SemanticElement createSemanticElement(String seName, Node syntaxNode, MessageGroup messageGroup ) {
+
+		SelectionManager selectionManager = SelectionManager.getInstance();
+		MdmiModelTree entitySelector = selectionManager.getEntitySelector();
+		DefaultTreeModel treeModel =
+			(DefaultTreeModel)entitySelector.getMessageElementsTree().getModel();
+		
+		// create a semantic element
+		SemanticElement semanticElement = new SemanticElement();
+		semanticElement.setName(seName);
+		
+		// add node to SE
+		if (syntaxNode != null) {
+			semanticElement.setSyntaxNode(syntaxNode);
+			// add SE to node
+			syntaxNode.setSemanticElement(semanticElement);
+		}
+
+		// add semantic element to selection tree
+		EditableObjectNode messageGroupNode = (EditableObjectNode)entitySelector.findNode(messageGroup);
+		if (messageGroupNode != null) {
+			SemanticElementNode seNode = new SemanticElementNode(semanticElement);
+			// find SemanticElementSetNode
+			for (Enumeration<?> en = messageGroupNode.depthFirstEnumeration(); en != null
+					&& en.hasMoreElements();) {
+				TreeNode node = (TreeNode) en.nextElement();
+				// found where to place it
+				if (node instanceof SemanticElementSetNode) {
+					SemanticElementSet set = (SemanticElementSet)((SemanticElementSetNode)node).getUserObject();
+					set.addSemanticElement(semanticElement);
+					semanticElement.setElementSet(set);
+
+					((SemanticElementSetNode)node).addSorted(seNode);
+					treeModel.nodeStructureChanged(node);
+					break;
+				}
+			}
+		}
+		
+		return semanticElement;
+
+	}
+	
+	
 	@Override
 	public void dispose() {
 		m_tree.setCellRenderer(null);

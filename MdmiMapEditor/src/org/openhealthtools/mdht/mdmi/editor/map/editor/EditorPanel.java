@@ -371,10 +371,12 @@ public class EditorPanel extends JPanel {
 			m_prevSelection = newSelection;
 			
 			// show in tree
-			DefaultMutableTreeNode treeNode = SelectionManager.getInstance().getEntitySelector().findNode(newSelection.getObjectBeingEdited());
-			if (treeNode != null) {
-				// select it (this will expand if necessary)
-				SelectionManager.getInstance().getEntitySelector().selectNode(treeNode);
+			if (newSelection != null) {
+				DefaultMutableTreeNode treeNode = SelectionManager.getInstance().getEntitySelector().findNode(newSelection.getObjectBeingEdited());
+				if (treeNode != null) {
+					// select it (this will expand if necessary)
+					SelectionManager.getInstance().getEntitySelector().selectNode(treeNode);
+				}
 			}
 		}
 	}

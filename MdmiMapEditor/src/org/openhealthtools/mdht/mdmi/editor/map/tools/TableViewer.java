@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -20,8 +21,10 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.swing.AbstractCellEditor;
+import javax.swing.ActionMap;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -33,6 +36,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -45,6 +49,7 @@ import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.actions.AbstractAction;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
+import org.openhealthtools.mdht.mdmi.editor.map.Actions;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.CollectionChangeEvent;
 import org.openhealthtools.mdht.mdmi.editor.map.CollectionChangeListener;
@@ -95,6 +100,10 @@ public class TableViewer extends PrintableView {
 	private WindowSizeListener    m_windowSizeListener    = new WindowSizeListener();
 	private WindowStateListener   m_windowStateListener   = new WindowStateListener();
 	private MouseClickListener	  m_mouseListener = new MouseClickListener();
+	
+	// keyboard actions
+	private AbstractAction m_copyAction = null;
+	private AbstractAction m_pasteAction = null;
 	
 	// Table Parts
 	private TableViewModel m_tableModel;
@@ -190,6 +199,9 @@ public class TableViewer extends PrintableView {
 		addComponentListener(m_windowSizeListener);
 		addWindowStateListener(m_windowStateListener);
 		
+		// add mappings for copy/paste
+		addKeyboardMap();
+		
 		// display
 		pack();
 		if (m_preferences.getBooleanValue(TABLE_VIEWER_MAXIMIZED, false)) {
@@ -202,6 +214,33 @@ public class TableViewer extends PrintableView {
 
 		setVisible(true);
 		toFront();
+	}
+
+	private void addKeyboardMap() {
+		// Add bindings for Copy (Ctrl C), Paste,
+		InputMap inputMap = m_table.getInputMap(JComponent.WHEN_FOCUSED);
+		ActionMap actionMap = m_table.getActionMap();
+		
+		m_copyAction = new TableViewAction(Actions.COPY_ACTION) {
+			@Override
+			public void execute(ActionEvent actionEvent) {
+				copyLeafNodes();
+			}
+		};
+		m_pasteAction = new TableViewAction(Actions.PASTE_ACTION) {
+			@Override
+			public void execute(ActionEvent actionEvent) {
+				pasteLeafNodesIntoSemanticElement();
+			}
+		};
+
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK),
+				Actions.COPY_ACTION);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK),
+				Actions.PASTE_ACTION);
+		
+		actionMap.put(Actions.COPY_ACTION, m_copyAction);
+		actionMap.put(Actions.PASTE_ACTION, m_pasteAction);
 	}
 	
 	public void setWindowTitle() {
@@ -500,6 +539,54 @@ public class TableViewer extends PrintableView {
 		}
 	}
 	
+	/** create a new SE with the same name as the node - for each row */
+	public boolean newSEfromNode(int [] rows) {
+		String message = null;
+		boolean dataValid = true;
+		
+		// check target cells
+		for (int row = 0; row < rows.length && dataValid; row++) {
+			RowData rowData = m_tableModel.getRowData(rows[row]);
+			if (rowData.semanticElement != null) {
+				// All target Semantic Element cells must be empty
+				message = s_res.getString("TableViewer.targetCellsMessage");
+				dataValid = false;
+			}
+		}
+		
+		if (message != null) {
+			JOptionPane.showMessageDialog(this, message, s_res.getString("TableViewer.createSE"), 
+					JOptionPane.WARNING_MESSAGE);
+			return false;
+		}
+		
+		for (int row = 0; row < rows.length; row++) {
+			newSEfromNode(rows[row]);
+		}
+		
+		return true;
+	}
+	
+	/** create a new SE with the same name as the node */
+	public boolean newSEfromNode(int rowNum)
+	{
+		RowData rowData = m_tableModel.getRowData(rowNum);
+		if (rowData == null || rowData.leafNode == null || rowData.semanticElement != null) {
+			return false;
+		}
+
+		MessageGroup messageGroup = rowData.leafNode.getSyntaxModel().getModel().getGroup();
+		SemanticElement se = AddRowToTableViewerDialog.createSemanticElement(rowData.leafNode.getName(), rowData.leafNode, messageGroup);
+		rowData.semanticElement = se;
+		rowData.nodeSELink = new LeafNodeSELink();
+		
+		m_table.repaint();
+		
+		m_table.setRowSelectionInterval(rowNum, rowNum);
+		
+		return true;
+	}
+	
 	/** add a new row with the same Node and SE, but a blank business element */
 	public void addNewBE(int rowNum) {
 		RowData rowData = m_tableModel.getRowData(rowNum);
@@ -659,14 +746,54 @@ public class TableViewer extends PrintableView {
 
 	public JPopupMenu createPopupMenu() {
 		JPopupMenu popupMenu = null;
+		
+		
 		Object selection = getSelection();
 
 		int row = m_table.getSelectedRow();
 		int col = m_table.getSelectedColumn();
 		RowData rowData = getSelectedRowData();
 
-		if (col == 0) {
-			// Add / Remove
+		if (m_table.getSelectedRowCount() > 1) {
+			// multiple rows - only allow single column
+			if (m_table.getSelectedColumnCount() == 1) {
+				// copy leaf node or paste semantic element
+				int [] rows = m_table.getSelectedRows();
+				popupMenu = new JPopupMenu();
+				if (col == LEAF_NODE_COL) {
+					popupMenu.add(m_copyAction);
+
+					// Create Semantic Element
+					boolean canCreateSE = true;
+					for (int r=0; r<rows.length; r++) {
+						rowData = m_tableModel.getRowData(rows[r]);
+						// Leaf non-null, SE null
+						if (rowData.leafNode == null || rowData.semanticElement != null) {
+							canCreateSE = false;
+							break;
+						}
+					}
+					if (canCreateSE) {
+						popupMenu.add(new CreateSemanticElementForNode(rows));
+					}
+					
+				} else if (col == SEMANTIC_ELEMENT_COL && m_selectedLeafRows != null) {
+					boolean allSEsBlank = true;
+					for (int r=0; r<rows.length; r++) {
+						rowData = m_tableModel.getRowData(rows[r]);
+						if (rowData.semanticElement != null) {
+							allSEsBlank = false;
+							break;
+						}
+					}
+					if (allSEsBlank) {
+						popupMenu.add(m_pasteAction);
+					}
+				}
+			}
+			
+		} else if (col == ROW_SEL_COL) {
+			// First column - Add / Remove
 			popupMenu = new JPopupMenu();
 			if (rowData != null) {
 				popupMenu.add(new NewLeafAction(row));
@@ -690,6 +817,11 @@ public class TableViewer extends PrintableView {
 				}
 			}
 			
+			// Create Semantic Element
+			if (selection instanceof Node && rowData != null && rowData.semanticElement == null) {
+				popupMenu.add(new CreateSemanticElementForNode(row));
+			}
+			
 			// Edit Cell
 			if (selection instanceof Node || selection instanceof SemanticElement) {
 				popupMenu.add(new AllowNameChange());
@@ -697,7 +829,6 @@ public class TableViewer extends PrintableView {
 				// can be blank
 				popupMenu.add(new ChangeBusinessElement(rowData.businessElement));
 			}
-			
 
 			// node-specific menus
 			DefaultMutableTreeNode treeNode = SelectionManager.getInstance().getEntitySelector().findNode(selection);
@@ -794,6 +925,85 @@ public class TableViewer extends PrintableView {
 		return direction;
 	}
 	
+	private int [] m_selectedLeafRows = null;
+	
+	/** Copy leaf nodes for pasting into Semantic Element */
+	private void copyLeafNodes() {
+		// multiple rows - only leaf column
+		int [] rows = m_table.getSelectedRows();
+		int [] cols = m_table.getSelectedColumns();
+		if (rows.length > 0 && cols.length == 1 && cols[0] == LEAF_NODE_COL)
+		{
+			m_selectedLeafRows = rows;
+		}
+	}
+	
+	private void pasteLeafNodesIntoSemanticElement() {
+		// multiple rows - only SE column matching Leaf selection
+		int [] rows = m_table.getSelectedRows();
+		int [] cols = m_table.getSelectedColumns();
+		if (m_selectedLeafRows != null && 
+				cols.length == 1 && cols[0] == SEMANTIC_ELEMENT_COL)
+		{
+			String message = null;
+			
+			StringBuffer rowsCopied = new StringBuffer("row");
+			if (m_selectedLeafRows.length > 1) {
+				rowsCopied.append("s");
+			}
+			rowsCopied.append(" ");
+			rowsCopied.append(listToString(m_selectedLeafRows));
+			
+			// check that from and to rows match
+			boolean dataValid = true;
+			if (rows.length != m_selectedLeafRows.length) {
+				// The data may only be pasted into the same rows that were copied (21-25, 27, 28)
+				message = MessageFormat.format(s_res.getString("TableViewer.pasteRowsMessageFormat"),
+						rowsCopied);
+				dataValid = false;
+			} else {
+				for (int row = 0; row < rows.length && dataValid; row++) {
+					if (rows[row] != m_selectedLeafRows[row]) {
+						message = MessageFormat.format(s_res.getString("TableViewer.pasteRowsMessageFormat"),
+								rowsCopied);
+						dataValid = false;
+					}
+				}
+			}
+
+			
+			if (message != null) {
+				JOptionPane.showMessageDialog(this, message, Actions.PASTE_ACTION, 
+						JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			
+			newSEfromNode(rows);
+			
+			m_selectedLeafRows = null;
+		}
+	}
+	
+	/** convert individual numbers into lists - e.g 1-3,5,7,10-12 */
+	public static String listToString(int [] numbers) {
+		StringBuffer buf = new StringBuffer();
+		
+		for (int i = 0; i < numbers.length; i++) {
+			//combine contiguous numbers - e.g. 1,2,3 -> 1-3
+			if (i == 0 || numbers[i-1] < numbers[i]-1) {
+				// start new number
+				if (i > 0) {
+					buf.append(", ");
+				}
+				buf.append(numbers[i]);
+			} else if (i == numbers.length-1 || numbers[i+1] > numbers[i]+1) {
+				// end of number range
+				buf.append('-').append(numbers[i]);
+			}
+		}
+		return buf.toString();
+	}
+
 	/** Data in a row of the table */
 	private class RowData {
 		public Node leafNode = null;
@@ -1128,7 +1338,17 @@ public class TableViewer extends PrintableView {
 			// select row if its not already selected
 			int rowAtPoint = table.rowAtPoint(e.getPoint());
 			if (rowAtPoint != -1) {
-				table.setRowSelectionInterval(rowAtPoint, rowAtPoint);
+				boolean selected = false;
+				int [] selectedRows = table.getSelectedRows();
+				for (int i=0; i<selectedRows.length; i++) {
+					if (selectedRows[i] == rowAtPoint) {
+						selected = true;
+						break;
+					}
+				}
+				if (!selected) {
+					table.setRowSelectionInterval(rowAtPoint, rowAtPoint);
+				}
 			}
 			
 			JPopupMenu popupMenu = createPopupMenu();
@@ -1396,19 +1616,27 @@ public class TableViewer extends PrintableView {
 	///////////////////////////////////////
 	// Menu Action Handlers
 	///////////////////////////////////////
+	
+	/** Base class for all actions in this class */
+	public abstract class TableViewAction extends AbstractAction {
+		
+		protected TableViewAction(String name) {
+			super(name);
+		}
+		
+		@Override
+		protected Frame getApplicationFrame() {
+			return TableViewer.this;
+		}
+	}
 
-	public class OpenSelectionAction extends AbstractAction {
+	public class OpenSelectionAction extends TableViewAction {
 		private Object m_selection = null;
 		
 		public OpenSelectionAction(Object object) {
 			super(MessageFormat.format(s_res.getString("TableViewer.openFormat"), 
 					ClassUtil.beautifyName(object.getClass()), ClassUtil.getItemName(object)));
 			m_selection = object;
-		}
-		
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 
 		@Override
@@ -1419,14 +1647,9 @@ public class TableViewer extends PrintableView {
 	}
 
 	// allow name change
-	public class AllowNameChange extends AbstractAction {
+	public class AllowNameChange extends TableViewAction {
 		public AllowNameChange() {
 			super(s_res.getString("TableViewer.changeName"));
-		}
-
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 
 		@Override
@@ -1435,18 +1658,35 @@ public class TableViewer extends PrintableView {
 		}
 		
 	}
+	
+	// create a semantic element for this node, using the node name
+	public class CreateSemanticElementForNode extends TableViewAction {
+		int [] m_rows;
+		
+		public CreateSemanticElementForNode(int rowNum) {
+			super(s_res.getString("TableViewer.createSE"));
+			m_rows = new int[1];
+			m_rows[0] = rowNum;
+		}
+		
+		public CreateSemanticElementForNode(int [] rows) {
+			super(s_res.getString("TableViewer.createSE"));
+			m_rows = rows;
+		}
+
+		@Override
+		public void execute(ActionEvent e) {
+			newSEfromNode(m_rows);
+		}
+		
+	}
 
 	// allow BE change
-	public class ChangeBusinessElement extends AbstractAction {
+	public class ChangeBusinessElement extends TableViewAction {
 		public ChangeBusinessElement(MdmiBusinessElementReference ber) {
 			// select / change business element
 			super(ber == null ? s_res.getString("TableViewer.selectBusinessElement"):
 				s_res.getString("TableViewer.changeBusinessElement"));
-		}
-
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 		
 		@Override
@@ -1457,14 +1697,9 @@ public class TableViewer extends PrintableView {
 	}
 	
 	// View SE to BE Link
-	public class ViewSEtoBELinkAction extends AbstractAction {
+	public class ViewSEtoBELinkAction extends TableViewAction {
 		public ViewSEtoBELinkAction() {
 			super(s_res.getString("TableViewer.viewSEToBELink"));
-		}
-
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 		
 		@Override
@@ -1475,16 +1710,11 @@ public class TableViewer extends PrintableView {
 
 	
 	// new leaf node
-	public class NewLeafAction extends AbstractAction {
+	public class NewLeafAction extends TableViewAction {
 		int m_rowNum;
 		public NewLeafAction(int rowNum) {
 			super(s_res.getString("TableViewer.newLeaf"));
 			m_rowNum = rowNum;
-		}
-
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 		
 		@Override
@@ -1496,16 +1726,11 @@ public class TableViewer extends PrintableView {
 
 
 	// Add Business Element
-	public class AddBEAction extends AbstractAction {
+	public class AddBEAction extends TableViewAction {
 		int m_rowNum;
 		public AddBEAction(int rowNum) {
 			super(s_res.getString("TableViewer.addBE"));
 			m_rowNum = rowNum;
-		}
-
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 		
 		@Override
@@ -1516,16 +1741,11 @@ public class TableViewer extends PrintableView {
 	}
 	
 	// delete row
-	public class DeleteRowAction extends AbstractAction {
+	public class DeleteRowAction extends TableViewAction {
 		int m_rowNum;
 		public DeleteRowAction(int rowNum) {
 			super(s_res.getString("TableViewer.deleteRow"));
 			m_rowNum = rowNum;
-		}
-
-		@Override
-		protected Frame getApplicationFrame() {
-			return TableViewer.this;
 		}
 		
 		@Override
