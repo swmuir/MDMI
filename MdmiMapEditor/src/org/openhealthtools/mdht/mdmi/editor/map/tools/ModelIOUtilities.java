@@ -519,6 +519,7 @@ public class ModelIOUtilities {
 						// add to the model
 						MessageSyntaxModel syntaxModel = (MessageSyntaxModel) syntaxModelNode.getUserObject();
 						syntaxModel.setRoot(root);
+						root.setSyntaxModel(syntaxModel);
 
 						// add to tree
 						syntaxModelNode.removeAllChildren();

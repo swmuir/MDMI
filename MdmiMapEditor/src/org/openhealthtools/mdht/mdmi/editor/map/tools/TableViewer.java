@@ -576,7 +576,13 @@ public class TableViewer extends PrintableView {
 			return false;
 		}
 
-		MessageGroup messageGroup = rowData.leafNode.getSyntaxModel().getModel().getGroup();
+		MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
+		DefaultMutableTreeNode treeNode = entitySelector.findNode(rowData.leafNode);
+		if (treeNode == null) {
+			return false;
+		}
+		MessageGroup messageGroup = ((EditableObjectNode)treeNode).getMessageGroup();
+		
 		SemanticElement se = AddRowToTableViewerDialog.createSemanticElement(rowData.leafNode.getName(), rowData.leafNode, messageGroup);
 		rowData.semanticElement = se;
 		rowData.nodeSELink = new LeafNodeSELink();
