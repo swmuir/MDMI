@@ -458,28 +458,28 @@ public class MapEditor extends JFrame {
 		}
 	}
 
-	/**
-	 * Starting point for application.
-	 *  Optional argument: -qa
-	 */
-	public static void main(String[] args) {
-		// initialize LogWriter
-		LogWriter lw = new LogWriter(Level.INFO, new File("./logs"), true, false);
-		SystemContext.setLogWriter(lw);
-		
-		try {
-			String lAndF = UIManager.getSystemLookAndFeelClassName();
-			UIManager.setLookAndFeel(lAndF);
-		} catch (Exception e) {
-			SystemContext.getLogWriter().loge(e, "Error setting look and feel for " + MapEditor.class.getName());
-		}
+    /**
+     * Starting point for application.
+     * Optional argument: -qa
+     */
+    public static void main(String[] args) {
+        // initialize LogWriter
+        LogWriter lw = new LogWriter(Level.INFO, new File("./logs"), true, false);
+        SystemContext.setLogWriter(lw);
 
-		MapEditor editor = new MapEditor();
-		boolean started = editor.startApplication(args);
-		if (!started) {
-			System.exit(0);
-		}
-	}
+        try {
+            String lAndF = UIManager.getSystemLookAndFeelClassName();
+            UIManager.setLookAndFeel(lAndF);
+        } catch (Exception e) {
+            SystemContext.getLogWriter().loge(e, "Error setting look and feel for " + MapEditor.class.getName());
+        }
+
+        MapEditor editor = new MapEditor();
+        boolean started = editor.startApplication(args);
+        if (!started) {
+            System.exit(0);
+        }
+    }
 
 
 }
