@@ -672,4 +672,16 @@ public final class FileUtil {
       String tmpName = sanitizeFileName(base + uuid.toString() + '.' + ext);
       return new File(System.getProperty("java.io.tmpdir"), tmpName);
    }
+
+    /**
+     * Creates the directory named by this abstract dirName, including any necessary but nonexistent parent directories.
+     * @param dirName
+     * @throws IOException
+     */
+    public static void createDir(final String dirName) throws IOException {
+        final File dir = new File(dirName);
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("Unable to create " + dir.getAbsolutePath());
+        }
+    }
 } // FileUtil

@@ -30,6 +30,7 @@ import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Date;
@@ -59,6 +60,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.writer.XMIWriterDirect;
+import org.openhealthtools.mdht.mdmi.util.FileUtil;
 import org.openhealthtools.mdht.mdmi.util.LogWriter;
 
 /**
@@ -214,7 +216,12 @@ public class MapEditor extends JFrame {
 			SelectionManager.getInstance().startManagement(m_msgGroupTree, m_editor, m_statusArea);
 			
 			// start timer
-			saveDataPeriodically();
+            try {
+                saveDataPeriodically();
+            } catch (IOException e) {
+                //todo: ExceptionHandler.handleSilently()
+                e.printStackTrace();
+            }
 			
 //			// Prompt for a file to open
 //			ModelIOUtilities.loadModelFromFile();
@@ -224,12 +231,14 @@ public class MapEditor extends JFrame {
 	}
 	
 	/** Start a timer that runs every 5 minutes to save the data in progress */
-	private void saveDataPeriodically() {
+	private void saveDataPeriodically() throws IOException {
 		m_timer = new Timer(true);
 
 		// File name "Edits_05-06-10.15.45.xmi"
 		String saveFileName = MessageFormat.format(s_res.getString("MapEditor.tempFileName"),
 				new Date());
+
+        FileUtil.createDir(m_savePath);
 		final File saveFile = new File(m_savePath + saveFileName );
 
 		TimerTask task = new TimerTask() {
