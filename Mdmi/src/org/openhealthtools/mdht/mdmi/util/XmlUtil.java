@@ -36,7 +36,7 @@ public class XmlUtil {
 
    // duration
    // (-)P1Y2M3DT10H30M40.50S 1 year, 2 months 3 days, 10 hours, 30 minutes and 40.50 seconds
-   // § 5.5.3.2 of ISO 8601, http://www.iso.ch/markete/8601.pdf
+   //  5.5.3.2 of ISO 8601, http://www.iso.ch/markete/8601.pdf
    public static final Pattern           P_DURATION   = Pattern.compile("-?P([0-9]+Y)?([0-9]+M)?([0-9]+D)?(T([0-9]+H)?([0-9]+M)?([0-9]+(.[0-9]+)?S)?)?");
 
    // dateTime
