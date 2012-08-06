@@ -23,10 +23,11 @@ import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.MessageModel;
+import org.openhealthtools.mdht.mdmi.model.Node;
 
 /** Renderers for all kinds of model objects */
 public class ModelRenderers {
-	
+
 	public static class MessageGroupRenderer extends DefaultListCellRenderer {
 
 		@Override
@@ -40,7 +41,7 @@ public class ModelRenderers {
 			}
 			return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 		}
-		
+
 	}
 
 
@@ -57,7 +58,7 @@ public class ModelRenderers {
 			}
 			return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 		}
-		
+
 	}
 
 	public static class BusinessElementRenderer extends DefaultListCellRenderer {
@@ -73,6 +74,22 @@ public class ModelRenderers {
 			}
 			return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 		}
-		
+
 	}
+
+    public static class NodeRenderer extends DefaultListCellRenderer {
+
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+            if (value instanceof Node) {
+                value = ((Node) value).getName();
+                if (value == null || "".equals(value)) {
+                    value = ClassUtil.s_unNamedItem;
+                }
+            }
+            return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        }
+
+    }
 }
