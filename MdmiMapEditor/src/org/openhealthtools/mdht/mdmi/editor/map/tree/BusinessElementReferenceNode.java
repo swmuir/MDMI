@@ -14,21 +14,29 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import org.openhealthtools.mdht.mdmi.editor.common.UniqueID;
 import org.openhealthtools.mdht.mdmi.editor.map.CollectionChangeEvent;
 import org.openhealthtools.mdht.mdmi.editor.map.CollectionChangeListener;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedListField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.StringField;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
@@ -87,16 +95,79 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		public CustomEditor(MessageGroup group, Class<?> objectClass) {
 			super(group, objectClass);
 		}
-		
+
 		@Override
 		protected void createDataEntryFields(List<Method[]> methodPairList) {
 			super.createDataEntryFields(methodPairList);
-			
+
 			// Add a field to show all Semantic Elements that reference this one
 			// add to layout 
 			m_semanticElementField = new SemanticElementReference(null);
 			addLabeledField("Associated Semantic Elements",
 					m_semanticElementField, 0.0, GridBagConstraints.HORIZONTAL);
+
+		}
+
+
+		/** Use a custom editor for Unique ID */
+		@Override
+		protected IEditorField createEditorField(DataEntryFieldInfo fieldInfo) {
+			if ("UniqueIdentifier".equalsIgnoreCase(fieldInfo.getFieldName())) {
+				// use a string field that provides a button to generate a unique ID
+				return new UniqueIDField(this);
+
+			}
+			return super.createEditorField(fieldInfo);
+		}
+
+		// A StringField, with a button to generate a UUID
+		protected class UniqueIDField extends StringField implements ActionListener {
+			private JButton m_genButton;
+
+			UniqueIDField(GenericEditor parentEditor) {
+				super(parentEditor, 1, 10);
+				m_genButton = new JButton();
+				m_genButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
+						DataTypeNode.s_res.getString("UniqueIDField.icon")));
+				add(BorderLayout.EAST, m_genButton);
+			}
+
+			@Override
+			public void setDisplayValue(Object value) {
+				super.setDisplayValue(value);
+				// disable if GUID
+				if (value instanceof String && UniqueID.isUUID((String)value)) {
+					setReadOnly();
+				}
+			}
+
+			@Override
+			public void setReadOnly() {
+				m_genButton.setEnabled(false);
+				super.setReadOnly();
+			}
+
+			@Override
+			public void addNotify() {
+				super.addNotify();
+				m_genButton.addActionListener(this);
+				m_genButton.setToolTipText(DataTypeNode.s_res.getString("UniqueIDField.toolTip"));
+			}
+
+			@Override
+			public void removeNotify() {
+				m_genButton.removeActionListener(this);
+				m_genButton.setToolTipText(null);
+				super.removeNotify();
+			}
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == m_genButton) {
+					// generate a UUID
+					setDisplayValue(UniqueID.getUUID());
+				}
+			}
 
 		}
 	}
