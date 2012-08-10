@@ -67,6 +67,6 @@ public abstract class MdmiDatatypeWriter<T extends MdmiDatatype> extends DirectW
       // Write type attributes
       WriterUtil.writeAttribute(writer, MdmiDatatypeValidate.s_nameField, object.getTypeName());
       WriterUtil.writeAttribute(writer, MdmiDatatypeValidate.s_descName, object.getDescription());
+      WriterUtil.writeAttribute(writer, MdmiDatatypeValidate.s_isReadonly, object.isReadonly());
    }
-
 }

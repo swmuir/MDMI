@@ -24,6 +24,7 @@ public class BusinessElemRefValidate implements IModelValidate<MdmiBusinessEleme
    public static final String s_refTypeField    = "referenceDatatype";
    public static final String s_descField       = "description";
    public static final String s_ruleName        = "businessRules";
+   public static final String s_isReadonly      = "isReadonly";
 
    @Override
    public void validate( MdmiBusinessElementReference object, ModelValidationResults results ) {

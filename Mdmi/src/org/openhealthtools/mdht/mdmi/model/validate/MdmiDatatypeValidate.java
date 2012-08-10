@@ -17,8 +17,9 @@ package org.openhealthtools.mdht.mdmi.model.validate;
 import org.openhealthtools.mdht.mdmi.model.*;
 
 public class MdmiDatatypeValidate<T extends MdmiDatatype> implements IModelValidate<T> {
-   public static final String s_nameField = "typeName";
-   public static final String s_descName  = "description";
+   public static final String s_nameField  = "typeName";
+   public static final String s_descName   = "description";
+   public static final String s_isReadonly = "isReadonly";
 
    @Override
    public void validate( T object, ModelValidationResults results ) {

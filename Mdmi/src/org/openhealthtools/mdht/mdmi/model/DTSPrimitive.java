@@ -94,6 +94,15 @@ public final class DTSPrimitive extends DTSimple {
 			return false;
 		return m_reference.equals( ((DTSPrimitive)other ).m_reference );
 	}
+	
+	@Override
+	public boolean isReadonly() {
+	   return true;
+	}
+
+	@Override
+	public void setReadonly( boolean value ) {
+	}
 
 	@Override
 	protected void toString( StringBuffer out, String indent ) {

@@ -55,6 +55,12 @@ public class MdmiBerReader extends XMIReaderDirectAbstract<MdmiBusinessElementRe
       object.setName(reader.getAttributeValue(null, BusinessElemRefValidate.s_nameField));
       object.setUniqueIdentifier(reader.getAttributeValue(null, BusinessElemRefValidate.s_idField));
       object.setDescription(reader.getAttributeValue(null, BusinessElemRefValidate.s_descField));
+
+      Boolean bool = XMIReaderUtil.convertToBoolean(reader.getAttributeValue(null,
+            BusinessElemRefValidate.s_isReadonly));
+      if( bool != null ) {
+         object.setReadonly(bool);
+      }
       object.setReference(XMIReaderUtil.convertToURI(reader.getAttributeValue(null, BusinessElemRefValidate.s_refField)));
    }
 

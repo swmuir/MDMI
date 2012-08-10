@@ -66,7 +66,6 @@ public class BuilderUtil {
    }
 
    /**
-    * 
     * @param classDef Class definition from which to retrieve the attribute value.
     * @param attribName The name of the attribute whose value is to be retrieved.
     * @return The value of the attribute, null if the attribute does not exist.
@@ -77,7 +76,6 @@ public class BuilderUtil {
    }
 
    /**
-    * 
     * @param classDef Class definition from which to retrieve the URI attribute value.
     * @param attribName The name of the attribute whose value is to be retrieved.
     * @return URI object for the attribute's value, null if the attribute does not exist OR if the value is not a valid
@@ -94,16 +92,25 @@ public class BuilderUtil {
    }
 
    /**
-    * 
     * @param classDef Class definition from which to retrieve the boolean attribute value.
     * @param attribName The name of the attribute whose value is to be retrieved.
     * @return boolean value parsed from attribute value.
     */
    public static boolean getBooleanAttribVal( ClassDef classDef, String attribName ) {
-      return Boolean.parseBoolean(getAttribVal(classDef, attribName));
+      try {
+         return Boolean.parseBoolean(getAttribVal(classDef, attribName));
+      }
+      catch( Exception ex ) {
+         return false;
+      }
    }
 
    public static int getIntegerAttribVal( ClassDef classDef, String attribName ) {
-      return Integer.parseInt(getAttribVal(classDef, attribName));
+      try {
+         return Integer.parseInt(getAttribVal(classDef, attribName));
+      }
+      catch( Exception ex ) {
+         return 0;
+      }
    }
 }

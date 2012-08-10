@@ -30,6 +30,7 @@ public class MdmiBusinessElementReference implements IClassifier {
    private MdmiDomainDictionaryReference m_domainDictionaryReference;
    private List<MdmiBusinessElementRule> m_businessRules;
    private MdmiDatatype                  m_referenceDatatype;
+   protected boolean                     m_isReadonly;
    private HashMap<String, Object>       m_userData;
    private VALUE                         m_value;
 
@@ -92,6 +93,14 @@ public class MdmiBusinessElementReference implements IClassifier {
 
    public void setUniqueIdentifier( String identifier ) {
       m_uniqueIdentifier = identifier;
+   }
+
+   public boolean isReadonly() {
+      return m_isReadonly;
+   }
+
+   public void setReadonly( boolean isReadonly ) {
+      m_isReadonly = isReadonly;
    }
 
    @Override

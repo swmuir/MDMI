@@ -18,7 +18,8 @@ import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.raw.*;
 
 public class ExternalDatatypeBuilder extends ModelBuilderAttributesOnly<DTExternal> {
-   private static final String s_refAttrib = "typeSpecification";
+   private static final String s_refAttrib  = "typeSpecification";
+   private static final String s_isReadonly = "isReadonly";
 
    @Override
    protected DTExternal buildMessageModelObject( ClassDef classDef, RawRoot root ) {
@@ -26,6 +27,7 @@ public class ExternalDatatypeBuilder extends ModelBuilderAttributesOnly<DTExtern
       datatype.setTypeName(classDef.getName());
       datatype.setDescription(classDef.getCommentString());
       datatype.setTypeSpec(BuilderUtil.getURIAttribVal(classDef, s_refAttrib));
+      datatype.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
       return datatype;
    }
 }

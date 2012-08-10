@@ -20,6 +20,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.raw.*;
 
 public class ChoiceDatatypeBuilder extends ModelBuilderAttributesOnly<DTCChoice> {
+   private static final String       s_isReadonly   = "isReadonly";
    private static final FieldBuilder s_fieldBuilder = new FieldBuilder();
 
    @Override
@@ -65,6 +66,7 @@ public class ChoiceDatatypeBuilder extends ModelBuilderAttributesOnly<DTCChoice>
       DTCChoice o = new DTCChoice();
       o.setTypeName(classDef.getName());
       o.setDescription(classDef.getCommentString());
+      o.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
       return o;
    }
 }

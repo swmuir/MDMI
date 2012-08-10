@@ -49,7 +49,6 @@ public class MdmiBerRuleReader extends XMIReaderDirectAbstract<MdmiBusinessEleme
 
    @Override
    protected void readAttributes( XMLStreamReader reader, MdmiBusinessElementRule object ) {
-
       object.setName(reader.getAttributeValue(null, BusinessElemRuleValidate.s_nameField));
       object.setDescription(reader.getAttributeValue(null, BusinessElemRuleValidate.s_descName));
       object.setRuleExpressionLanguage(reader.getAttributeValue(null, BusinessElemRuleValidate.s_ruleLangName));

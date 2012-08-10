@@ -25,6 +25,7 @@ public class DerivedDatatypeBuilder extends ModelBuilderAttributesOnly<DTSDerive
    private static final DerivedDatatypeBuilder    s_derivedTypeBuilder = new DerivedDatatypeBuilder();
    private static final String                    s_restricAttrib      = "restriction";
    private static final String                    s_baseTypeAttrib     = "baseType";
+   private static final String                    s_isReadonly         = "isReadonly";
 
    @Override
    public DTSDerived buildMessageModelObject( ClassDef classDef, RawRoot root, Map<String, Object> objectMap ) {
@@ -33,6 +34,7 @@ public class DerivedDatatypeBuilder extends ModelBuilderAttributesOnly<DTSDerive
       datatype.setTypeName(classDef.getName());
       datatype.setDescription(classDef.getCommentString());
       datatype.setRestriction(BuilderUtil.getAttribVal(classDef, s_restricAttrib));
+      datatype.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
       objectMap.put(classDef.getId(), datatype);
 
       String baseTypeName = BuilderUtil.getAttribVal(classDef, s_baseTypeAttrib);

@@ -20,6 +20,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.raw.*;
 
 public class StructuredDatatypeBuilder extends ModelBuilderAttributesOnly<DTCStructured> {
+   private static final String       s_isReadonly   = "isReadonly";
    private static final FieldBuilder s_fieldBuilder = new FieldBuilder();
 
    @Override
@@ -57,6 +58,7 @@ public class StructuredDatatypeBuilder extends ModelBuilderAttributesOnly<DTCStr
       DTCStructured o = new DTCStructured();
       o.setTypeName(classDef.getName());
       o.setDescription(classDef.getCommentString());
+      o.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
       return o;
    }
 }

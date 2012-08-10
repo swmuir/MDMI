@@ -18,11 +18,14 @@ import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.raw.*;
 
 public class EnumeratedDatatypeBuilder extends ModelBuilderAttributesOnly<DTSEnumerated> {
+   private static final String s_isReadonly = "isReadonly";
+   
    @Override
    protected DTSEnumerated buildMessageModelObject( ClassDef classDef, RawRoot root ) {
       DTSEnumerated dataType = new DTSEnumerated();
       dataType.setTypeName(classDef.getName());
       dataType.setDescription(classDef.getCommentString());
+      dataType.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
       for( Literal literal : classDef.getLiterals() ) {
          EnumerationLiteral enumLiteral = new EnumerationLiteral();
          enumLiteral.setCode(literal.getName());

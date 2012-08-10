@@ -23,6 +23,7 @@ public class MdmiBerBuilder extends ModelBuilderCompositionOnly<MdmiBusinessElem
    private static final String             s_idAttrib       = "uniqueIdentifier";
    private static final String             s_refAttrib      = "reference";
    private static final String             s_datatypeAttrib = "referenceDatatype";
+   private static final String             s_isReadonly     = "isReadonly";
    private static final MdmiBerRuleBuilder m_ruleBuilder    = new MdmiBerRuleBuilder();
 
    @Override
@@ -50,6 +51,7 @@ public class MdmiBerBuilder extends ModelBuilderCompositionOnly<MdmiBusinessElem
       ref.setDescription(BuilderUtil.getDescriptionAttribVal(classDef));
       ref.setUniqueIdentifier(BuilderUtil.getAttribVal(classDef, s_idAttrib));
       ref.setReference(BuilderUtil.getURIAttribVal(classDef, s_refAttrib));
+      ref.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
       return ref;
    }
 

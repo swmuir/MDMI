@@ -22,6 +22,7 @@ public abstract class MdmiDatatype implements IClassifier {
    protected MessageGroup            m_owner;
    protected String                  m_name;
    protected String                  m_description;
+   protected boolean                 m_isReadonly;
    protected HashMap<String, Object> m_userData = new HashMap<String, Object>();
 
    public MessageGroup getOwner() {
@@ -46,6 +47,14 @@ public abstract class MdmiDatatype implements IClassifier {
 
    public void setDescription( String description ) {
       m_description = description;
+   }
+
+   public boolean isReadonly() {
+      return m_isReadonly;
+   }
+
+   public void setReadonly( boolean isReadonly ) {
+      m_isReadonly = isReadonly;
    }
 
    public abstract boolean isSimple();

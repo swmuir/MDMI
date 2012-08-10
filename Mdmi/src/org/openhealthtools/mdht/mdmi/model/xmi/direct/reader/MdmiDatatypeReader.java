@@ -18,6 +18,7 @@ import javax.xml.stream.*;
 
 import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.validate.*;
+import org.openhealthtools.mdht.mdmi.model.xmi.XMIReaderUtil;
 
 public abstract class MdmiDatatypeReader<T extends MdmiDatatype> extends XMIReaderDirectAbstract<T> {
    protected MdmiDatatypeReader( String nodeName ) {
@@ -37,5 +38,11 @@ public abstract class MdmiDatatypeReader<T extends MdmiDatatype> extends XMIRead
    protected void readAttributes( XMLStreamReader reader, T object ) {
       object.setTypeName(reader.getAttributeValue(null, MdmiDatatypeValidate.s_nameField));
       object.setDescription(reader.getAttributeValue(null, MdmiDatatypeValidate.s_descName));
+
+      Boolean bool = XMIReaderUtil.convertToBoolean(reader.getAttributeValue(null,
+            MdmiDatatypeValidate.s_isReadonly));
+      if( bool != null ) {
+         object.setReadonly(bool);
+      }
    }
 }
