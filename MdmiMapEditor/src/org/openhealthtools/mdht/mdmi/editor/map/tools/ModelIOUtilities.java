@@ -401,8 +401,10 @@ public class ModelIOUtilities {
         MessageGroup messageGroup = groupNode.getMessageGroup();
         //search for datatype with same name
         MdmiDatatype found = findDatatype(messageGroup.getDatatypes(), datatype.getTypeName());
-
-        if (found == null) {
+        
+        if (found == datatype) {
+        	// same one - nothing to do
+        } else if (found == null) {
             groupNode.addDatatype(datatype);
 
             if (datatype instanceof DTComplex) {
@@ -573,15 +575,6 @@ public class ModelIOUtilities {
                             newBizElemRef.getName());
 
                     if (found == null) {
-                        // make sure datatype exists
-                        MdmiDatatype refDatatype = newBizElemRef.getReferenceDatatype();
-                        if (refDatatype != null) {
-                            MdmiDatatype foundType = addImportedDatatype(refDatatype, groupNode, false, false);    // don't warn if these already exist
-                            if (foundType != refDatatype) {
-                                // exists
-                                newBizElemRef.setReferenceDatatype(foundType);
-                            }
-                        }
 
                         // Add to tree
                         NewObjectInfo info = dictionaryNode.getNewObjectInformationForClass(newBizElemRef.getClass());
@@ -595,7 +588,7 @@ public class ModelIOUtilities {
 
                         if (copyIfExists) {
                             // copy data into found object
-                            EditableObjectNode newNode = entitySelector.replaceUserObject(found, newBizElemRef);
+                            EditableObjectNode newNode = entitySelector.replaceUserObject(found, newBizElemRef);                   
 
                             // mark as imported
                             newNode.setImported(true);
@@ -613,6 +606,20 @@ public class ModelIOUtilities {
 
                             SelectionManager.getInstance().getStatusPanel().writeConsoleLink(preMessage,
                                     link, postMessage);
+                        }
+                    }
+                    
+                    // check on datatype if we're using the imported BER
+                    if (found == null || copyIfExists) {
+
+                        // make sure datatype exists
+                        MdmiDatatype refDatatype = newBizElemRef.getReferenceDatatype();
+                        if (refDatatype != null) {
+                            MdmiDatatype foundType = addImportedDatatype(refDatatype, groupNode, copyIfExists, warnIfExists);
+                            if (foundType != refDatatype) {
+                                // datatype exists, so change the reference to the existing one
+                                newBizElemRef.setReferenceDatatype(foundType);
+                            }
                         }
                     }
                 }

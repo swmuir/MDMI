@@ -26,6 +26,7 @@ import org.openhealthtools.mdht.mdmi.editor.common.UniqueID;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.WrappingDisplayText;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
+import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MdmiDomainDictionaryReference;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
@@ -278,9 +279,15 @@ public class UniqueIdGenerator extends JFrame implements ActionListener {
     				for (MdmiBusinessElementReference bizElem : dictionary.getBusinessElements()) {
     					bizElemCount++;
     					if (!UniqueID.isUUID(bizElem.getUniqueIdentifier())) {
-        					String uuid = UniqueID.getUUID();
-        					bizElem.setUniqueIdentifier(uuid);
-        					idsChanged++;
+    						String uuid = UniqueID.getUUID();
+    						bizElem.setUniqueIdentifier(uuid);
+    						idsChanged++;
+    					}
+    					// make sure all BEs and Datatypes are read-only
+    					bizElem.setReadonly(true);
+    					MdmiDatatype datatype = bizElem.getReferenceDatatype();
+    					if (datatype != null) {
+    						datatype.setReadonly(true);
     					}
     				}
     			}

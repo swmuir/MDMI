@@ -148,6 +148,28 @@ public class DataTypeNode extends EditableObjectNode {
 		return menus;
 	}
 
+	// indicate object was imported 
+	@Override
+	public boolean isImported() {
+		if (super.isImported()) {
+			return true;
+		}
+		if (getUserObject() instanceof DTSPrimitive) {
+			return false;
+		}
+		// if read-only, treat as imported
+		return ((MdmiDatatype)getUserObject()).isReadonly();
+	}
+	
+	@Override
+	public void setImported(boolean imported) {
+		// make read-only
+		if (imported) {
+			((MdmiDatatype)getUserObject()).setReadonly(true);
+		}
+
+		super.setImported(imported);
+	}
 
 	//////////////////////////////////////////////////////////////////
 	//    Custom Classes
@@ -159,8 +181,10 @@ public class DataTypeNode extends EditableObjectNode {
 
 		@Override
 		public boolean isReadOnlyFields(String fieldName) {
-			// cannot change attributes on primitive
-			if (getUserObject() instanceof DTSPrimitive) {
+			// look at read-only flag
+			if (((MdmiDatatype)getUserObject()).isReadonly()) {
+				return true;
+			} else if (getUserObject() instanceof DTSPrimitive) {
 				return true;
 			}
 			return super.isReadOnlyFields(fieldName);

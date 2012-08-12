@@ -1213,6 +1213,10 @@ public class MdmiModelTree extends JPanel {
 	/** Replace all occurences of the old user object with the new one */
 	public EditableObjectNode replaceUserObject(Object oldObj, Object newObj)
 	{
+		if (oldObj == newObj) {
+			return  (EditableObjectNode)findNode(oldObj);
+		}
+		
 		// we need to be careful what gets copied
 		try {
 			EditableObjectNode treeNode = (EditableObjectNode)findNode(oldObj);

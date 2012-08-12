@@ -85,6 +85,27 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		return new CustomEditor(getMessageGroup(), getUserObject().getClass());
 	}
 	
+
+	// indicate object was imported (currently only applies to datatypes and business element refs
+	@Override
+	public boolean isImported() {
+		if (super.isImported()) {
+			return true;
+		}
+		// if read-only, treat as imported
+		return ((MdmiBusinessElementReference)getUserObject()).isReadonly();
+	}
+	
+	@Override
+	public void setImported(boolean imported) {
+		// make read-only
+		if (imported) {
+			((MdmiBusinessElementReference)getUserObject()).setReadonly(true);
+		}
+
+		 super.setImported(imported);
+	}
+	
 	///////////////////////////////////////////////////////////////
 	// Custom Editor adds a read-only display of Semantic Elements
 	// using this reference
@@ -106,6 +127,13 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 			addLabeledField("Associated Semantic Elements",
 					m_semanticElementField, 0.0, GridBagConstraints.HORIZONTAL);
 
+		}
+
+		/** Determine if this field should be shown read-only */
+		@Override
+		public boolean isReadOnlyFields(String fieldName) {
+			// look at read-only flag
+			return ((MdmiBusinessElementReference)getUserObject()).isReadonly();
 		}
 
 

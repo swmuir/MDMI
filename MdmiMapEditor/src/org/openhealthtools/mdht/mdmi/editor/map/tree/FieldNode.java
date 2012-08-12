@@ -20,6 +20,7 @@ import java.util.List;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
 import org.openhealthtools.mdht.mdmi.model.Field;
+import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 
@@ -69,6 +70,19 @@ public class FieldNode extends EditableObjectNode {
 		return new CustomEditor(getMessageGroup(), getUserObject().getClass());
 	}
 	
+
+
+	// treat as imported if parent read-only
+	@Override
+	public boolean isImported() {
+		if (super.isImported()) {
+			return true;
+		}
+		// if parent type is read-only, treat as imported
+		MdmiDatatype datatype = ((Field)getUserObject()).getOwnerType();
+		return (datatype != null && datatype.isReadonly());
+	}
+	
 	////////////////////////////////////////////
 	
 	public class CustomEditor extends GenericEditor {
@@ -80,6 +94,11 @@ public class FieldNode extends EditableObjectNode {
 		/** Determine if this field should be shown read-only */
 		@Override
 		public boolean isReadOnlyFields(String fieldName) {
+			// look at read-only flag on parent
+			MdmiDatatype datatype = ((Field)getUserObject()).getOwnerType();
+			if (datatype != null && datatype.isReadonly()) {
+				return true;
+			}
 			// OwnerType is read-only
 			return "OwnerType".equalsIgnoreCase(fieldName);
 		}
