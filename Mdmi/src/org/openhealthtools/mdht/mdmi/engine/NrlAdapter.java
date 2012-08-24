@@ -15,71 +15,87 @@
 package org.openhealthtools.mdht.mdmi.engine;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import net.sourceforge.nrl.parser.NRLError;
 
 import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.Util;
+import org.openhealthtools.mdht.mdmi.util.*;
 
 public class NrlAdapter implements IExpressionInterpreter {
-	IExpressionInterpreter m_adapter = null;
+   IExpressionInterpreter m_adapter = null;
 
-	public NrlAdapter() {
-		try {
-			m_adapter = Util.getInstance("com.whitestar.mdmi.NrlAdapter", new File("nrl-adapter.jar"), null, null);
-		}
-		catch (Exception ex) {
-		}
-	}
+   public NrlAdapter() {
+      tryInitAdapter();
+   }
 
-	public NrlAdapter(ElementValueSet eset, XElementValue context,	String name, XValue value) {
-		try {
-			m_adapter = Util.getInstance("com.whitestar.mdmi.NrlAdapter", new File("nrl-adapter.jar"), null, null);
-			initialize (eset, context, name, value);
-		}
-		catch (Exception ex) {
-		}
-	}
-	
-	public void initialize(ElementValueSet eset, XElementValue context,	String name, XValue value) {
-		if (m_adapter != null)
-			m_adapter.initialize(eset, context, name, value);
-	}
+   public NrlAdapter( ElementValueSet eset, XElementValue context, String name, XValue value ) {
+      tryInitAdapter();
+      try {
+         initialize(eset, context, name, value);
+      }
+      catch( Exception ex ) {
+      }
+   }
 
-	public boolean evalConstraint(IElementValue context, String rule) {
-		if (m_adapter != null && !rule.isEmpty())
-			return m_adapter.evalConstraint(context, rule);
-		else if (!rule.isEmpty())
-			throw new MdmiException("The open source version does not support the use of NRL rules.");
+   private void tryInitAdapter() {
+      try {
+         File i = new File("NRL/nrl-interpreter.jar");
+         File f = new File("nrl-adapter.jar");
+         if( !i.exists() || !f.exists() ) {
+            i = new File("../bin/NRL/nrl-interpreter.jar");
+            f = new File("../bin/nrl-adapter.jar");
+         }
+         if( !i.exists() || !f.exists() )
+            return;
+         JarClassLoader jl = new JarClassLoader(i);
+         jl.addJarFile(f);
+         Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");
+         Object o = c.newInstance();
+         m_adapter = (IExpressionInterpreter)o;
+      }
+      catch( Exception ex ) {
+         System.out.println(ex.getMessage());
+      }
+   }
+   
+   public void initialize( ElementValueSet eset, XElementValue context, String name, XValue value ) {
+      if( m_adapter != null )
+         m_adapter.initialize(eset, context, name, value);
+   }
 
-		return true;
-	}
+   public boolean evalConstraint( IElementValue context, String rule ) {
+      if( m_adapter != null && !rule.isEmpty() )
+         return m_adapter.evalConstraint(context, rule);
+      else if( !rule.isEmpty() )
+         throw new MdmiException("The open source version does not support the use of NRL rules.");
 
-	public void evalAction(IElementValue context, String rule) {
-		if (m_adapter != null && !rule.isEmpty())
-			m_adapter.evalAction(context, rule);
-		else if (!rule.isEmpty())
-			throw new MdmiException("The open source version does not support the use of NRL rules.");
-	}
-	
-	public List<NRLError> compileConstraint( SemanticElement se, String rule ) {
-		if (m_adapter != null && !rule.isEmpty())
-			return m_adapter.compileConstraint(se, rule);
-		else if (!rule.isEmpty())
-			throw new MdmiException("The open source version does not support the use of NRL rules.");
-		
-		return new ArrayList<NRLError>();
-	}
+      return true;
+   }
 
-	public List<NRLError> compileAction( SemanticElement se, String rule ) {
-		if (m_adapter != null && !rule.isEmpty())
-			return m_adapter.compileAction(se, rule);
-		else if (!rule.isEmpty())
-			throw new MdmiException("The open source version does not support the use of NRL rules.");
+   public void evalAction( IElementValue context, String rule ) {
+      if( m_adapter != null && !rule.isEmpty() )
+         m_adapter.evalAction(context, rule);
+      else if( !rule.isEmpty() )
+         throw new MdmiException("The open source version does not support the use of NRL rules.");
+   }
 
-		return new ArrayList<NRLError>();
-	}
+   public List<NRLError> compileConstraint( SemanticElement se, String rule ) {
+      if( m_adapter != null && !rule.isEmpty() )
+         return m_adapter.compileConstraint(se, rule);
+      else if( !rule.isEmpty() )
+         throw new MdmiException("The open source version does not support the use of NRL rules.");
+
+      return new ArrayList<NRLError>();
+   }
+
+   public List<NRLError> compileAction( SemanticElement se, String rule ) {
+      if( m_adapter != null && !rule.isEmpty() )
+         return m_adapter.compileAction(se, rule);
+      else if( !rule.isEmpty() )
+         throw new MdmiException("The open source version does not support the use of NRL rules.");
+
+      return new ArrayList<NRLError>();
+   }
 } // NrlAdapter
