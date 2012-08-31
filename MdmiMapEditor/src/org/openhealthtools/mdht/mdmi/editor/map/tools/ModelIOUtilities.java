@@ -408,14 +408,7 @@ public class ModelIOUtilities {
             groupNode.addDatatype(datatype);
 
             if (datatype instanceof DTComplex) {
-                // re-set the datatype of each field
-                for (Field field : ((DTComplex) datatype).getFields()) {
-                    found = addImportedDatatype(field.getDatatype(), groupNode, copyIfExists, false);    // don't warn if these already exist
-                    if (found != field.getDatatype()) {
-                        // make sure field uses the type that's already in the tree
-                        field.setDatatype(found);
-                    }
-                }
+                addImportedDatatypeFields(((DTComplex)datatype), groupNode, copyIfExists);
             }
             found = datatype;
             setNodeAsImported(entitySelector, found);
@@ -428,6 +421,12 @@ public class ModelIOUtilities {
             if (copyIfExists && found.getClass() == datatype.getClass()) {
                 // copy data into found object
                 EditableObjectNode newNode = entitySelector.replaceUserObject(found, datatype);
+                
+                // if the datatype has fields, we need to fix them to have the right datatype
+                if (datatype instanceof DTComplex) {
+                    // re-set the datatype of each field
+                    addImportedDatatypeFields(((DTComplex)datatype), groupNode, copyIfExists);
+                }
 
                 // mark as imported
                 newNode.setImported(true);
@@ -455,6 +454,27 @@ public class ModelIOUtilities {
         return found;
     }
 
+  
+    /**
+     * Add the fields of this datatype to the message group if it doesn't already exist.
+     *
+     * @param datatype
+     * @param groupNode
+     * @param copyIfExists If an object already exists, copy the data from the datatypes
+     */
+    private static void addImportedDatatypeFields(DTComplex datatype, MessageGroupNode groupNode, boolean copyIfExists) {
+		MdmiDatatype found;
+		for (Field field : datatype.getFields()) {
+		    found = addImportedDatatype(field.getDatatype(), groupNode, copyIfExists, false);    // don't warn if these already exist
+		    if (found != field.getDatatype()) {
+		        // make sure field uses the type that's already in the tree
+		        field.setDatatype(found);
+		    }
+		}
+	}
+
+  
+    /** Find the datatype in the list with the type name */
     public static MdmiDatatype findDatatype(Collection<MdmiDatatype> datatypes, String typeName) {
         for (MdmiDatatype datatype : datatypes) {
             if (datatype.getTypeName().equals(typeName)) {
