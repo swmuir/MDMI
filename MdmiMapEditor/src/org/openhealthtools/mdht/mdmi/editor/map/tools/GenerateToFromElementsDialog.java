@@ -92,7 +92,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private ActionListener m_directionListener = new DirectionListener();
 
 	public GenerateToFromElementsDialog(Frame owner, SemanticElement semanticElement) {
-		super(owner, BaseDialog.OK_CANCEL_OPTION);
+		super(owner, BaseDialog.OK_CANCEL_APPLY_OPTION);
 		m_semanticElement = semanticElement;
 		buildUI();
 		setTitle(s_res.getString("GenerateToFromElementsDialog.title"));
@@ -319,12 +319,32 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 	
 	@Override
+	protected void applyButtonAction() {
+		if (createToFromElements()) {
+			super.applyButtonAction();
+			
+		} else {
+			return;
+		}
+	}
+	
+	@Override
 	protected void okButtonAction() {
+		if (createToFromElements()) {
+			super.okButtonAction();
+			
+		} else {
+			return;
+		}
+	}
+
+	/** Create the To and/or From Elements */
+	private boolean createToFromElements() {
 		// create data
 		MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
 		if (businessElement == null) {
 			// shouldn't be here anyway
-			return;
+			return false;
 		}
 		
 		String ruleName = m_name.getText().trim();
@@ -335,7 +355,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		if (!(treeNode instanceof SemanticElementNode))
 		{
 			// shouldn't get here
-			return;
+			return false;
 		}
 		SemanticElementNode seNode = (SemanticElementNode)treeNode;
 		
@@ -439,7 +459,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			SelectionManager.getInstance().editItem(childNode);
 		}
 		
-		super.okButtonAction();
+		return true;
 	}
 	
 	public static String generateRuleText(boolean toBER, String ruleName, String seFieldName, String beFieldName) {
@@ -548,6 +568,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			fillInName();
+			setDirty(true);
 		}
 	}
 
@@ -595,7 +616,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 				StringBuilder text = new StringBuilder(item.getPath());
 				// show as "<path> : <datatype>"
 				Field field = item.getField();
-				text.append(" : ").append(field.getDatatype().getName());
+				if (field.getDatatype() != null) {
+					text.append(" : ").append(field.getDatatype().getName());
+				}
 				value = text;
 				
 				icon = TreeNodeIcon.getTreeIcon(field.getDatatype().getClass());

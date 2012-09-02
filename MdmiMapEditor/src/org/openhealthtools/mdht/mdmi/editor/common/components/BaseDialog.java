@@ -122,15 +122,19 @@ public abstract class BaseDialog extends JDialog {
 	public static final int OK_BUTTON_OPTION     = 1;
 	/** Cancel Button */
 	public static final int CANCEL_BUTTON_OPTION = 2;
+	/** Apply Button */
+	public static final int APPLY_BUTTON_OPTION  = 4;
 	/** Close Button */
-	public static final int CLOSE_BUTTON_OPTION  = 4;
+	public static final int CLOSE_BUTTON_OPTION  = 8;
 	/** Yes Button */
-	public static final int YES_BUTTON_OPTION    = 8;
+	public static final int YES_BUTTON_OPTION    = 16;
 	/** No Button */
-	public static final int NO_BUTTON_OPTION     = 16;
+	public static final int NO_BUTTON_OPTION     = 32;
 
 	/** OK and Cancel */
 	public static final int OK_CANCEL_OPTION    = OK_BUTTON_OPTION + CANCEL_BUTTON_OPTION;
+	/** OK, Cancel and Apply */
+	public static final int OK_CANCEL_APPLY_OPTION    = OK_BUTTON_OPTION + CANCEL_BUTTON_OPTION + APPLY_BUTTON_OPTION;
 	/** OK and Close */
 	public static final int OK_CLOSE_OPTION     = OK_BUTTON_OPTION + CLOSE_BUTTON_OPTION;
 	/** Yes and No */
@@ -139,6 +143,7 @@ public abstract class BaseDialog extends JDialog {
 	// BUTTONS
 	protected JButton m_okButton = new JButton(s_res.getString("BaseDialog.okButtonLabel"));
 	protected JButton m_cancelButton = new JButton(s_res.getString("BaseDialog.cancelButtonLabel"));
+	protected JButton m_applyButton = new JButton(s_res.getString("BaseDialog.applyButtonLabel"));
 	protected JButton m_closeButton = new JButton(s_res.getString("BaseDialog.closeButtonLabel"));
 	protected JButton m_yesButton = new JButton(s_res.getString("BaseDialog.yesButtonLabel"));
 	protected JButton m_noButton = new JButton(s_res.getString("BaseDialog.noButtonLabel"));
@@ -188,7 +193,7 @@ public abstract class BaseDialog extends JDialog {
 	}
 
 	/**
-	 * initialze the dialog
+	 * initialize the dialog
 	 */
 	private void initDialog(int options) {
 		m_buttonOptions = options;
@@ -537,6 +542,7 @@ public abstract class BaseDialog extends JDialog {
 		boolean enable = (dirty && isDataValid());
 		m_okButton.setEnabled(enable);
 		m_yesButton.setEnabled(enable);
+		m_applyButton.setEnabled(enable);
 	}
 
 	/** Validate the data. This will be called when setDirty() is called to enable the OK button */
@@ -707,6 +713,9 @@ public abstract class BaseDialog extends JDialog {
 		if (isOptionSet(CANCEL_BUTTON_OPTION)) {
 			m_cancelButton.removeActionListener(m_buttonActionListener);
 		}
+		if (isOptionSet(APPLY_BUTTON_OPTION)) {
+			m_applyButton.removeActionListener(m_buttonActionListener);
+		}
 		if (isOptionSet(CLOSE_BUTTON_OPTION)) {
 			m_closeButton.removeActionListener(m_buttonActionListener);
 		}
@@ -756,6 +765,10 @@ public abstract class BaseDialog extends JDialog {
 			m_buttonPane.add(m_cancelButton);
 			m_cancelButton.addActionListener(m_buttonActionListener);
 		}
+		if (isOptionSet(APPLY_BUTTON_OPTION)) {
+			m_buttonPane.add(m_applyButton);
+			m_applyButton.addActionListener(m_buttonActionListener);
+		}
 		if (isOptionSet(CLOSE_BUTTON_OPTION)) {
 			m_buttonPane.add(m_closeButton);
 			m_closeButton.addActionListener(m_buttonActionListener);
@@ -786,6 +799,14 @@ public abstract class BaseDialog extends JDialog {
 
 		dispose();
 	}
+
+	/** Action called when Apply button is pressed.
+	 * Dirty flag will be cleared.
+	 * Dialog will remain open */
+	protected void applyButtonAction() {
+		setDirty(false);
+	}
+
 
 	/** Action called when Cancel button (or the ESC key) is pressed.
 	 * Dialog will be closed, and exit status set to CANCEL_BUTTON_OPTION */
@@ -850,13 +871,14 @@ public abstract class BaseDialog extends JDialog {
 		}
 	}
 
-	/** proces a button click in a new thread */
+	/** process a button click in a new thread */
 	protected void doClick(final JButton button) {
 		button.requestFocusInWindow();
 
 		// process click in new thread so focus listeners
 		// can to their thing.
 		SwingUtilities.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				button.doClick();
 			}
@@ -872,6 +894,7 @@ public abstract class BaseDialog extends JDialog {
 	/** Listener for button presses */
 	private class ButtonPressListener implements ActionListener {
 
+		@Override
 		public void actionPerformed(ActionEvent event) {
 			// call appropriate action
 			Object source = event.getSource();
@@ -885,6 +908,9 @@ public abstract class BaseDialog extends JDialog {
 
 				} else if (source == m_cancelButton) {
 					cancelButtonAction();
+
+				} else if (source == m_applyButton) {
+					applyButtonAction();
 
 				} else if (source == m_closeButton) {
 					closeButtonAction();
