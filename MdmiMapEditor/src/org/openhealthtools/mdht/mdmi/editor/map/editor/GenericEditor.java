@@ -492,7 +492,7 @@ public class GenericEditor extends AbstractComponentEditor {
 
 		m_gbc.weightx = 1;
 		m_gbc.gridwidth = 2;
-		m_gbc.anchor = GridBagConstraints.WEST;
+		m_gbc.anchor = GridBagConstraints.CENTER;
 		m_gbc.fill = fill;
 		m_gbc.weighty = 1;
 		m_mainPanel.add(field, m_gbc);

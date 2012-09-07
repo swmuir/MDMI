@@ -22,12 +22,16 @@ import java.util.List;
 import javax.swing.tree.TreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.BooleanField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.DataFormatException;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.MdmiDatatypeField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.RuleField;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
+import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 
 /** Node for a ConversionRule */
@@ -113,11 +117,32 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 		return language;
 	}
 
+	
+	public boolean isIsomorphic() {
+		ConversionRule conversionRule = (ConversionRule)userObject;
+		
+		SemanticElement semanticElement = getSemanticElement();
+		for (ToMessageElement toMdmi : semanticElement.getToMdmi()) {
+			for (ToBusinessElement toBER : semanticElement.getFromMdmi()) {
+				
+				if (toMdmi == conversionRule || toBER == conversionRule) {
+					if (toMdmi.getBusinessElement() == toBER.getBusinessElement()) {
+						return true;
+					}
+				}
+				
+			}
+		}
+		
+		return false;
+	}
+
 
 	//////////////////////////////////////////////////////////////////
 	//    Custom Classes
 	//////////////////////////////////////////////////////////////
 	public class CustomEditor extends AbstractRuleEditor {
+		private BooleanField m_isomorphicField;
 		private MdmiDatatypeField m_semanticElementDatatypeField;
 		
 		public CustomEditor(MessageGroup group, Class<?> objectClass) {
@@ -134,6 +159,17 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 		
 		@Override
 		protected void createDataEntryFields(List<Method[]> methodPairList) {
+			
+			// Add a field to show if Isomorphic
+			m_isomorphicField = new BooleanField(this, "Isomorphic");
+			try {
+				m_isomorphicField.setDisplayValue(Boolean.valueOf(isIsomorphic()));
+			} catch (DataFormatException e) {
+				// don't care
+			}
+			m_isomorphicField.setReadOnly();
+			addLabeledField(null, m_isomorphicField, 0.0, GridBagConstraints.NONE);
+
 			super.createDataEntryFields(methodPairList);
 			
 			// Add a field to show Semantic Element's datatype
@@ -142,10 +178,10 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 			addLabeledField("Owner Data Type",
 					m_semanticElementDatatypeField, 0.0, GridBagConstraints.HORIZONTAL);
 			if ( ((ConversionRule)getUserObject()).getOwner() != null) {
-   			MdmiDatatype datatype = ((ConversionRule)getUserObject()).getOwner().getDatatype();
-   			if (datatype != null) {
-   				m_semanticElementDatatypeField.setDisplayValue(datatype);
-   			}
+				MdmiDatatype datatype = ((ConversionRule)getUserObject()).getOwner().getDatatype();
+				if (datatype != null) {
+					m_semanticElementDatatypeField.setDisplayValue(datatype);
+				}
 			}
 		}
 

@@ -77,9 +77,11 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private JComboBox m_SEfieldNameSelector  = new JComboBox();
 	private JComboBox m_BEfieldNameSelector  = new JComboBox();
 
-	private ButtonGroup  m_direction = new ButtonGroup();
-	private JRadioButton m_fromBERButton = new JRadioButton("From");
-	private JRadioButton m_toBERButton = new JRadioButton("To");
+	private JRadioButton m_isoButton     = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.isomorphic"));
+	private JRadioButton m_fromBERButton = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toMdmi"));
+	private JRadioButton m_toBERButton   = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toBE"));
+
+	private ButtonGroup  m_directionGroup = new ButtonGroup();
 	
 	private JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
 	private JTextField  m_name = new JTextField();
@@ -90,6 +92,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	
 	private ActionListener m_businessElementListener = new BusinessElementListener();
 	private ActionListener m_directionListener = new DirectionListener();
+	private ActionListener m_fieldNameListener = new FieldNameListener();
 
 	public GenerateToFromElementsDialog(Frame owner, SemanticElement semanticElement) {
 		super(owner, BaseDialog.OK_CANCEL_APPLY_OPTION);
@@ -102,7 +105,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	
 	private void buildUI() {
 		// 
-		// Direction:            ( ) From   ( ) To
+		//                             
+		// Direction:            [ ] Iso   ( ) From   ( ) To
 		// Business Element Ref: [__________________|v]
 		// Name:                 [                    ]
 		//  -- Semantic Element ------------------------
@@ -117,16 +121,20 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		
 		MdmiDatatype dataType = m_semanticElement.getDatatype();
 
-		m_fromBERButton.setSelected(true);
+		m_isoButton.setSelected(true);
+		m_fromBERButton.setSelected(false);
 		m_toBERButton.setSelected(false);
-		m_fromBERButton.setText(s_res.getString("GenerateToFromElementsDialog.toMdmi"));
-		m_toBERButton.setText(s_res.getString("GenerateToFromElementsDialog.toBE"));
-		m_direction.add(m_fromBERButton);
-		m_direction.add(m_toBERButton);
+		
+		m_directionGroup.add(m_isoButton);
+		m_directionGroup.add(m_fromBERButton);
+		m_directionGroup.add(m_toBERButton);
+		m_isoButton.addActionListener(m_directionListener);
 		m_fromBERButton.addActionListener(m_directionListener);
 		m_toBERButton.addActionListener(m_directionListener);
 
+		m_SEfieldNameSelector.addActionListener(m_fieldNameListener);
 		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
+		m_BEfieldNameSelector.addActionListener(m_fieldNameListener);
 		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
 		
 		m_businessElementSelector.setRenderer(m_businessElementRenderer);
@@ -163,6 +171,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets.left = 0;
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		buttons.add(m_isoButton);
 		buttons.add(m_fromBERButton);
 		buttons.add(m_toBERButton);
 		mainPanel.add(buttons, gbc);
@@ -285,8 +294,11 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	@Override
 	public void dispose() {
 		m_businessElementSelector.removeActionListener(m_businessElementListener);
+		m_isoButton.removeActionListener(m_directionListener);
 		m_toBERButton.removeActionListener(m_directionListener);
 		m_fromBERButton.removeActionListener(m_directionListener);
+		m_BEfieldNameSelector.removeActionListener(m_fieldNameListener);
+		m_SEfieldNameSelector.removeActionListener(m_fieldNameListener);
 		
 		m_businessElementSelector.setRenderer(null);
 		m_BEfieldNameSelector.setRenderer(null);
@@ -340,14 +352,28 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 	/** Create the To and/or From Elements */
 	private boolean createToFromElements() {
+		boolean created = false;
+		String ruleName = m_name.getText().trim();
+		
+		if (m_isoButton.isSelected()) {
+			// both
+			created = createToFromElements(true, "To_" + ruleName) &&
+					  createToFromElements(false, "From_" + ruleName);
+		} else {
+			created = createToFromElements(m_toBERButton.isSelected(), ruleName);
+		}
+		return created;
+	}
+	
+	
+	/** Create the To and/or From Elements */
+	private boolean createToFromElements(boolean toBER, String ruleName) {
 		// create data
 		MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
 		if (businessElement == null) {
 			// shouldn't be here anyway
 			return false;
 		}
-		
-		String ruleName = m_name.getText().trim();
 		
 
 		MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
@@ -371,7 +397,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		
 		ConversionRule conversionRule = null;
 		
-		if (m_toBERButton.isSelected()) {
+		if (toBER) {
 			// check if it exists already
 			for (ToBusinessElement existing : m_semanticElement.getFromMdmi()) {
 				if (ruleName.equalsIgnoreCase(existing.getName())) {
@@ -433,7 +459,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		}
 
 		// Rule will be of the form: Set <target> to <source>
-		String newRule =  generateRuleText(m_toBERButton.isSelected(), ruleName, seFieldName, beFieldName);
+		String newRule =  generateRuleText(toBER, ruleName, seFieldName, beFieldName);
 				
 		// append new rule to existing rule
 		String rule = conversionRule.getRule();
@@ -505,17 +531,19 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	
 	// auto-fill the name
 	private void fillInName() {
+		String name = "";
 		MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
 		if (businessElement != null) {
 			String beRefName = businessElement.getName();
-			if (m_toBERButton.isSelected()) {
-				m_name.setText("To_" + beRefName);
+			if (m_isoButton.isSelected()) {
+				name = beRefName;
+			} else if (m_toBERButton.isSelected()) {
+				name = "To_" + beRefName;
 			} else {
-				m_name.setText("From_" + beRefName);
+				name = "From_" + beRefName;
 			}
-		} else {
-			m_name.setText("");
 		}
+		m_name.setText(name);
 	}
 	
 	/** object inside a combo box of field names */
@@ -564,10 +592,20 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 
 	////////////////////////////////
+	
+	// Isomorphic/To BER/From BER change - change name text
 	private class DirectionListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			fillInName();
+			setDirty(true);
+		}
+	}
+	
+	// Field Name changed - enable Apply/Save
+	private class FieldNameListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
 			setDirty(true);
 		}
 	}
