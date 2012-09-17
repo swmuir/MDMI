@@ -21,7 +21,7 @@ import org.openhealthtools.mdht.mdmi.model.raw.*;
 import org.openhealthtools.mdht.mdmi.model.validate.*;
 
 /**
- * 
+ *
  */
 public class MapBuilderAbstract {
    private static final MessageGroupBuilder        s_groupBuilder       = new MessageGroupBuilder();

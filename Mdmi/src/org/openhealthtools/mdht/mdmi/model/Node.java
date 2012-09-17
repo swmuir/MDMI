@@ -16,7 +16,7 @@ package org.openhealthtools.mdht.mdmi.model;
 
 public abstract class Node {
    protected String             m_name;
-   protected int                m_minOccurs = 1;
+   protected int                m_minOccurs = 0;
    protected int                m_maxOccurs = 1;
    protected String             m_location;
    protected String             m_locationExpressionLanguage;

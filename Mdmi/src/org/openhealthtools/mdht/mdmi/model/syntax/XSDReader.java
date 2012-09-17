@@ -22,10 +22,15 @@ import org.openhealthtools.mdht.mdmi.model.*;
 public class XSDReader {
 	private static Map<String,Node> m_visited = new HashMap<String,Node>();
 	private static Map<String,Node> m_roots = new HashMap<String,Node>();
+	private static Counter bagCounter = new Counter();
+	private static Counter choiceCounter = new Counter();
+
+    private static final String BAG_TYPE = "BagType";
+    private static final String CHOICE_TYPE = "ChoiceType";
 
 	/**
     * parse - parses an XSD file and returns a list of root MDMI nodes.
-    * 
+    *
     * @param uri	The uri of the XSD file to be parsed.
     * @return		A list of root MDMI Node objects.
     */
@@ -38,26 +43,30 @@ public class XSDReader {
 		m_visited.clear();
 		m_roots.clear();
 
+        bagCounter.reset();
+        choiceCounter.reset();
+
 		// start recursively processing elements (start with ones in the element map)
 		for (int i=0; i < elMap.size(); i++) {
 			XSElementDeclaration element = (XSElementDeclaration) elMap.item(i);
-			
+
 			// if we haven't visited this element, add it as a possible root
+            //TODO: fix cache issue
 			if (!m_visited.containsKey(element.getName()))
 				m_roots.put(element.getName(), process(element));
 		}
 
 		return new ArrayList<Node>(m_roots.values());
 	}
-	
+
    /**
     * process - recursively parses elements in an XSD and builds the corresponding Node tree.
-    * 
+    *
     * @param el		The schema element to be processed.
     * @return		The corresponding MDMI Node.
     */
 	private static Node process(XSElementDeclaration el) {
-		XSTypeDefinition xtd = el.getTypeDefinition();		
+		XSTypeDefinition xtd = el.getTypeDefinition();
 		String elName =  el.getName();
 		Node node = null;
 
@@ -74,7 +83,7 @@ public class XSDReader {
 				node = new Bag();
 				children = ((Bag)node).getNodes();
 			}
-			
+
 			node.setName(capitalize(elName));
 			node.setLocation(elName);
 			node.setLocationExpressionLanguage("XPath");
@@ -82,84 +91,76 @@ public class XSDReader {
 			m_visited.put(elName, node);
 
 			// add attribute nodes
-			XSObjectList attrs = xtdc.getAttributeUses();
-			for (int i=0; i < attrs.getLength(); i++) {
-				XSAttributeUse attrUse = (XSAttributeUse) attrs.item(i);
-				XSAttributeDeclaration attr = attrUse.getAttrDeclaration();
-				String attrName = attr.getName();
-				
-				Node attrNode = new LeafSyntaxTranslator();
-				attrNode.setName(capitalize(attrName));
-				attrNode.setLocation("@"+attrName);
-				attrNode.setLocationExpressionLanguage("XPath");
-				if (!attrUse.getRequired())
-					attrNode.setMinOccurs(0);
-				attrNode.setParentNode(node);
-				children.add(attrNode);
-			}
-			
+            processAttributes(xtdc, node, children);
+
 			// traverse child elements
 			if (term instanceof XSModelGroup) {
 				XSObjectList particles = ((XSModelGroup)term).getParticles();
 				for (int i=0; i < particles.getLength(); i++) {
-					XSParticle childParticle = (XSParticle) particles.get(i);
-					XSTerm childTerm = childParticle.getTerm();
-					String childName = childTerm.getName();
-					if (childTerm instanceof XSElementDeclaration) {
-						Node childNode = null;
-						
-						if (m_roots.containsKey(childName)) {
-							childNode = m_roots.get(childName);
-							m_roots.remove(childName);
-						} else if (m_visited.containsKey(childName)) {
-							childNode = clone(m_visited.get(childName));
-						} else {
-							childNode = process((XSElementDeclaration)childTerm);
-						}
-						childNode.setMinOccurs(childParticle.getMinOccurs());
-						childNode.setMaxOccurs(childParticle.getMaxOccurs());
-						childNode.setParentNode(node);
-						children.add(childNode);
-					} else if (childTerm instanceof XSModelGroup && ((XSModelGroup) childTerm).getCompositor() == XSModelGroup.COMPOSITOR_CHOICE) {
-						// create temporary
-						Node choice = new Choice();
-						List<Node> choiceChildren = ((Choice)choice).getNodes();
-						
-						//choice.setName("CHOICE-"+childTerm.hashCode());
-						choice.setName("ChooseOneOf");
-						choice.setLocation("");
-						choice.setLocationExpressionLanguage("XPath");
-						choice.setMinOccurs(childParticle.getMinOccurs());
-						choice.setMaxOccurs(childParticle.getMaxOccurs());
-						choice.setParentNode(node);
-						children.add(choice);
-						
-						// add children
-						XSObjectList choiceParticles = ((XSModelGroup)childTerm).getParticles();
-						for (int j=0; j < choiceParticles.getLength(); j++) {
-							XSParticle choiceChildParticle = (XSParticle) choiceParticles.get(j);
-							XSTerm choiceChildTerm = choiceChildParticle.getTerm();
-							String choiceChildName = choiceChildTerm.getName();
-							if (choiceChildTerm instanceof XSElementDeclaration) {
-								Node choiceChildNode = null;
-								
-								if (m_roots.containsKey(choiceChildName)) {
-									choiceChildNode = m_roots.get(choiceChildName);
-									m_roots.remove(choiceChildName);
-								} else if (m_visited.containsKey(choiceChildName)) {
-									choiceChildNode = clone(m_visited.get(choiceChildName));
-								} else {
-									choiceChildNode = process((XSElementDeclaration)choiceChildTerm);
-								}
-								choiceChildNode.setMinOccurs(choiceChildParticle.getMinOccurs());
-								choiceChildNode.setMaxOccurs(choiceChildParticle.getMaxOccurs());
-								choiceChildNode.setParentNode(choice);
-								choiceChildren.add(choiceChildNode);
-							}
-						}
-					}
+                    XSParticle childParticle = (XSParticle) particles.get(i);
+                    XSTerm childTerm = childParticle.getTerm();
+                    String childName = childTerm.getName();
+                    if (childTerm instanceof XSElementDeclaration) {
+                        Node childNode = null;
 
-				}
+                        if (m_roots.containsKey(childName)) {
+                            childNode = m_roots.get(childName);
+                            m_roots.remove(childName);
+                        } else if (m_visited.containsKey(childName)) {
+                            childNode = clone(m_visited.get(childName));
+                        } else {
+                            childNode = process((XSElementDeclaration) childTerm);
+                        }
+                        childNode.setMinOccurs(childParticle.getMinOccurs());
+                        childNode.setMaxOccurs(childParticle.getMaxOccurs());
+                        childNode.setParentNode(node);
+                        children.add(childNode);
+                    } else if (childTerm instanceof XSModelGroup) {//Anonymous type declaration
+                        Node childNode = null;
+                        List<Node> childChildren = null;
+
+                        if (((XSModelGroup) childTerm).getCompositor() == XSModelGroup.COMPOSITOR_CHOICE) {
+                            childNode = new Choice();
+                            childChildren = ((Choice) childNode).getNodes();
+                            childNode.setName(node.getName() + CHOICE_TYPE + choiceCounter.getNext());
+                        } else {
+                            childNode = new Bag();
+                            childChildren = ((Bag) childNode).getNodes();
+                            childNode.setName(node.getName() + BAG_TYPE + bagCounter.getNext());
+                        }
+
+                        childNode.setLocation("");
+                        childNode.setLocationExpressionLanguage("XPath");
+                        childNode.setMinOccurs(childParticle.getMinOccurs());
+                        childNode.setMaxOccurs(childParticle.getMaxOccurs());
+                        childNode.setParentNode(node);
+                        children.add(childNode);
+
+                        // add children
+                        XSObjectList childParticles = ((XSModelGroup) childTerm).getParticles();
+                        for (int j = 0; j < childParticles.getLength(); j++) {
+                            XSParticle childChildParticle = (XSParticle) childParticles.get(j);
+                            XSTerm childChildTerm = childChildParticle.getTerm();
+                            String childChildName = childChildTerm.getName();
+                            if (childChildTerm instanceof XSElementDeclaration) {
+                                Node childChildNode = null;
+
+                                if (m_roots.containsKey(childChildName)) {
+                                    childChildNode = m_roots.get(childChildName);
+                                    m_roots.remove(childChildName);
+                                } else if (m_visited.containsKey(childChildName)) {
+                                    childChildNode = clone(m_visited.get(childChildName));
+                                } else {
+                                    childChildNode = process((XSElementDeclaration) childChildTerm);
+                                }
+                                childChildNode.setMinOccurs(childChildParticle.getMinOccurs());
+                                childChildNode.setMaxOccurs(childChildParticle.getMaxOccurs());
+                                childChildNode.setParentNode(childNode);
+                                childChildren.add(childChildNode);
+                            }
+                        }
+                    }
+                }
 			}
 
 			// sometimes, the parser thinks simple types are complex
@@ -181,9 +182,27 @@ public class XSDReader {
 		return node;
 	}
 
+    private static void processAttributes(XSComplexTypeDecl xtdc, Node parent, List<Node> children) {
+        XSObjectList attrs = xtdc.getAttributeUses();
+        for (int i=0; i < attrs.getLength(); i++) {
+            XSAttributeUse attrUse = (XSAttributeUse) attrs.item(i);
+            XSAttributeDeclaration attr = attrUse.getAttrDeclaration();
+            String attrName = attr.getName();
+
+            Node attrNode = new LeafSyntaxTranslator();
+            attrNode.setName(capitalize(attrName));
+            attrNode.setLocation("@"+attrName);
+            attrNode.setLocationExpressionLanguage("XPath");
+            if (!attrUse.getRequired())
+                attrNode.setMinOccurs(0);
+            attrNode.setParentNode(parent);
+            children.add(attrNode);
+        }
+    }
+
    /**
     * clone - recursively copies a Node tree
-    * 
+    *
     * @param node	The root Node of the tree to be copied.
     * @return		A copy of the original Node tree.
     */
@@ -219,10 +238,10 @@ public class XSDReader {
 			else
 				((Bag)newNode).getNodes().add(newChild);
 		}
-		
+
 		return newNode;
 	}
-	
+
 	private static String capitalize(String str) {
 		char[] chars = str.toCharArray();
 
@@ -231,4 +250,16 @@ public class XSDReader {
 
 		return  String.valueOf(chars);
 	}
+
+    private static class Counter {
+        private int value = 0;
+
+        public int getNext() {
+            return value++;
+        }
+
+        public void reset() {
+            value = 0;
+        }
+    }
 }
