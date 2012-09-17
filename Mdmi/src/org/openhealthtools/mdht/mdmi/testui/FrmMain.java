@@ -18,6 +18,7 @@ import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.List;
 
 import javax.swing.*;
 
@@ -259,30 +260,43 @@ public class FrmMain extends JFrame {
 			DlgShowException.doModal( this, ex, "FrmMain.setTargetMap() fails" );
 	   }
    }
-   
-   private void setElements() {
-   	lstElements.setListData( new Vector<Object>() );
-   	if( sourceMessageGroups == null || targetMessageGroups == null )
-   		return;
-   	ArrayList<MdmiBusinessElementReference> sourceBers = new ArrayList<MdmiBusinessElementReference>();
-      for( MessageGroup mg : sourceMessageGroups ) {
-			Collection<MdmiBusinessElementReference> bers = mg.getDomainDictionary().getBusinessElements();
-			sourceBers.addAll( bers );			
-		}
-   	ArrayList<MdmiBusinessElementReference> targetBers = new ArrayList<MdmiBusinessElementReference>();
-      for( MessageGroup mg : targetMessageGroups ) {
-			Collection<MdmiBusinessElementReference> bers = mg.getDomainDictionary().getBusinessElements();
-			targetBers.addAll( bers );			
-		}
-   	
-      Vector<MdmiBusinessElementReference> v = new Vector<MdmiBusinessElementReference>();
-      for( MdmiBusinessElementReference ber : sourceBers ) {
-      	if( hasBer(targetBers, ber) )
-      		v.add( ber );
-		}
-   	lstElements.setListData( v );
-   }
-   private boolean hasBer( ArrayList<MdmiBusinessElementReference> bers, MdmiBusinessElementReference ber ) {
+
+    private void setElements() {
+        lstElements.setListData(new Vector<Object>());
+        if (sourceMessageGroups == null || targetMessageGroups == null)
+            return;
+        ArrayList<MdmiBusinessElementReference> sourceBers = new ArrayList<MdmiBusinessElementReference>();
+        for (MessageGroup mg : sourceMessageGroups) {
+            Collection<MdmiBusinessElementReference> bers = mg.getDomainDictionary().getBusinessElements();
+            sourceBers.addAll(bers);
+        }
+        ArrayList<MdmiBusinessElementReference> targetBers = new ArrayList<MdmiBusinessElementReference>();
+        for (MessageGroup mg : targetMessageGroups) {
+            Collection<MdmiBusinessElementReference> bers = mg.getDomainDictionary().getBusinessElements();
+            targetBers.addAll(bers);
+        }
+
+        List<MdmiBusinessElementReference> mutualBEs = new ArrayList<MdmiBusinessElementReference>();
+        for (MdmiBusinessElementReference ber : sourceBers) {
+            if (hasBer(targetBers, ber)) {
+                mutualBEs.add(ber);
+            }
+        }
+
+        Vector<MdmiBusinessElementReference> v = filterBEs(mutualBEs);
+        Collections.sort(v, new Comparator<MdmiBusinessElementReference>() {
+            @Override
+            public int compare(MdmiBusinessElementReference o1, MdmiBusinessElementReference o2) {
+                String n1 = o1.getName() == null ? "" : o1.getName();
+                String n2 = o2.getName() == null ? "" : o2.getName();
+                return n1.compareToIgnoreCase(n2);
+            }
+        });
+
+        lstElements.setListData(v);
+    }
+
+    private boolean hasBer( ArrayList<MdmiBusinessElementReference> bers, MdmiBusinessElementReference ber ) {
       for( MdmiBusinessElementReference b : bers ) {
 			if( b.getUniqueIdentifier().equals(ber.getUniqueIdentifier()) )
 				return true;
@@ -290,7 +304,53 @@ public class FrmMain extends JFrame {
       return false;
    }
 
-   void setSourceMsg( String s ) {
+    private Vector<MdmiBusinessElementReference> filterBEs(List<MdmiBusinessElementReference> businessElements) {
+        Vector<MdmiBusinessElementReference> v = new Vector<MdmiBusinessElementReference>();
+        if (cmbSourceMdl.getSelectedItem() != null && cmbTargetMdl.getSelectedItem() != null) {
+            MdmiModelRef sMod = new MdmiModelRef((String) cmbSourceMdl.getSelectedItem());
+            MdmiModelRef tMod = new MdmiModelRef((String) cmbTargetMdl.getSelectedItem());
+
+            if (sMod.getModel() != null && tMod.getModel() != null) {
+                for (MdmiBusinessElementReference businessElement : businessElements) {
+                    if (hasToBer(sMod.getModel().getElementSet().getSemanticElements(), businessElement) &&
+                            hasFromBer(tMod.getModel().getElementSet().getSemanticElements(), businessElement)) {
+                        v.add(businessElement);
+                    }
+                }
+            }
+        }
+        return v;
+    }
+
+    private boolean hasToBer(Collection<SemanticElement> semanticElements, MdmiBusinessElementReference ber) {
+        if (semanticElements != null && ber != null) {
+            for (SemanticElement semanticElement : semanticElements) {
+                for (ToBusinessElement toBE : semanticElement.getFromMdmi()) {
+                    if (toBE.getBusinessElement() != null &&
+                            toBE.getBusinessElement().getUniqueIdentifier().equals(ber.getUniqueIdentifier())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasFromBer(Collection<SemanticElement> semanticElements, MdmiBusinessElementReference ber) {
+        if (semanticElements != null && ber != null) {
+            for (SemanticElement semanticElement : semanticElements) {
+                for (ToMessageElement toME : semanticElement.getToMdmi()) {
+                    if (toME.getBusinessElement() != null &&
+                            toME.getBusinessElement().getUniqueIdentifier().equals(ber.getUniqueIdentifier())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    void setSourceMsg( String s ) {
    	txtSourceMsg.setText( s );
    	txtSourceMessage.setText( "" );
    	try {
