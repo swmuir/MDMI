@@ -93,6 +93,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private ActionListener m_businessElementListener = new BusinessElementListener();
 	private ActionListener m_directionListener = new DirectionListener();
 	private ActionListener m_fieldNameListener = new FieldNameListener();
+	
+	private JRadioButton m_prevButton = null;
 
 	public GenerateToFromElementsDialog(Frame owner, SemanticElement semanticElement) {
 		super(owner, BaseDialog.OK_CANCEL_APPLY_OPTION);
@@ -124,34 +126,19 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_isoButton.setSelected(true);
 		m_fromBERButton.setSelected(false);
 		m_toBERButton.setSelected(false);
+		m_prevButton = m_isoButton;
 		
 		m_directionGroup.add(m_isoButton);
 		m_directionGroup.add(m_fromBERButton);
 		m_directionGroup.add(m_toBERButton);
-		m_isoButton.addActionListener(m_directionListener);
-		m_fromBERButton.addActionListener(m_directionListener);
-		m_toBERButton.addActionListener(m_directionListener);
 
-		m_SEfieldNameSelector.addActionListener(m_fieldNameListener);
-		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
-		m_BEfieldNameSelector.addActionListener(m_fieldNameListener);
-		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
-		
-		m_businessElementSelector.setRenderer(m_businessElementRenderer);
-		m_businessElementSelector.addActionListener(m_businessElementListener);
-		
-		// get all business elements in the group
-		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
-		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
-		for (MdmiBusinessElementReference bizElem : group.getDomainDictionary().getBusinessElements()) {
-			m_businessElementSelector.addItem(bizElem);
-		}
-		
 		// get all fields in the SE's datatype
 		m_SEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
 		populateFieldNames(m_SEfieldNameSelector, dataType, null);
+
+		// get all business elements in the group
+		populateBusinessElements();
 		
-		m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
 		
 		JPanel mainPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -237,10 +224,47 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		gbc.gridwidth = 1;
 
 		
+		// Set up listeners and renderers
+		m_isoButton.addActionListener(m_directionListener);
+		m_fromBERButton.addActionListener(m_directionListener);
+		m_toBERButton.addActionListener(m_directionListener);
+
+		m_SEfieldNameSelector.addActionListener(m_fieldNameListener);
+		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
+		m_BEfieldNameSelector.addActionListener(m_fieldNameListener);
+		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
+		
+		m_businessElementSelector.setRenderer(m_businessElementRenderer);
+		m_businessElementSelector.addActionListener(m_businessElementListener);
+		
 		
 		setDirty(true);	// allow OK button
 		
 		getContentPane().add(mainPanel, BorderLayout.CENTER);
+	}
+
+
+	private void populateBusinessElements() {
+		m_businessElementSelector.removeAllItems();
+		
+		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
+		for (MdmiBusinessElementReference bizElem : group.getDomainDictionary().getBusinessElements()) {
+			
+			if (m_isoButton.isSelected()) {
+				// only add BERs with same datatype as SE
+				if (bizElem.getReferenceDatatype() == m_semanticElement.getDatatype()) {
+					m_businessElementSelector.addItem(bizElem);
+				}
+			} else {
+				m_businessElementSelector.addItem(bizElem);
+			}
+		}
+		
+		// we can pre-fill the datatype
+		if (m_isoButton.isSelected()) {
+			selectDataType(m_semanticElement.getDatatype());
+		}
 	}
 	
 	
@@ -458,18 +482,21 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			
 		}
 
-		// Rule will be of the form: Set <target> to <source>
-		String newRule =  generateRuleText(toBER, ruleName, seFieldName, beFieldName);
-				
-		// append new rule to existing rule
-		String rule = conversionRule.getRule();
-		if (rule != null && rule.length() > 0) {
-			StringBuilder buf = new StringBuilder(rule);
-			buf.append("\r\n").append(newRule);
-			newRule = buf.toString();
+		// if Isomorphic, the rule should be left blank
+		if (!m_isoButton.isSelected()) {
+			// Rule will be of the form: Set <target> to <source>
+			String newRule =  generateRuleText(toBER, ruleName, seFieldName, beFieldName);
+
+			// append new rule to existing rule
+			String rule = conversionRule.getRule();
+			if (rule != null && rule.length() > 0) {
+				StringBuilder buf = new StringBuilder(rule);
+				buf.append("\r\n").append(newRule);
+				newRule = buf.toString();
+			}
+			conversionRule.setRule(newRule);
 		}
 		
-		conversionRule.setRule(newRule);
 
 		
 		if (!existingRule) {
@@ -546,6 +573,24 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_name.setText(name);
 	}
 	
+	/** Fill in the Data Type and Field Type fields */
+	private void selectDataType(MdmiDatatype dataType) {
+		// empty field list
+		m_BEfieldNameSelector.removeAllItems();
+		m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		
+		if (dataType != null) {
+			m_beDatatype.setText(dataType.getName());
+		} else {
+			m_beDatatype.setText(UNDEFINED_TYPE);
+		}
+
+		// fill fields (not for iso)
+		if (!m_isoButton.isSelected()) {
+			populateFieldNames(m_BEfieldNameSelector, dataType, null);
+		}
+	}
+
 	/** object inside a combo box of field names */
 	public static class FieldNameComboBoxItem {
 		private String m_path = null;
@@ -598,6 +643,13 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			fillInName();
+			
+			// if Iso button was checked or un-checked, we need to repopulate
+			if (e.getSource() == m_isoButton || m_prevButton == m_isoButton) {
+				populateBusinessElements();
+			}
+			
+			m_prevButton = (JRadioButton) e.getSource();
 			setDirty(true);
 		}
 	}
@@ -622,18 +674,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 				dataType = businessElement.getReferenceDatatype();
 			}
 			
-			// empty field list
-			m_BEfieldNameSelector.removeAllItems();
-			m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
-			
-			if (dataType != null) {
-				m_beDatatype.setText(dataType.getName());
-			} else {
-				m_beDatatype.setText(UNDEFINED_TYPE);
-			}
-
-			// fill fields
-			populateFieldNames(m_BEfieldNameSelector, dataType, null);
+			selectDataType(dataType);
 			
 			setDirty(true);	// enable/disable OK button
 		}
@@ -656,10 +697,10 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 				Field field = item.getField();
 				if (field.getDatatype() != null) {
 					text.append(" : ").append(field.getDatatype().getName());
+					icon = TreeNodeIcon.getTreeIcon(field.getDatatype().getClass());
 				}
 				value = text;
 				
-				icon = TreeNodeIcon.getTreeIcon(field.getDatatype().getClass());
 			}
 
 			Component comp = super.getListCellRendererComponent(list, value, index, isSelected,

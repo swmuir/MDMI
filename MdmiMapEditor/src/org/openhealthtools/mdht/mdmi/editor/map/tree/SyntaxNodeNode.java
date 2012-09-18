@@ -41,6 +41,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DefaultTextField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.IntegerField;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.Comparators;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSyntaxNode;
 import org.openhealthtools.mdht.mdmi.model.Bag;
@@ -441,7 +442,7 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 
 		@Override
 		public void highlightField(Object value, Color highlightColor) {
-			// if value is a Field, we need to highight the field name
+			// if value is a Field, we need to highlight the field name
 			if (value instanceof Field) {
 				IEditorField editorField = getEditorField(FIELD_NAME);
 				try {
@@ -479,6 +480,13 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 				m_locationLanguageField = new DefaultTextField(this, 
 						getDefaultLocationExpressionLanguage());
 				return m_locationLanguageField;
+			
+			} else if ("MaxOccurs".equalsIgnoreCase(fieldInfo.getFieldName())) {
+				IEditorField field = super.createEditorField(fieldInfo);
+				if (field instanceof IntegerField) {
+					((IntegerField)field).addUnboundedBox();
+				}
+				return field;
 			}
 			return super.createEditorField(fieldInfo);
 		}

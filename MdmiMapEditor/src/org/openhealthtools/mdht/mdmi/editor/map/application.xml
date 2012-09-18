@@ -41,6 +41,7 @@
 		<!-- Edit Menu -->
         <action name="edit" class="org.openhealthtools.mdht.mdmi.editor.common.actions.EditMenuAction"/>
         <action name="openEditor" class="org.openhealthtools.mdht.mdmi.editor.map.actions.OpenEditorAction"/>
+        <action name="editRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.EditRIAction"/>
         <action name="cut" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CutAction"/>
         <action name="copy" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CopyAction"/>
         <action name="paste" class="org.openhealthtools.mdht.mdmi.editor.map.actions.PasteAction"/>
@@ -114,6 +115,8 @@
       
       <menu action="edit">
          <item action="openEditor"/>
+         <separator/>
+         <item action="editRefIndex" type="checkbox"/>
          <separator/>
          <item action="cut"/>
          <item action="copy"/>

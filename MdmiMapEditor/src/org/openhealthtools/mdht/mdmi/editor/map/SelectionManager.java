@@ -316,6 +316,17 @@ public class SelectionManager {
 		}
 		return null;
 	}
+	
+	/////////////////////////////////////
+	// Allow Editing of Referent Index //
+	/////////////////////////////////////
+	public void allowReferentIndexEditing(boolean allow) {
+		m_editor.setAllowEditingImports(allow);
+	}
+
+	public boolean isReferentIndexEditingAllowed() {
+		return m_editor.isAllowEditingImports();
+	}
 
 
 	////////////////////////////////////////////

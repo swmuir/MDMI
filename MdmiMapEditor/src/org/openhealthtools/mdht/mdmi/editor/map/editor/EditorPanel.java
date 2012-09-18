@@ -77,6 +77,9 @@ public class EditorPanel extends JPanel {
 	private AbstractAction     m_acceptListener = new AcceptAction();
 	private AbstractAction     m_closeListener = new CloseAction();
 	
+	// allow editing of "imported" items
+	private boolean m_allowEditingImports = false;
+	
 	@Override
 	public void addNotify() {
 		super.addNotify();
@@ -123,6 +126,16 @@ public class EditorPanel extends JPanel {
 		m_activeEdits.removeContainerListener(listener);
 	}
 
+	// allow editing of "imported" items
+	public void setAllowEditingImports(boolean flag) {
+		m_allowEditingImports = flag;
+	}
+	
+	// can imported items be edited?
+	public boolean isAllowEditingImports() {
+		return m_allowEditingImports;
+	}
+	
 	/**
 	 * <code>
 	 *    -------------------------------
@@ -201,9 +214,11 @@ public class EditorPanel extends JPanel {
 			
 			// if imported, make read-only
 			boolean isReadOnly = false;
-			if (entityNode.isImported() && ed instanceof GenericEditor) {
-				((GenericEditor)ed).setReadOnly();
-				isReadOnly = true;
+			if (!m_allowEditingImports) {
+				if (entityNode.isImported() && ed instanceof GenericEditor) {
+					((GenericEditor)ed).setReadOnly();
+					isReadOnly = true;
+				}
 			}
 			
 			// Register for property change so we can update the title

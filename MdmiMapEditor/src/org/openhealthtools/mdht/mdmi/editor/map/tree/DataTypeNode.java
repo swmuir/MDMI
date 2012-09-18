@@ -182,7 +182,8 @@ public class DataTypeNode extends EditableObjectNode {
 		@Override
 		public boolean isReadOnlyFields(String fieldName) {
 			// look at read-only flag
-			if (((MdmiDatatype)getUserObject()).isReadonly()) {
+			if (!SelectionManager.getInstance().isReferentIndexEditingAllowed() &&
+					((MdmiDatatype)getUserObject()).isReadonly()) {
 				return true;
 			} else if (getUserObject() instanceof DTSPrimitive) {
 				return true;

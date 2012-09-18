@@ -133,7 +133,10 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		@Override
 		public boolean isReadOnlyFields(String fieldName) {
 			// look at read-only flag
-			return ((MdmiBusinessElementReference)getUserObject()).isReadonly();
+			if (!SelectionManager.getInstance().isReferentIndexEditingAllowed()) {
+				return ((MdmiBusinessElementReference)getUserObject()).isReadonly();
+			}
+			return super.isReadOnlyFields(fieldName);
 		}
 
 

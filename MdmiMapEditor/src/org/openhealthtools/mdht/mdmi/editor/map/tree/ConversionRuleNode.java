@@ -14,6 +14,8 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.DataFormatException;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.MdmiDatatypeField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.RuleField;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
+import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
@@ -117,24 +120,42 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 		return language;
 	}
 
-	
+	/** Isomorphic is defined as the semantic element and the business element reference
+	 * having the same datatype
+	 * @return
+	 */
 	public boolean isIsomorphic() {
+		boolean isIso = false;
+		
 		ConversionRule conversionRule = (ConversionRule)userObject;
 		
 		SemanticElement semanticElement = getSemanticElement();
-		for (ToMessageElement toMdmi : semanticElement.getToMdmi()) {
-			for (ToBusinessElement toBER : semanticElement.getFromMdmi()) {
-				
-				if (toMdmi == conversionRule || toBER == conversionRule) {
-					if (toMdmi.getBusinessElement() == toBER.getBusinessElement()) {
-						return true;
-					}
-				}
-				
+		MdmiDatatype seDatatype = semanticElement.getDatatype();
+		
+		if (seDatatype != null) {
+			MdmiBusinessElementReference ber = null;
+			if (conversionRule instanceof ToBusinessElement) {
+				ber = ((ToBusinessElement)conversionRule).getBusinessElement();
+			} else if (conversionRule instanceof ToMessageElement) {
+				ber = ((ToMessageElement)conversionRule).getBusinessElement();
+			}
+			if (ber != null) {
+				isIso = (ber.getReferenceDatatype() == seDatatype);
 			}
 		}
+//		for (ToMessageElement toMdmi : semanticElement.getToMdmi()) {
+//			for (ToBusinessElement toBER : semanticElement.getFromMdmi()) {
+//				
+//				if (toMdmi == conversionRule || toBER == conversionRule) {
+//					if (toMdmi.getBusinessElement() == toBER.getBusinessElement()) {
+//						return true;
+//					}
+//				}
+//				
+//			}
+//		}
 		
-		return false;
+		return isIso;
 	}
 
 
@@ -163,7 +184,15 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 			// Add a field to show if Isomorphic
 			m_isomorphicField = new BooleanField(this, "Isomorphic");
 			try {
-				m_isomorphicField.setDisplayValue(Boolean.valueOf(isIsomorphic()));
+				boolean isomorphic = isIsomorphic();
+				if (isomorphic) {
+					// make it stand out
+					m_isomorphicField.setForeground(Color.red);
+					Font font = m_isomorphicField.getFont();
+					font = font.deriveFont(Font.BOLD);
+					m_isomorphicField.setFont(font);
+				}
+				m_isomorphicField.setDisplayValue(Boolean.valueOf(isomorphic));
 			} catch (DataFormatException e) {
 				// don't care
 			}

@@ -17,8 +17,12 @@ package org.openhealthtools.mdht.mdmi.editor.map.tree;
 import java.text.MessageFormat;
 import java.util.List;
 
+import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.IntegerField;
 import org.openhealthtools.mdht.mdmi.model.Field;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
@@ -95,12 +99,27 @@ public class FieldNode extends EditableObjectNode {
 		@Override
 		public boolean isReadOnlyFields(String fieldName) {
 			// look at read-only flag on parent
-			MdmiDatatype datatype = ((Field)getUserObject()).getOwnerType();
-			if (datatype != null && datatype.isReadonly()) {
-				return true;
+			if (!SelectionManager.getInstance().isReferentIndexEditingAllowed()) {
+				MdmiDatatype datatype = ((Field)getUserObject()).getOwnerType();
+				if (datatype != null && datatype.isReadonly()) {
+					return true;
+				}
 			}
 			// OwnerType is read-only
 			return "OwnerType".equalsIgnoreCase(fieldName);
+		}
+
+		/** Add "Unbounded" box to Max */
+		@Override
+		protected IEditorField createEditorField(DataEntryFieldInfo fieldInfo) {
+			if ("MaxOccurs".equalsIgnoreCase(fieldInfo.getFieldName())) {
+				IEditorField field = super.createEditorField(fieldInfo);
+				if (field instanceof IntegerField) {
+					((IntegerField)field).addUnboundedBox();
+				}
+				return field;
+			}
+			return super.createEditorField(fieldInfo);
 		}
 
 
