@@ -81,8 +81,21 @@ public class MdmiResolver {
          handleErrors(mf, r.getErrors());
       if( r.getWarnings().size() > 0 )
          handleWarnings(mf, r.getWarnings());
+      
+      // load message converter from file (if one exists)
+      IEnumerationConverter ecv = null;
+      String mfn = mf.getAbsolutePath().trim().toLowerCase();
+      if( 0 < mfn.lastIndexOf(".xmi") ) {
+         mfn = mf.getAbsolutePath().trim().substring(0, mfn.lastIndexOf(".xmi"));
+         mfn += MdmiEnumerationConverter.FILE_EXTENSION;
+         File ecf = new File(mfn);
+         if( ecf.exists() )
+            ecv = new MdmiEnumerationConverter(ecf);
+      }
+      
       for( MessageGroup mg : mgs ) {
          MI mi = new MI(mapInfo, mg);
+         mi.enumerationConverter = ecv; // set the converter to be available to the runtime
          System.out.println("Loaded message group " + mg.getName());
          if( m_maps.containsKey(mi.messageGroup.getName()) )
             m_maps.remove(mi.messageGroup.getName());
@@ -151,6 +164,21 @@ public class MdmiResolver {
          return null;
       return mi.getSyntaxParser();
    }
+   
+   /**
+    * Get the enumeration converter for the specified message group.
+    * 
+    * @param messageGroup The message group name to look for.
+    * @return The enumeration converter for the specified message group, or null if the group is not found.
+    */
+   public IEnumerationConverter getEnumerationConverter( String messageGroup ) {
+      if( messageGroup == null )
+         throw new IllegalArgumentException("Null argument");
+      MI mi = m_maps.get(messageGroup);
+      if( mi == null )
+         return null;
+      return mi.getEnumerationConverter();
+   }
 
    /**
     * Get the semantic parser for the specified message group.
@@ -189,10 +217,11 @@ public class MdmiResolver {
    }
 
    private static final class MI {
-      MdmiConfig.MapInfo mapInfo;
-      MessageGroup       messageGroup;
-      ISyntacticParser   syntacticSvcProvider;
-      ISemanticParser    semanticSvcProvider;
+      MdmiConfig.MapInfo    mapInfo;
+      MessageGroup          messageGroup;
+      ISyntacticParser      syntacticSvcProvider;
+      ISemanticParser       semanticSvcProvider;
+      IEnumerationConverter enumerationConverter;
 
       public MI( MdmiConfig.MapInfo mapInfo, MessageGroup messageGroup ) {
          this.mapInfo = mapInfo;
@@ -235,6 +264,10 @@ public class MdmiResolver {
             }
          }
          return semanticSvcProvider;
+      }
+      
+      IEnumerationConverter getEnumerationConverter() {
+         return enumerationConverter;
       }
    } // MdmiMapResolver$MT
 } // MdmiMapResolver

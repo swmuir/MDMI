@@ -16,7 +16,7 @@ package org.openhealthtools.mdht.mdmi.engine;
 
 import java.util.*;
 
-import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
+import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.engine.Conversion.ConversionInfo;
 import org.openhealthtools.mdht.mdmi.model.*;
 
@@ -34,7 +34,7 @@ class ConversionImpl {
       System.out.println( "    converting: " + src.toStringShort() + " to " + trg.getName() );
       XValue v = new XValue( "v", toBE.getBusinessElement().getReferenceDatatype() );
       if( !c.hasTrgRule(toSE) ) {
-         c.cloneValue( trg.getValue(), v );
+         c.cloneValue( trg.getValue(), v, false );
          System.out.println( "    target cloned: " + v.toString() );
       }
       c.execSrcRule( src, ci, trg, toBE, v );
@@ -53,7 +53,7 @@ class ConversionImpl {
    
    void execSrcRule( XElementValue src, ConversionInfo ci, XElementValue trg, ToBusinessElement toBE, XValue v ) {
       if( !hasSrcRule(toBE) ) {
-         cloneValue( src.getValue(), v );
+         cloneValue( src.getValue(), v, true );
       }
       else {
          IExpressionInterpreter m_adapter = new NrlAdapter( src.getOwner(), src, toBE.getName(), v );
@@ -63,7 +63,7 @@ class ConversionImpl {
 
    void execTrgRule( XValue v, ConversionInfo ci, XElementValue trg, ToMessageElement toSE ) {
       if( !hasTrgRule(toSE) ) {
-         cloneValue( v, trg.getValue() );
+         cloneValue( v, trg.getValue(), false );
       }
       else {
          IExpressionInterpreter m_adapter = new NrlAdapter( trg.getOwner(), trg, toSE.getName(), v );
@@ -71,7 +71,7 @@ class ConversionImpl {
       }
    }
 
-   private void cloneStruct( XDataStruct src, XDataStruct trg ) {
+   private void cloneStruct( XDataStruct src, XDataStruct trg, boolean fromSrc ) {
       if( src == null || trg == null )
          throw new IllegalArgumentException( "Null argument!" );
       ArrayList<XValue> values = trg.getValues();
@@ -79,18 +79,18 @@ class ConversionImpl {
          XValue t = values.get( i );
          XValue s = src.getValue( t.getName() );
          if( s != null )
-            cloneValue( s, t );
+            cloneValue( s, t, fromSrc );
       }
    }
 
-   private void cloneChoice( XDataChoice src, XDataChoice trg ) {
+   private void cloneChoice( XDataChoice src, XDataChoice trg, boolean fromSrc ) {
       XValue s = src.getValue();
       String fieldName = s.getName();
       XValue t = trg.setValue( fieldName );
-      cloneValue( s, t );
+      cloneValue( s, t, fromSrc );
    }
 
-   private void cloneValue( XValue src, XValue trg ) {
+   private void cloneValue( XValue src, XValue trg, boolean fromSrc ) {
       ArrayList<Object> values = src.getValues();
       if( values.size() <= 0 )
          return;
@@ -99,7 +99,7 @@ class ConversionImpl {
             XDataStruct srcXD = (XDataStruct)values.get( i );
             XDataStruct trgXD = new XDataStruct( trg, (DTCStructured)trg.getDatatype() );
             trg.setValue( trgXD );
-            cloneStruct( srcXD, trgXD );
+            cloneStruct( srcXD, trgXD, fromSrc );
          }
       }
       else if( src.getDatatype().isChoice() ) {
@@ -107,7 +107,7 @@ class ConversionImpl {
             XDataChoice srcXD = (XDataChoice)values.get( i );
             XDataChoice trgXD = new XDataChoice( trg, (DTCChoice)trg.getDatatype() );
             trg.setValue( trgXD );
-            cloneChoice( srcXD, trgXD );
+            cloneChoice( srcXD, trgXD, fromSrc );
          }
       }
       else { // simple
@@ -115,13 +115,36 @@ class ConversionImpl {
             trg.cloneValues(src);
          }
          else {
+            DTSEnumerated eds = (DTSEnumerated)src.getDatatype();
             DTSEnumerated edt = (DTSEnumerated)trg.getDatatype();
+            MdmiResolver resolver = Mdmi.INSTANCE.getResolver();
+            IEnumerationConverter ecv = null;
+            if( fromSrc ) {
+               MessageGroup srcMap = eds.getOwner();
+               ecv = resolver.getEnumerationConverter(srcMap.getName());
+            }
+            else {
+               MessageGroup trgMap = edt.getOwner();
+               ecv = resolver.getEnumerationConverter(trgMap.getName());
+            }
             trg.clear();
-            for( int i = 0; i < values.size(); i++ ) {
-               EnumerationLiteral srcEL = (EnumerationLiteral)values.get( i );
-               if( srcEL != null ) {
-                  EnumerationLiteral trgEL = edt.getLiteralByCode( srcEL.getCode() );
-                  trg.setValue( trgEL, -1 );
+            
+            if( ecv == null || !ecv.canConvert(eds, edt) ) {
+               for( int i = 0; i < values.size(); i++ ) {
+                  EnumerationLiteral srcEL = (EnumerationLiteral)values.get( i );
+                  if( srcEL != null ) {
+                     EnumerationLiteral trgEL = edt.getLiteralByCode( srcEL.getCode() );
+                     trg.setValue( trgEL, -1 );
+                  }
+               }
+            }
+            else {
+               for( int i = 0; i < values.size(); i++ ) {
+                  EnumerationLiteral srcEL = (EnumerationLiteral)values.get( i );
+                  if( srcEL != null ) {
+                     EnumerationLiteral trgEL = ecv.convert(eds, edt, srcEL);
+                     trg.setValue( trgEL, -1 );
+                  }
                }
             }
          }
