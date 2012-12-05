@@ -66,7 +66,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          if( se.isComputedIn() )
             setComputedInValue(se);
       }
-      
+
       // 2. Create the syntax model
       Node root = mdl.getSyntaxModel().getRoot();
       if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 )
@@ -202,7 +202,7 @@ public class DefaultSemanticParser implements ISemanticParser {
       // set the value
       MdmiDatatype dt = me.getDatatype();
       if( !dt.isChoice() )
-         throw new MdmiException("Invalid mapping for node {0}, expected datatype choice, found {1}.", 
+         throw new MdmiException("Invalid mapping for node {0}, expected datatype choice, found {1}.",
                DefaultSyntacticParser.getNodePath(ychoice.getNode()), dt.toString());
       DTCChoice cdt = (DTCChoice)dt;
       XDataChoice xc = new XDataChoice(xe.getValue(), cdt);
@@ -741,7 +741,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 
    /**
     * Returns true if the node appears in the context between min and max times.
-    * 
+    *
     * @param node The node.
     * @param context The context.
     * @return True if the node appears in the context between min and max times.
@@ -858,10 +858,16 @@ public class DefaultSemanticParser implements ISemanticParser {
       adapter.evalAction(xe, rule);
    }
 
-   private void setComputedInValue( SemanticElement se ) {
-      String rule = se.getComputedInValue().getExpression();
-      XElementValue xe = new XElementValue(se, valueSet);
-      IExpressionInterpreter adapter = new NrlAdapter(valueSet, xe, "", null);
-      adapter.evalAction(xe, rule);
-   }
+    private void setComputedInValue(SemanticElement se) {
+        String rule = se.getComputedInValue().getExpression();
+        XElementValue xe;
+        if (valueSet.getElementValuesByType(se).size() > 0) {
+            xe = (XElementValue) valueSet.getElementValuesByType(se).get(0);
+        } else {
+            xe = new XElementValue(se, valueSet);
+        }
+
+        IExpressionInterpreter adapter = new NrlAdapter(valueSet, xe, "", null);
+        adapter.evalAction(xe, rule);
+    }
 } // DefaultMdmiSemanticParser
