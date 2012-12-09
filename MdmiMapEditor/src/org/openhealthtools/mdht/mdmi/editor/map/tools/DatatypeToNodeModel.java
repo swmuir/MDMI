@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Stack;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -61,45 +62,78 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 	// Preferred column widths
 	public static final int [] s_columnWidths = new int [] {
 		300,	// Datatype
-		100,	// Syntax Node
-		220,	// Format
+		250,	// Syntax Node
+		150,	// Format
 		50		// Location
 	};
 	
 	private List<SemanticElement> m_semanticElementList = new ArrayList<SemanticElement>();
 	private Map<SemanticElement, DatatypeToNodeMap> m_seToNodeMap = new HashMap<SemanticElement, DatatypeToNodeMap>();
+	
+	/** Turn a single SemanticElement into a collection containing the SE and Syntax Node hierarchy */
+	private static Collection<Object> makeCollection(SemanticElement semanticElement) {
+		ArrayList<Object> collection = new ArrayList<Object>();
+		// check parentage
+		Node syntaxNode = semanticElement.getSyntaxNode();
+		if (syntaxNode != null) {
+			Stack<Node> nodes = new Stack<Node>();
+			while (syntaxNode != null) {
+				nodes.push(syntaxNode);
+				// get parent
+				syntaxNode = syntaxNode.getParentNode();
+			} 
+			
+			// add each semantic element
+			while (!nodes.isEmpty()) {
+				syntaxNode = nodes.pop();
+				if (syntaxNode.getSemanticElement() != null) {
+					// add the SE
+					collection.add(syntaxNode.getSemanticElement());
+				} else {
+					// add the node
+					collection.add(syntaxNode);
+				}
+			}
 
-	public DatatypeToNodeModel(SemanticElement semanticElement) {
-		// create a semantic element node, with a single child datatype node (with children for each field),
-		// and use that as the root of the model
-		super(createTopNode(semanticElement));
+		}
 		
-		m_semanticElementList.add(semanticElement);
+		if (!collection.contains(semanticElement)) {
+			collection.add(semanticElement);
+		}
 		
-		DatatypeToNodeMap nodeMap = new DatatypeToNodeMap(getTopDatatype(semanticElement),
-				semanticElement.getSyntaxNode());
-		m_seToNodeMap.put(semanticElement, nodeMap);
-		
-		validateModel(false, null);
+		return collection;
 	}
 
-	public DatatypeToNodeModel(Collection<SemanticElement> semanticElements) {
-		// create a semantic element node, with a single child datatype node (with children for each field),
-		// and use that as the root of the model
-		super(createTopNode(semanticElements));
+	/** Multiple Semantic Elements and Syntax Nodes */
+	public DatatypeToNodeModel(Collection<?> elements) {
 		
-		for (SemanticElement semanticElement : semanticElements) {
-			m_semanticElementList.add(semanticElement);
+		// create a =collection node, with each element as a child
+		super(createTopNode(elements));
+		
+		for (Object element : elements) {
+			if (element instanceof SemanticElement) {
+				SemanticElement semanticElement = (SemanticElement)element;
+				m_semanticElementList.add(semanticElement);
 
-			DatatypeToNodeMap nodeMap = new DatatypeToNodeMap(getTopDatatype(semanticElement), semanticElement.getSyntaxNode());
-			m_seToNodeMap.put(semanticElement, nodeMap);
+				DatatypeToNodeMap nodeMap = new DatatypeToNodeMap(getTopDatatype(semanticElement), semanticElement.getSyntaxNode());
+				m_seToNodeMap.put(semanticElement, nodeMap);
+			}
 		}
 		
 		validateModel(false, null);
 	}
+
+	/** Single Semantic Element */
+	public DatatypeToNodeModel(SemanticElement semanticElement) {
+		// create a semantic element node, with a single child datatype node (with children for each field),
+		// and use that as the root of the model
+		this(makeCollection(semanticElement));		
+	}
 	
 
-	private static SimpleSemanticElementNode createTopNode(SemanticElement semanticElement) {
+	
+	/** Create a TreeTable node for this SemanticElement */
+	private static SimpleSemanticElementNode createSemanticElementNode(SemanticElement semanticElement) {
 		// start with Semantic Element
 		SimpleSemanticElementNode rootNode = new SimpleSemanticElementNode(semanticElement);
 		if (semanticElement.getDatatype() != null) {
@@ -108,19 +142,45 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 		
 		return rootNode;
 	}
-	
-	private static DefaultMutableTreeNode createTopNode(Collection<SemanticElement> semanticElements) {
+
+
+	/** Create a TreeTable node with all elements as children */
+	private static DefaultMutableTreeNode createTopNode(Collection<?> elementList) {
 
 		// start with a dummy node
-		DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("Semantic Elements");
+		DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("Data Elements");
+
+		DefaultMutableTreeNode prevTreeNode = null;
+		
 		// create a node for each SE
-		for (SemanticElement semanticElement : semanticElements) {
-			rootNode.add( createTopNode(semanticElement) );
+		for (Object element : elementList) {
+			DefaultMutableTreeNode treeNode = null;
+			if (element instanceof SemanticElement) {
+				// Semantic Element Node - children are Datatypes
+				treeNode = createSemanticElementNode((SemanticElement)element);
+			} else if (element instanceof Node) {
+				// Syntax Node Node - children are more Syntax Nodes
+				treeNode = new SimpleSyntaxNode((Node)element);
+			}
+			
+			if (treeNode != null) {
+				if (elementList.size() == 1) {
+					// if single node, just show that one
+					rootNode = treeNode;
+					
+				} else if (prevTreeNode != null && treeNode.getUserObject() instanceof Node &&
+						prevTreeNode.getUserObject() == ((Node)treeNode.getUserObject()).getParentNode()) {
+					// keep syntax node hierarchy
+					prevTreeNode.add( treeNode );
+					
+				} else {
+					rootNode.add( treeNode );
+				}
+				
+				prevTreeNode = treeNode;
+			}
 		}
-		// check size
-		if (rootNode.getChildCount() == 1) {
-			rootNode = (DefaultMutableTreeNode) rootNode.getChildAt(0);
-		}
+
 		return rootNode;
 	}
 	
@@ -184,11 +244,21 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 	public Object getValueAt(Object node, int column) {
 		Object value = "";
 		if (column == s_dataTypeCol) {
+			// first column is the tree node
 			value = node;
+			
 
-		} else if (node instanceof IDatatypeField) {
-			// determine syntax node
-			Node syntaxNode = getNodeForDatatype((IDatatypeField)node);
+		} else {
+			// other columns - look like a table
+			Node syntaxNode = null;
+			if (node instanceof SimpleSyntaxNode) {
+				syntaxNode = (Node)((SimpleSyntaxNode)node).getUserObject();
+				
+			} else if (node instanceof IDatatypeField) {
+				// determine syntax node
+				syntaxNode = getNodeForDatatype((IDatatypeField)node);
+			}
+			
 			if (syntaxNode != null) {
 				if (column == s_syntaxNodeCol) {
 					value = syntaxNode;
@@ -213,31 +283,31 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 	}
 
    @Override
-	public void setValueAt(Object value, Object node, int column) {
-   	if (node instanceof IDatatypeField) {
-			// determine syntax node
-			Node syntaxNode = getNodeForDatatype((IDatatypeField)node);
-			if (syntaxNode instanceof LeafSyntaxTranslator) {
-				LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)syntaxNode;
-				if (value == null) {
-					value = "";
-				}
-				if (column == s_formatCol) {
-					if (!value.equals(leaf.getFormat())) {
-						leaf.setFormat(value.toString());
-						// notify listeners
-						notifyOnChange(syntaxNode);
-					}
-					
-				} else if (column == s_locationCol) {
-					if (!value.equals(leaf.getLocation())) {
-						leaf.setLocation(value.toString());
-						// notify listeners
-						notifyOnChange(syntaxNode);
-					}
-				}
-			}
-		}
+   public void setValueAt(Object value, Object node, int column) {
+	   if (node instanceof IDatatypeField) {
+		   // determine syntax node
+		   Node syntaxNode = getNodeForDatatype((IDatatypeField)node);
+		   if (syntaxNode instanceof LeafSyntaxTranslator) {
+			   LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)syntaxNode;
+			   if (value == null) {
+				   value = "";
+			   }
+			   if (column == s_formatCol) {
+				   if (!value.equals(leaf.getFormat())) {
+					   leaf.setFormat(value.toString());
+					   // notify listeners
+					   notifyOnChange(syntaxNode);
+				   }
+
+			   } else if (column == s_locationCol) {
+				   if (!value.equals(leaf.getLocation())) {
+					   leaf.setLocation(value.toString());
+					   // notify listeners
+					   notifyOnChange(syntaxNode);
+				   }
+			   }
+		   }
+	   }
    }
    
    /** Notify listeners about a change to the data model */
@@ -278,7 +348,7 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 	
 	private IDatatypeField getDatatypeChild(DefaultMutableTreeNode node) {
 		// should be first child
-		if (node.getChildCount() > 0) {
+		if (node.getChildCount() > 0 && node.getChildAt(0) instanceof IDatatypeField) {
 			return (IDatatypeField)node.getChildAt(0);
 		}
 		return null;
@@ -297,7 +367,7 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 		return super.isCellEditable(node, column);
 	}
 	
-	/** Node for SemanticElement */
+	/** Tree Node for SemanticElement */
 	public static class SimpleSemanticElementNode extends EditableObjectNode {
 
 		public SimpleSemanticElementNode(SemanticElement elem) {
@@ -308,6 +378,21 @@ public class DatatypeToNodeModel extends AbstractTreeTableModel {
 		@Override
 		public String getDisplayName(Object userObject) {
 			return ((SemanticElement)userObject).getName();
+		}
+		
+	}
+
+	/** Tree Node for SyntaxNode */
+	public static class SimpleSyntaxNode extends EditableObjectNode {
+
+		public SimpleSyntaxNode(Node elem) {
+			super(elem);
+			setNodeIcon(TreeNodeIcon.getTreeIcon(elem.getClass()));
+		}
+
+		@Override
+		public String getDisplayName(Object userObject) {
+			return ((Node)userObject).getName();
 		}
 		
 	}

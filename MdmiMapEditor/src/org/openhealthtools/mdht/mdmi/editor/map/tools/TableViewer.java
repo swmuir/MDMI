@@ -4,8 +4,11 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,9 +30,11 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -75,11 +80,12 @@ import org.openhealthtools.mdht.mdmi.model.MessageModel;
 import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
 import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
+import org.openhealthtools.mdht.mdmi.model.enums.SemanticElementType;
 
 public class TableViewer extends PrintableView {
-
 	/** Window Width key */
 	public static final String TABLE_VIEWER_WIDTH         = "tableViewerWidth";
 	/** Window Height key */
@@ -87,14 +93,25 @@ public class TableViewer extends PrintableView {
 	/** Window state (Minimized/Maximized) */
 	public static final String  TABLE_VIEWER_MAXIMIZED     = "tableViewerMaximized";
 	
+
+	// Filtering Criteria
+	private static final String ALL_SEMANTIC_ELEMENTS       = s_res.getString("TableViewer.AllSemanticElements");
+	private static final String NORMAL_SEMANTIC_ELEMENTS    = s_res.getString("TableViewer.NormalSemanticElements");
+	private static final String LOCAL_SEMANTIC_ELEMENTS     = s_res.getString("TableViewer.LocalSemanticElements");
+	private static final String MAPPED_SEMANTIC_ELEMENTS    = s_res.getString("TableViewer.MappedSemanticElements");
+	private static final String UN_MAPPED_SEMANTIC_ELEMENTS = s_res.getString("TableViewer.UnMappedSemanticElements");
+	
 	
 	// Size information
 	private UserPreferences 	 m_preferences;
 	
+	// Filters
+	private JComboBox m_filters;
+	private JCheckBox m_showLeafNodes;
+	
 	// extra buttons
 	private JButton m_refreshButton;
 	private JButton m_mainWindowButton;
-//	private JButton m_saveButton;
 	private ActionListener m_buttonAction;
 
 	// listeners
@@ -111,23 +128,15 @@ public class TableViewer extends PrintableView {
 	private JTable	   m_table;
 
 	// table columns
-	private static int s_colCount = 0;
-	public static final int ROW_SEL_COL			 = s_colCount++;
-	public static final int LEAF_NODE_COL		 = s_colCount++;
-	public static final int NODE_SE_LINK_COL	 = s_colCount++;
-	public static final int SEMANTIC_ELEMENT_COL = s_colCount++;
-	public static final int SE_BER_LINK_COL		 = s_colCount++;
-	public static final int BUSINESS_ELEMENT_COL = s_colCount++;
+	private int m_rowNumbCol	  = -1;
+	private int m_leafNodeCol	  = -1;
+	private int m_nodeSeLinkCol	  = -1;
+	private int m_semanticElemCol = -1;
+	private int m_seBeLinkCol	  = -1;
+	private int m_BusinessElemCol = -1;
 	
 	// column names - must match column indices
-	private static String[] s_columnNames = {
-		"",
-		s_res.getString("TableViewer.leafNode"),
-		"", 
-		s_res.getString("TableViewer.semanticElement"),
-		"", 
-		s_res.getString("TableViewer.businessElement")
-	};
+	private ArrayList<String> m_columnNames = new ArrayList<String>();
 	
 	// Table Cell Editors (acts as CollectionChangeListener)
 	CustomCellEditor m_nameCellEditor = new CustomCellEditor();
@@ -142,7 +151,8 @@ public class TableViewer extends PrintableView {
 
 		// Set the size based on user preferences
 		setWindowSize();
-
+		configureTableColumns();
+		
 		m_tableModel = new TableViewModel();
 		m_table = new JTable(m_tableModel);
 		m_table.setColumnSelectionAllowed(true);	// allow single item selection
@@ -154,41 +164,8 @@ public class TableViewer extends PrintableView {
 		headerSize.height += m_table.getRowHeight() - rowHeight;
 		m_table.getTableHeader().setPreferredSize(headerSize);
 
-		
-		// add custom renderer for link columns
-		Icon icon = AbstractComponentEditor.getIcon(this.getClass(),
-				s_res.getString("TableViewer.linkIcon"));
-		IconRenderer iconRenderer = new IconRenderer(icon);
-		for (int c=0; c<m_table.getColumnCount(); c++) {
-			TableColumn column = m_table.getTableHeader().getColumnModel().getColumn(c);
-			if (c == NODE_SE_LINK_COL || c == SE_BER_LINK_COL) {
-				column.setHeaderRenderer(iconRenderer);
-			}
-		}
-		
-		// set width and renderer for data
-		int width = getWidth()/3;
-		RowDataRenderer customRenderer = new RowDataRenderer();
-		for (int c=0; c<m_table.getColumnCount(); c++) {
-			TableColumn column = m_table.getColumnModel().getColumn(c);
-			column.setCellRenderer(customRenderer);
-			// columns 1, 3 and 5 get most of the width
-			if (c == LEAF_NODE_COL) {
-				column.setPreferredWidth(width);
-				column.setCellEditor(m_nameCellEditor);
-			} else if (c == SEMANTIC_ELEMENT_COL) {
-				column.setPreferredWidth(width);
-				column.setCellEditor(m_nameCellEditor);
-			} else if (c == BUSINESS_ELEMENT_COL) {
-				column.setPreferredWidth(width);
-				column.setCellEditor(m_beCellEditor);
-			} else {
-				column.setMinWidth(28);
-				column.setMaxWidth(28);
-				column.setPreferredWidth(28);
-				column.setResizable(false);
-			}
-		}
+		// configure the table columns
+		configureTableColumns();
 		
 		// add listeners for changes to the SEs and BEs
 		SelectionManager.getInstance().addCollectionChangeListener(m_beCellEditor);
@@ -215,6 +192,80 @@ public class TableViewer extends PrintableView {
 
 		setVisible(true);
 		toFront();
+	}
+
+	private void configureTableColumns() {
+
+		//  table columns
+		m_columnNames.clear();
+		int colIdx = 0;
+
+		m_columnNames.add("");
+		m_rowNumbCol	  = colIdx++;
+		
+		if (isShowLeafNodes()) {
+			m_columnNames.add(s_res.getString("TableViewer.leafNode"));
+			m_leafNodeCol	  = colIdx++;
+
+			m_columnNames.add("");
+			m_nodeSeLinkCol	  = colIdx++;
+		} else {
+			m_leafNodeCol = -1;
+			m_nodeSeLinkCol = -1;
+		}
+
+		m_columnNames.add(s_res.getString("TableViewer.semanticElement"));
+		m_semanticElemCol = colIdx++;
+
+		m_columnNames.add("");
+		m_seBeLinkCol	  = colIdx++;
+
+		m_columnNames.add(s_res.getString("TableViewer.businessElement"));
+		m_BusinessElemCol = colIdx++;
+		
+		if (m_tableModel == null)
+			return;
+		
+		m_tableModel.fireTableStructureChanged();
+		
+		// add custom renderer for link columns
+		Icon icon = AbstractComponentEditor.getIcon(this.getClass(),
+				s_res.getString("TableViewer.linkIcon"));
+		IconRenderer iconRenderer = new IconRenderer(icon);
+		for (int c=0; c<m_table.getColumnCount(); c++) {
+			TableColumn column = m_table.getTableHeader().getColumnModel().getColumn(c);
+			if (c == m_nodeSeLinkCol || c == m_seBeLinkCol) {
+				column.setHeaderRenderer(iconRenderer);
+			}
+		}
+		
+		// set width and renderer for data
+		int width = getWidth()/3;
+		RowDataRenderer customRenderer = new RowDataRenderer();
+		for (int c=0; c<m_table.getColumnCount(); c++) {
+			TableColumn column = m_table.getColumnModel().getColumn(c);
+			column.setCellRenderer(customRenderer);
+			// columns 1, 3 and 5 get most of the width
+			if (c == m_leafNodeCol) {
+				column.setPreferredWidth(width/2);
+				column.setCellEditor(m_nameCellEditor);
+			} else if (c == m_semanticElemCol) {
+				column.setPreferredWidth(width);
+				column.setCellEditor(m_nameCellEditor);
+			} else if (c == m_BusinessElemCol) {
+				column.setPreferredWidth(width);
+				column.setCellEditor(m_beCellEditor);
+			} else {
+				// fixed-width column
+				int w = 32;
+				column.setMinWidth(w);
+				column.setMaxWidth(w);
+				column.setPreferredWidth(w);
+				column.setResizable(false);
+			}
+		}
+		
+		m_tableModel.loadTable();
 	}
 
 	private void addKeyboardMap() {
@@ -269,7 +320,9 @@ public class TableViewer extends PrintableView {
 
 	@Override
 	protected JPanel createButtonPanel() {
-		JPanel buttonPanel = super.createButtonPanel();
+		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+		JPanel rightPanel = super.createButtonPanel();
 
 		m_refreshButton = new JButton(s_res.getString("TableViewer.refresh"));
 		m_mainWindowButton = new JButton(s_res.getString("TableViewer.mainWindow"));
@@ -285,20 +338,52 @@ public class TableViewer extends PrintableView {
 		m_mainWindowButton.addActionListener(m_buttonAction);
 		m_mainWindowButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
 				s_res.getString("TableViewer.mainWindowIcon")));
+		
+		rightPanel.add(m_refreshButton);
+		rightPanel.add(m_mainWindowButton);
+		
+		// Filters
+		m_showLeafNodes = new JCheckBox(s_res.getString("TableViewer.showLeafNodes"));
+		m_showLeafNodes.setSelected(true);
+		leftPanel.add(m_showLeafNodes);
+		
+		m_showLeafNodes.addActionListener(m_buttonAction);
+		
+		centerPanel.add(new JLabel("Show:"));
+		
+		m_filters = new JComboBox();
+		m_filters.addItem(ALL_SEMANTIC_ELEMENTS);
+		m_filters.addItem(NORMAL_SEMANTIC_ELEMENTS);
+		m_filters.addItem(LOCAL_SEMANTIC_ELEMENTS);
+		m_filters.addItem(MAPPED_SEMANTIC_ELEMENTS);
+		m_filters.addItem(UN_MAPPED_SEMANTIC_ELEMENTS);
+		
+		m_filters.addActionListener(m_buttonAction);
+		
+		centerPanel.add(m_filters);
+		
+		JPanel buttonPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
 
-//		m_saveButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
-//				s_res.getString("TableViewer.saveIcon")));
-//		m_saveButton.setToolTipText(s_res.getString("TableViewer.saveToolTip"));
-//		m_saveButton.addActionListener(m_buttonAction);
+		gbc.weightx = 1;
+		gbc.weighty = 1;
+		gbc.fill = GridBagConstraints.NONE;
 
-		buttonPanel.add(m_refreshButton);
-		buttonPanel.add(m_mainWindowButton);
-//		buttonPanel.add(m_saveButton);
+		gbc.anchor = GridBagConstraints.WEST;
+		buttonPanel.add(leftPanel, gbc);
+
+		gbc.anchor = GridBagConstraints.CENTER;
+		buttonPanel.add(centerPanel, gbc);
+
+		gbc.anchor = GridBagConstraints.EAST;
+		buttonPanel.add(rightPanel, gbc);
+		
 		return buttonPanel;
 	}
 
 	/** refresh table */
 	public void refreshTable() {
+		configureTableColumns();
 		if (m_tableModel.isDirty()) {
 			// warn if dirty
 			// The data in the table has been modified. Are you sure you want to refresh
@@ -316,12 +401,52 @@ public class TableViewer extends PrintableView {
 		setWindowTitle();
 	}
 	
-//	/** save data */
-//	public void saveData() {
-//		//  - update model
-//		//  - make sure to notify listeners too
-//		// modelChanged(model)
-//	}
+	public boolean isShowLeafNodes() {
+		return m_showLeafNodes.isSelected();
+	}
+	
+	/** check whether we should show this row */
+	private boolean showRow(RowData rowData) {
+		boolean showRow = true;
+		
+		if (m_filters == null || rowData == null) {
+			return showRow;
+		}
+
+		SemanticElement semanticElement = rowData.semanticElement;
+		SEtoBELink seToBELink = rowData.seToBELink;
+		
+		Object filterCriteria = m_filters.getSelectedItem();
+
+		if (ALL_SEMANTIC_ELEMENTS.equals(filterCriteria)) {
+			showRow = true;
+			
+		} else if (NORMAL_SEMANTIC_ELEMENTS.equals(filterCriteria)) {
+			// Normal SEs 
+			showRow = (semanticElement != null) && 
+					SemanticElementType.NORMAL.equals(semanticElement.getSemanticElementType());
+
+		} else if (LOCAL_SEMANTIC_ELEMENTS.equals(filterCriteria)) {
+			// Local SEs
+			showRow = (semanticElement != null) && 
+					SemanticElementType.LOCAL.equals(semanticElement.getSemanticElementType());
+
+		} else if (MAPPED_SEMANTIC_ELEMENTS.equals(filterCriteria)) {
+			// Normal + Mapped
+			showRow = (semanticElement != null) && 
+					SemanticElementType.NORMAL.equals(semanticElement.getSemanticElementType()) && 
+					(seToBELink != null) && 
+					(seToBELink.direction != SEtoBELink.Direction.None);
+			
+		} else if (UN_MAPPED_SEMANTIC_ELEMENTS.equals(filterCriteria)) {
+			// Normal + Un-Mapped
+			showRow = (semanticElement != null) && 
+					SemanticElementType.NORMAL.equals(semanticElement.getSemanticElementType()) && 
+					((seToBELink == null) || seToBELink.direction == SEtoBELink.Direction.None);
+		}
+
+		return showRow;
+	}
 	
 	/** Delete this row */
 	public void deleteRow(int rowNum) {
@@ -610,16 +735,17 @@ public class TableViewer extends PrintableView {
 		newRow.businessElement = null;
 		
 		// add it after this one
-		rowNum++;
-		m_tableModel.m_rowData.add(rowNum, newRow);
+		if (showRow(rowData)) {
+			m_tableModel.m_rowData.add(++rowNum, newRow);
+		}
 		
 		m_table.repaint();
 			
 		// set focus to add new BE
 		m_table.setRowSelectionInterval(rowNum, rowNum);
-		m_table.setColumnSelectionInterval(BUSINESS_ELEMENT_COL, BUSINESS_ELEMENT_COL);
+		m_table.setColumnSelectionInterval(m_BusinessElemCol, m_BusinessElemCol);
 		m_tableModel.m_editable = true;
-		m_table.editCellAt(rowNum, BUSINESS_ELEMENT_COL);
+		m_table.editCellAt(rowNum, m_BusinessElemCol);
 	}
 
 	
@@ -678,6 +804,8 @@ public class TableViewer extends PrintableView {
 		m_refreshButton.removeActionListener(m_buttonAction);
 		m_mainWindowButton.setToolTipText(null);
 		m_mainWindowButton.removeActionListener(m_buttonAction);
+		m_showLeafNodes.removeActionListener(m_buttonAction);
+		m_filters.removeActionListener(m_buttonAction);
 		removeComponentListener(m_windowSizeListener);
 		removeWindowStateListener(m_windowStateListener);
 		
@@ -767,7 +895,7 @@ public class TableViewer extends PrintableView {
 				// copy leaf node or paste semantic element
 				int [] rows = m_table.getSelectedRows();
 				popupMenu = new JPopupMenu();
-				if (col == LEAF_NODE_COL) {
+				if (col == m_leafNodeCol) {
 					popupMenu.add(m_copyAction);
 
 					// Create Semantic Element
@@ -784,7 +912,7 @@ public class TableViewer extends PrintableView {
 						popupMenu.add(new CreateSemanticElementForNode(rows));
 					}
 					
-				} else if (col == SEMANTIC_ELEMENT_COL && m_selectedLeafRows != null) {
+				} else if (col == m_semanticElemCol && m_selectedLeafRows != null) {
 					boolean allSEsBlank = true;
 					for (int r=0; r<rows.length; r++) {
 						rowData = m_tableModel.getRowData(rows[r]);
@@ -799,18 +927,20 @@ public class TableViewer extends PrintableView {
 				}
 			}
 			
-		} else if (col == ROW_SEL_COL) {
+		} else if (col == m_rowNumbCol) {
 			// First column - Add / Remove
 			popupMenu = new JPopupMenu();
 			if (rowData != null) {
-				popupMenu.add(new NewLeafAction(row));
+				if (isShowLeafNodes()) {
+					popupMenu.add(new NewLeafAction(row));
+				}
 				popupMenu.add(new AddBEAction(row));
 				popupMenu.addSeparator();
 				popupMenu.add(new DeleteRowAction(row));
 				popupMenu.add(new DeleteLeafNodeAction(row));
 			}
 		}
-		else if (col == LEAF_NODE_COL || col == SEMANTIC_ELEMENT_COL || col == BUSINESS_ELEMENT_COL) {
+		else if (col == m_leafNodeCol || col == m_semanticElemCol || col == m_BusinessElemCol) {
 			popupMenu = new JPopupMenu();
 			// Open Object 'name'
 			if (selection instanceof Node || selection instanceof SemanticElement ||
@@ -832,7 +962,7 @@ public class TableViewer extends PrintableView {
 			// Edit Cell
 			if (selection instanceof Node || selection instanceof SemanticElement) {
 				popupMenu.add(new AllowNameChange());
-			} else if (col == BUSINESS_ELEMENT_COL) {
+			} else if (col == m_BusinessElemCol) {
 				// can be blank
 				popupMenu.add(new ChangeBusinessElement(rowData.businessElement));
 			}
@@ -939,7 +1069,7 @@ public class TableViewer extends PrintableView {
 		// multiple rows - only leaf column
 		int [] rows = m_table.getSelectedRows();
 		int [] cols = m_table.getSelectedColumns();
-		if (rows.length > 0 && cols.length == 1 && cols[0] == LEAF_NODE_COL)
+		if (rows.length > 0 && cols.length == 1 && cols[0] == m_leafNodeCol)
 		{
 			m_selectedLeafRows = rows;
 		}
@@ -950,7 +1080,7 @@ public class TableViewer extends PrintableView {
 		int [] rows = m_table.getSelectedRows();
 		int [] cols = m_table.getSelectedColumns();
 		if (m_selectedLeafRows != null && 
-				cols.length == 1 && cols[0] == SEMANTIC_ELEMENT_COL)
+				cols.length == 1 && cols[0] == m_semanticElemCol)
 		{
 			String message = null;
 			
@@ -1048,8 +1178,6 @@ public class TableViewer extends PrintableView {
 		private ArrayList<RowData> m_rowData = new ArrayList<RowData>();
 		
 		public TableViewModel() {
-			// load table from data
-			loadTable();
 		}
 		
 		public void deleteRow(int row) {
@@ -1074,17 +1202,35 @@ public class TableViewer extends PrintableView {
 		
 		public void loadTable() {
 			m_rowData.clear();
-			for (MessageGroup group : SelectionManager.getInstance().getEntitySelector().getMessageGroups()) {
-				for (MessageModel model : group.getModels()) {
-					MessageSyntaxModel syntax = model.getSyntaxModel();
-					Node root = syntax.getRoot();
-					addNode(root, -1);	// walk tree
+			
+			if (isShowLeafNodes()) {
+				// organize by Node
+				for (MessageGroup group : SelectionManager.getInstance().getEntitySelector().getMessageGroups()) {
+					for (MessageModel model : group.getModels()) {
+						MessageSyntaxModel syntax = model.getSyntaxModel();
+						Node root = syntax.getRoot();
+						addNode(root, -1);	// walk tree
+					}
+				}
+			} else {
+				for (MessageGroup group : SelectionManager.getInstance().getEntitySelector().getMessageGroups()) {
+					for (MessageModel model : group.getModels()) {
+						SemanticElementSet elementSet = model.getElementSet();
+						if (elementSet != null) {
+							for (SemanticElement se : elementSet.getSemanticElements()) {
+								RowData rowData = new RowData();
+								rowData.semanticElement = se;
+								addSemanticElementData(0, rowData);
+							}
+						}
+					}
 				}
 			}
 			m_dirty = false;
 			setWindowTitle();
 			fireTableDataChanged();
 		}
+		
 		
 		/** Add this node to the list at the position specified by index.
 		 * A value of -1 indicates the end of the list.
@@ -1103,6 +1249,7 @@ public class TableViewer extends PrintableView {
 				// set data fields
 				// leafNode is the node
 				rowData.leafNode = node;
+				
 				// Semantic Element
 				if (node.getSemanticElement() != null) {
 					// set SE and link
@@ -1123,41 +1270,16 @@ public class TableViewer extends PrintableView {
 						}
 					}
 				}
-				// Business Element - (There can be many, so which one)
+				
+				// fill in Business Elements - (There can be multiples)
 				if (rowData.semanticElement != null) {
-					ArrayList<MdmiBusinessElementReference> beList = new ArrayList<MdmiBusinessElementReference>();
-					for (ToMessageElement toMdmi: rowData.semanticElement.getToMdmi()) {
-						// add to list
-						if (toMdmi.getBusinessElement() != null) {
-							if (!beList.contains(toMdmi.getBusinessElement())) {
-								beList.add(toMdmi.getBusinessElement());
-							}
-						}
-					}
-					for (ToBusinessElement fromMdmi : rowData.semanticElement.getFromMdmi()) {
-						// add to list
-						if (!beList.contains(fromMdmi.getBusinessElement())) {
-							beList.add(fromMdmi.getBusinessElement());
-						}
-					}
-					// add unique elements
-					int count = 0;
-					for (MdmiBusinessElementReference ber : beList)
-					{
-						count++;
-						if (count > 1) {
-							// add previous row data, make a new one
-							m_rowData.add(index++, rowData);
-							rowData = rowData.makeCopy();
-						}
-						
-						rowData.seToBELink.direction = getDirection(rowData.semanticElement, ber);
-						rowData.businessElement = ber;
+					index = addSemanticElementData(index, rowData);
+				} else {
+					// No SE
+					if (showRow(rowData)) {
+						m_rowData.add(index++, rowData);
 					}
 				}
-				
-				
-				m_rowData.add(index++, rowData);
 				
 			} else if (node instanceof Bag) {
 				// check children
@@ -1176,6 +1298,44 @@ public class TableViewer extends PrintableView {
 			return index;
 		}
 
+		/** Add a row for every BER associated with this Semantic Element */
+		private int addSemanticElementData(int index, RowData rowData) {
+			ArrayList<MdmiBusinessElementReference> beList = new ArrayList<MdmiBusinessElementReference>();
+			for (ToMessageElement toMdmi: rowData.semanticElement.getToMdmi()) {
+				// add to list
+				if (toMdmi.getBusinessElement() != null) {
+					if (!beList.contains(toMdmi.getBusinessElement())) {
+						beList.add(toMdmi.getBusinessElement());
+					}
+				}
+			}
+			for (ToBusinessElement fromMdmi : rowData.semanticElement.getFromMdmi()) {
+				// add to list
+				if (!beList.contains(fromMdmi.getBusinessElement())) {
+					beList.add(fromMdmi.getBusinessElement());
+				}
+			}
+			// add row for each Business Element
+			if (beList.size() > 0) {
+				for (MdmiBusinessElementReference ber : beList)
+				{
+					rowData.seToBELink.direction = getDirection(rowData.semanticElement, ber);
+					rowData.businessElement = ber;
+					// add row data for each BER
+					if (showRow(rowData)) {
+						m_rowData.add(index++, rowData);
+						rowData = rowData.makeCopy();
+					}
+				}
+			} else {
+				// No BER - just add row for SE
+				if (showRow(rowData)) {
+					m_rowData.add(index++, rowData);
+				}
+			}
+			return index;
+		}
+
 		@Override
 		public int getRowCount() {
 			return m_rowData.size();
@@ -1183,12 +1343,12 @@ public class TableViewer extends PrintableView {
 
 		@Override
 		public int getColumnCount() {
-			return s_columnNames.length;
+			return m_columnNames.size();
 		}
 
 		@Override
 		public String getColumnName(int columnIndex) {
-			return s_columnNames[columnIndex];
+			return m_columnNames.get(columnIndex);
 		}
 
 		
@@ -1198,11 +1358,11 @@ public class TableViewer extends PrintableView {
 			if (rowIndex < m_rowData.size() && editable) {
 				// only Leaf, SE and BE can be edited (for now)
 				RowData rowData = m_rowData.get(rowIndex);
-				if (columnIndex == LEAF_NODE_COL && rowData.leafNode != null) {
+				if (columnIndex == m_leafNodeCol && rowData.leafNode != null) {
 					editable = true;
-				} else if (columnIndex == SEMANTIC_ELEMENT_COL && rowData.semanticElement != null) {
+				} else if (columnIndex == m_semanticElemCol && rowData.semanticElement != null) {
 					editable = true;
-				} else if (columnIndex == BUSINESS_ELEMENT_COL) {
+				} else if (columnIndex == m_BusinessElemCol) {
 					editable = true;
 				}
 			}
@@ -1214,19 +1374,19 @@ public class TableViewer extends PrintableView {
 			Object value = null;
 			if (rowIndex < m_rowData.size()) {
 				RowData rowData = m_rowData.get(rowIndex);
-				if (columnIndex == LEAF_NODE_COL) {
+				if (columnIndex == m_leafNodeCol) {
 					// Leaf Node
 					value = rowData.leafNode;
-				} else if (columnIndex == NODE_SE_LINK_COL) {
+				} else if (columnIndex == m_nodeSeLinkCol) {
 					// node-SE link
 					value = rowData.nodeSELink;
-				} else if (columnIndex == SEMANTIC_ELEMENT_COL) {
+				} else if (columnIndex == m_semanticElemCol) {
 					// Semantic Element
 					value = rowData.semanticElement;
-				} else if (columnIndex == SE_BER_LINK_COL) {
+				} else if (columnIndex == m_seBeLinkCol) {
 					// SE - BE link
 					value = rowData.seToBELink;
-				} else if (columnIndex == BUSINESS_ELEMENT_COL) {
+				} else if (columnIndex == m_BusinessElemCol) {
 					// Business Element
 					value = rowData.businessElement;
 				}
@@ -1245,7 +1405,7 @@ public class TableViewer extends PrintableView {
 			
 			if (rowIndex < m_rowData.size()) {
 				RowData rowData = m_rowData.get(rowIndex);
-				if (columnIndex == LEAF_NODE_COL) {
+				if (columnIndex == m_leafNodeCol) {
 					// can only change name
 					if (value instanceof String && rowData.leafNode != null) {
 						rowData.leafNode.setName((String)value);
@@ -1253,13 +1413,13 @@ public class TableViewer extends PrintableView {
 						modelChanged(rowData.leafNode);
 						m_table.repaint();	// force redraw
 					}
-				} else if (columnIndex == NODE_SE_LINK_COL) {
+				} else if (columnIndex == m_nodeSeLinkCol) {
 					// node-SE link
 					if (rowData.nodeSELink != value) {
 						dirty = true;
 					}
 					rowData.nodeSELink = (LeafNodeSELink)value;
-				} else if (columnIndex == SEMANTIC_ELEMENT_COL) {
+				} else if (columnIndex == m_semanticElemCol) {
 					// can only change name
 					if (value instanceof String && rowData.semanticElement != null) {
 						rowData.semanticElement.setName((String)value);
@@ -1267,13 +1427,13 @@ public class TableViewer extends PrintableView {
 						modelChanged(rowData.semanticElement);
 						m_table.repaint();	// force redraw
 					}
-				} else if (columnIndex == SE_BER_LINK_COL) {
+				} else if (columnIndex == m_seBeLinkCol) {
 					// SE - BE link
 					if (rowData.seToBELink != value) {
 						dirty = true;
 					}
 					rowData.seToBELink = (SEtoBELink)value;
-				} else if (columnIndex == BUSINESS_ELEMENT_COL) {
+				} else if (columnIndex == m_BusinessElemCol) {
 					// Business Element
 					if (value instanceof MdmiBusinessElementReference) {
 						if (rowData.businessElement != value) {
@@ -1321,9 +1481,9 @@ public class TableViewer extends PrintableView {
 			JTable table = (JTable)e.getSource();
 			int rowAtPoint = table.rowAtPoint(e.getPoint());
 			int colAtPoint = table.columnAtPoint(e.getPoint());
-			if (rowAtPoint != -1 && colAtPoint == ROW_SEL_COL) {
+			if (rowAtPoint != -1 && colAtPoint == m_rowNumbCol) {
 				table.setRowSelectionInterval(rowAtPoint, rowAtPoint);
-				table.setColumnSelectionInterval(0, s_colCount-1);
+				table.setColumnSelectionInterval(0, m_columnNames.size()-1);
 			}
 
 			if (e.isPopupTrigger()) {
@@ -1526,7 +1686,7 @@ public class TableViewer extends PrintableView {
 			String toolTip = null;
 			Color bgColor = isSelected ? table.getSelectionBackground() : table.getBackground();
 			
-			if (column == ROW_SEL_COL) {
+			if (column == m_rowNumbCol) {
 				value = String.valueOf(row);
 				align = CENTER;
 				style = Font.ITALIC;
@@ -1578,23 +1738,30 @@ public class TableViewer extends PrintableView {
 				switch (se.direction) {
 				case None:
 					value = "";
+					RowData rowData = m_tableModel.getRowData(row);
+					if (rowData != null && rowData.semanticElement != null
+							&& SemanticElementType.LOCAL.equals(rowData.semanticElement.getSemanticElementType())) {
+						value = "Local";
+					}
 					toolTip = "Un-linked";
 					break;
 				case Both:
 					value = SemanticElementNode.DOUBLE_ARROW;
+					size = m_defaultFontSize + 4;
 					toolTip = "SE To/From BER";
 					break;
 				case ToMdmi:
 					value = SemanticElementNode.LEFT_ARROW;
+					size = m_defaultFontSize + 4;
 					toolTip = "BER to SE";
 					break;
 				case FromMdmi:
 					value = SemanticElementNode.RIGHT_ARROW;
+					size = m_defaultFontSize + 4;
 					toolTip = "SE to BER";
 					break;
 				}
 				align = CENTER;
-				size = m_defaultFontSize + 4;
 				
 			} else if (value instanceof MdmiBusinessElementReference) {
 				MdmiBusinessElementReference ber = (MdmiBusinessElementReference)value;
@@ -1792,9 +1959,10 @@ public class TableViewer extends PrintableView {
 			cm.setWaitCursor();
 
 			try {
-				if (e.getSource() == m_refreshButton) {
+				Object source = e.getSource();
+				if (source == m_refreshButton) {
 					refreshTable();
-				} else if (e.getSource() == m_mainWindowButton) {
+				} else if (source == m_mainWindowButton) {
 					final Frame appFrame = SystemContext.getApplicationFrame();
 
 					EventQueue.invokeLater(new Runnable() {
@@ -1805,9 +1973,12 @@ public class TableViewer extends PrintableView {
 					    	appFrame.repaint();
 					    }
 					});
+				
+				} else if (source == m_showLeafNodes) {
+					refreshTable();
 					
-//				} else if (e.getSource() == m_saveButton) {
-//					saveData();
+				} else if (source == m_filters) {
+					refreshTable();
 				}
 
 			} catch (Exception ex) {

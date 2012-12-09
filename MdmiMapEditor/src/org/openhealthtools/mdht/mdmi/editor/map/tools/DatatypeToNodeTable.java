@@ -58,7 +58,7 @@ import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 
-
+/** A TreeTable with DataTypes in the first column, and Syntax Nodes in the second */
 public class DatatypeToNodeTable extends JTreeTable {
 	
 	/** Resource for localization */
@@ -103,9 +103,10 @@ public class DatatypeToNodeTable extends JTreeTable {
 		this(new DatatypeToNodeModel(semanticElement));
 	}
 
-	public DatatypeToNodeTable(Collection<SemanticElement> semanticElements) {
+	
+	public DatatypeToNodeTable(Collection<SemanticElement> elements) {
 		// initialize tree
-		this(new DatatypeToNodeModel(semanticElements));
+		this(new DatatypeToNodeModel(elements));
 	}
 
 

@@ -108,6 +108,7 @@ public class DatatypeTree extends ModelTree {
 	//  Tree Nodes
 	///////////////////////////////////////////////////////////
 	
+	/** Tree Node interface for different kinds of Data Types */
 	public static interface IDatatypeField extends TreeNode {
 		public String getFieldName();
 		public MdmiDatatype getDatatype();
