@@ -16,14 +16,18 @@ package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -33,6 +37,7 @@ import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.BooleanField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataFormatException;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
@@ -170,11 +175,32 @@ public class DataTypeNode extends EditableObjectNode {
 
 		super.setImported(imported);
 	}
+	
+
+	
+	@Override
+	public Icon getNodeIcon() {
+		Icon icon =  super.getNodeIcon();
+		// add an "R" if referent
+		if (icon != null && isReferenceType()) {
+			icon = new ReferentIcon(icon);
+		}
+		return icon;
+	}
+
+
+	/** Is this datatype an attribute of an MdmiBusinessElementReference in the message group
+	 **/
+	public  boolean isReferenceType() {
+		return DataTypeSetNode.isReferenceType((MdmiDatatype)getUserObject(), getMessageGroup());
+	}
 
 	//////////////////////////////////////////////////////////////////
 	//    Custom Classes
 	//////////////////////////////////////////////////////////////
 	public class CustomEditor extends GenericEditor {
+		private BooleanField m_referentField;
+		
 		CustomEditor(MessageGroup group, Class<?> objectClass) {
 			super(group, objectClass);
 		}
@@ -191,6 +217,29 @@ public class DataTypeNode extends EditableObjectNode {
 			return super.isReadOnlyFields(fieldName);
 		}
 
+		@Override
+		protected void createDataEntryFields(List<Method[]> methodPairList) {
+			
+			// Add a field to show if Isomorphic
+			m_referentField = new BooleanField(this, "Referent");
+			try {
+				boolean isRef = isReferenceType();
+				if (isRef) {
+					// make it stand out
+					m_referentField.setForeground(Color.red);
+					Font font = m_referentField.getFont();
+					font = font.deriveFont(Font.BOLD);
+					m_referentField.setFont(font);
+				}
+				m_referentField.setDisplayValue(Boolean.valueOf(isRef));
+			} catch (DataFormatException e) {
+				// don't care
+			}
+			m_referentField.setReadOnly();
+			addLabeledField(null, m_referentField, 0.0, GridBagConstraints.NONE);
+
+			super.createDataEntryFields(methodPairList);
+		}
 
 		/** Add a wizard for TypeSpec */
 		@Override
