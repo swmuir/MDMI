@@ -59,6 +59,8 @@ import org.openhealthtools.mdht.mdmi.editor.map.Actions;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.CollectionChangeEvent;
 import org.openhealthtools.mdht.mdmi.editor.map.CollectionChangeListener;
+import org.openhealthtools.mdht.mdmi.editor.map.ModelChangeEvent;
+import org.openhealthtools.mdht.mdmi.editor.map.ModelChangeListener;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
@@ -85,7 +87,7 @@ import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
 import org.openhealthtools.mdht.mdmi.model.enums.SemanticElementType;
 
-public class TableViewer extends PrintableView {
+public class TableViewer extends PrintableView  {
 	/** Window Width key */
 	public static final String TABLE_VIEWER_WIDTH         = "tableViewerWidth";
 	/** Window Height key */
@@ -142,6 +144,9 @@ public class TableViewer extends PrintableView {
 	CustomCellEditor m_nameCellEditor = new CustomCellEditor();
 	BusinessElementCellEditor m_beCellEditor = new BusinessElementCellEditor();
 	
+	// Listener for changes to the model
+	ChangeListener m_changeListener = new ChangeListener();
+	
 	public TableViewer() {
 		// set up frame parameters
 		setDefaultCloseOperation(HIDE_ON_CLOSE);
@@ -169,6 +174,8 @@ public class TableViewer extends PrintableView {
 		
 		// add listeners for changes to the SEs and BEs
 		SelectionManager.getInstance().addCollectionChangeListener(m_beCellEditor);
+		SelectionManager.getInstance().addModelChangeListener(m_changeListener);
+		SelectionManager.getInstance().addCollectionChangeListener(m_changeListener);
 		
 		setCenterComponent(new JScrollPane(m_table));
 		m_table.addMouseListener(m_mouseListener);
@@ -795,7 +802,9 @@ public class TableViewer extends PrintableView {
 			m_table.getTableHeader().getColumnModel().getColumn(c).setCellRenderer(null);
 		}
 		
-		SelectionManager.getInstance().removeCollectionChangeListener(MdmiBusinessElementReference.class, m_beCellEditor);
+		SelectionManager.getInstance().removeCollectionChangeListener(m_beCellEditor);
+		SelectionManager.getInstance().removeModelChangeListener(m_changeListener);
+		SelectionManager.getInstance().removeCollectionChangeListener(m_changeListener);
 
 		m_table.removeMouseListener(m_mouseListener);
 
@@ -1213,14 +1222,17 @@ public class TableViewer extends PrintableView {
 					}
 				}
 			} else {
+				// sort by Semantic Element
 				for (MessageGroup group : SelectionManager.getInstance().getEntitySelector().getMessageGroups()) {
 					for (MessageModel model : group.getModels()) {
 						SemanticElementSet elementSet = model.getElementSet();
 						if (elementSet != null) {
-							for (SemanticElement se : elementSet.getSemanticElements()) {
+							List <SemanticElement> elements = new ArrayList<SemanticElement>(elementSet.getSemanticElements());
+							Collections.sort(elements, new Comparators.SemanticElementComparator());
+							for (SemanticElement se : elements) {
 								RowData rowData = new RowData();
 								rowData.semanticElement = se;
-								addSemanticElementData(0, rowData);
+								addSemanticElementData(-1, rowData);
 							}
 						}
 					}
@@ -1300,6 +1312,11 @@ public class TableViewer extends PrintableView {
 
 		/** Add a row for every BER associated with this Semantic Element */
 		private int addSemanticElementData(int index, RowData rowData) {
+			
+			if (index == -1) {
+				index = m_rowData.size();
+			}
+			
 			ArrayList<MdmiBusinessElementReference> beList = new ArrayList<MdmiBusinessElementReference>();
 			for (ToMessageElement toMdmi: rowData.semanticElement.getToMdmi()) {
 				// add to list
@@ -1988,5 +2005,35 @@ public class TableViewer extends PrintableView {
 			}	
 		}
 	}
+
+	// ModelChangeListener
+	private class ChangeListener implements ModelChangeListener, CollectionChangeListener {
+
+		/////////////////////////////
+		// ModelChangeListener
+		/////////////////////////////
+		@Override
+		public void modelChanged(ModelChangeEvent e) {
+			// repaint table
+			m_table.repaint();
+		}
+
+		/////////////////////////////
+		// CollectionChangeListener
+		/////////////////////////////
+		@Override
+		public Class<?> getListenForClass() {
+			// we want to know when message groups are added or removed
+			return MessageGroup.class;
+		}
+
+		@Override
+		public void contentsChanged(CollectionChangeEvent e) {
+			// new message group
+			refreshTable();
+		}
+	}
+	
+	// TODO - need collection change listener for MessageGroup - so we can refresh entire table
 
 }

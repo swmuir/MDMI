@@ -215,6 +215,10 @@ public class MdmiModelTree extends JPanel {
 
 		m_treeModel.nodeStructureChanged(m_treeRoot);
 		m_messageElementsTree.setRootVisible(true);
+		
+
+		// - notify listeners that groups have changed
+		SelectionManager.getInstance().notifyCollectionChangeListeners(MessageGroup.class);
 
 		// expand MessageGroup and MessageModel nodes
 		SwingUtilities.invokeLater(new Runnable() {

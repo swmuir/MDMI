@@ -192,7 +192,8 @@ public class DataTypeNode extends EditableObjectNode {
 	/** Is this datatype an attribute of an MdmiBusinessElementReference in the message group
 	 **/
 	public  boolean isReferenceType() {
-		return DataTypeSetNode.isReferenceType((MdmiDatatype)getUserObject(), getMessageGroup());
+		MdmiDatatype dataType = (MdmiDatatype)getUserObject();
+		return DataTypeSetNode.isReferenceType(dataType, dataType.getOwner());
 	}
 
 	//////////////////////////////////////////////////////////////////

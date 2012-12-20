@@ -220,7 +220,7 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		@Override
 		public void removeNotify() {
 			super.removeNotify();
-			SelectionManager.getInstance().removeCollectionChangeListener(getListenForClass(), this);
+			SelectionManager.getInstance().removeCollectionChangeListener(this);
 		}
 
 		@Override

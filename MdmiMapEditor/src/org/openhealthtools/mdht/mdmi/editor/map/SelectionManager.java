@@ -670,7 +670,7 @@ public class SelectionManager {
 	
 	/** Remove a Change listener for changes to a particular class of objects
 	 */
-	public void removeCollectionChangeListener(Class<?> objectClass, CollectionChangeListener listener) {
+	public void removeCollectionChangeListener(CollectionChangeListener listener) {
 		synchronized (m_changeListeners) {
 			m_changeListeners.remove(listener);
 		}

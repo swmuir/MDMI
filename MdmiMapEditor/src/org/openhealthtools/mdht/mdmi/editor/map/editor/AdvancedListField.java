@@ -284,8 +284,7 @@ ListSelectionListener, MouseListener {
 		m_createButton.removeActionListener(this);
 
 		if (getDataClass() != null) {
-			SelectionManager.getInstance().removeCollectionChangeListener(getDataClass(), 
-					m_changeListener);
+			SelectionManager.getInstance().removeCollectionChangeListener(m_changeListener);
 		}
 		m_list.setCellRenderer(null);
 

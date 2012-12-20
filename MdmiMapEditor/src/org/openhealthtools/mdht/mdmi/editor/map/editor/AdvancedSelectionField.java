@@ -302,8 +302,7 @@ public abstract class AdvancedSelectionField extends JPanel implements IEditorFi
 		m_refreshButton.setToolTipText(null);
 
 		if (getDataClass() != null) {
-			SelectionManager.getInstance().removeCollectionChangeListener(getDataClass(), 
-					m_changeListener);
+			SelectionManager.getInstance().removeCollectionChangeListener(m_changeListener);
 		}
 		m_comboBox.setRenderer(null);
 

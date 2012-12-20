@@ -87,6 +87,9 @@ public class DataTypeSetNode extends EditableObjectNode {
 	
 	/** Is this datatype an attribute of an MdmiBusinessElementReference */
 	public static boolean isReferenceType(MdmiDatatype datatype, MessageGroup messageGroup) {
+		if (messageGroup == null || datatype == null) {
+			return false;
+		}
 		MdmiDomainDictionaryReference dictionary = messageGroup.getDomainDictionary();
 		if (dictionary != null) {
 			for (MdmiBusinessElementReference ref : dictionary.getBusinessElements()) {
