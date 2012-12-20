@@ -2033,7 +2033,5 @@ public class TableViewer extends PrintableView  {
 			refreshTable();
 		}
 	}
-	
-	// TODO - need collection change listener for MessageGroup - so we can refresh entire table
 
 }
