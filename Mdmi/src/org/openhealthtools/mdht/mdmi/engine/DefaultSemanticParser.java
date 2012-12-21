@@ -645,7 +645,7 @@ public class DefaultSemanticParser implements ISemanticParser {
       String format = yleaf.getLeaf().getFormat();
       XDT xdt = XDT.fromString(format);
       MdmiDatatype dt = getDatatype(node);
-      if( !dt.isSimple() )
+      if( !(dt.isSimple() || dt.isExternal()) )
          throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(yleaf.getNode()));
 
       String v = null;
