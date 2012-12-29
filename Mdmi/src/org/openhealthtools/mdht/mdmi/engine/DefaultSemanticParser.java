@@ -860,13 +860,16 @@ public class DefaultSemanticParser implements ISemanticParser {
 
     private void setComputedInValue(SemanticElement se) {
         String rule = se.getComputedInValue().getExpression();
-        XElementValue xe;
         if (valueSet.getElementValuesByType(se).size() > 0) {
-            xe = (XElementValue) valueSet.getElementValuesByType(se).get(0);
+            for (int i = 0; i < valueSet.getElementValuesByType(se).size(); i++) {
+                evalNrl(se, rule, (XElementValue) valueSet.getElementValuesByType(se).get(i));
+            }
         } else {
-            xe = new XElementValue(se, valueSet);
+            evalNrl(se, rule, new XElementValue(se, valueSet));
         }
+    }
 
+    private void evalNrl(SemanticElement se, String rule, XElementValue xe) {
         IExpressionInterpreter adapter = new NrlAdapter(valueSet, xe, "", null);
         adapter.evalAction(xe, rule);
     }
