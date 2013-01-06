@@ -32,6 +32,7 @@ import javax.swing.Icon;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
@@ -626,14 +627,48 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	public static void populateFieldNames(JComboBox comboBox, MdmiDatatype dataType, String path) {
 		if (dataType instanceof DTComplex) {
 			for (Field field : ((DTComplex)dataType).getFields()) {
+				MdmiDatatype fieldDataType = field.getDatatype();
+				
+				// check for recursion
+				if (fieldDataType instanceof DTComplex) { 
+					if (fieldsInCombobox(comboBox, (DTComplex)fieldDataType)) {
+						// warn and continue
+						String message = "The field '" + field.getName() + "' of data type '" + dataType.getName() +
+								"' is recursive. It cannot be used for this operation.";
+						JOptionPane.showMessageDialog(SelectionManager.getInstance().getEntityEditor(), message,
+								"Recursive Data Types",
+								JOptionPane.WARNING_MESSAGE);
+					
+						continue;
+					}
+				}
+				
+				// add field to combo box
 				FieldNameComboBoxItem item = new FieldNameComboBoxItem(path, field);
 				comboBox.addItem(item);
-				
+
 				// if field is a complex type, go further
-				MdmiDatatype fieldDataType = field.getDatatype();
-				populateFieldNames(comboBox, fieldDataType, item.getPath());
+				if (fieldDataType instanceof DTComplex) { 
+					populateFieldNames(comboBox, fieldDataType, item.getPath());
+				}
+				
 			}
 		}
+	}
+	
+	/** Look for recursion by checking if the fields of this data type are already in the combo box */
+	private static boolean fieldsInCombobox(JComboBox fieldNameComboBox, DTComplex dataType) {
+
+		for (Field field : dataType.getFields()) {
+			for (int i=0; i<fieldNameComboBox.getItemCount(); i++) {
+				Object item = fieldNameComboBox.getItemAt(i);
+				if (item instanceof FieldNameComboBoxItem &&
+						((FieldNameComboBoxItem)item).m_field == field) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	////////////////////////////////
