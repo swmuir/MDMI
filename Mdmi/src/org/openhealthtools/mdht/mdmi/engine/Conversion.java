@@ -161,8 +161,13 @@ class Conversion {
                   XElementValue trg = null;
                   if( k < trgs.size() )
                      trg = (XElementValue)trgs.get(k);
-                  else
-                     trg = new XElementValue( ci.target, m_owner.trgSemanticModel );
+                  else {
+                      trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+                      if (trgs.size() > 0) {
+                          IElementValue parentContainer = trgs.get(0).getParent();
+                          generateTargetValue(trg, parentContainer);
+                      }
+                  }
                   ConversionImpl.convert( src, ci, trg );
                   execute(src, ci, trg);
                }
@@ -232,8 +237,54 @@ class Conversion {
          }
       }     
    }
-   
-   // get the CIs for which the target SE's are top level, i.e. have no parent or have a LOCAL parent
+
+    // generates target ElementValue tree
+    private void generateTargetValue(IElementValue targetValue, IElementValue parentContainer) {
+        if (targetValue.getSemanticElement().getSyntaxNode().isUnbound()) {
+            parentContainer.addChild(targetValue);
+        } else {
+            IElementValue parentTargetValue = new XElementValue(targetValue.getSemanticElement().getParent(), m_owner.trgSemanticModel);
+            ((XValue) parentTargetValue.getValue()).intializeStructs();
+            parentTargetValue.addChild(targetValue);
+
+            generateRequiredSEValues(parentTargetValue.getSemanticElement(), parentTargetValue);
+            generateTargetValue(parentTargetValue, parentContainer.getParent());
+        }
+    }
+
+    // generates target element values for required SNs
+    private void generateRequiredSEValues(SemanticElement sourceSE, IElementValue sourceEV) {
+        for (SemanticElement childSE : sourceSE.getChildren()) {
+            if (!hasChildElementValue(sourceEV, childSE)  && childSE.getSyntaxNode().isRequired()) {
+                XElementValue childTargetValue = new XElementValue(childSE, m_owner.trgSemanticModel);
+                childTargetValue.getValue().intializeStructs();
+                sourceEV.addChild(childTargetValue);
+                childTargetValue.setParent(sourceEV);
+            }
+
+            if (childSE.getChildren().size() > 0) {
+                generateRequiredSEValues(childSE, getChildElementValue(sourceEV, childSE));
+            }
+        }
+    }
+
+    private boolean hasChildElementValue(IElementValue elementValue, SemanticElement childSemanticElement) {
+        if (getChildElementValue(elementValue, childSemanticElement) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    private IElementValue getChildElementValue(IElementValue elementValue, SemanticElement childSemanticElement) {
+        for (IElementValue childEV : elementValue.getChildren()) {
+            if (childEV.getSemanticElement() == childSemanticElement) {
+                return childEV;
+            }
+        }
+        return null;
+    }
+
+    // get the CIs for which the target SE's are top level, i.e. have no parent or have a LOCAL parent
    private ArrayList<ConversionInfo> getTopLevelCis() {
       ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
       for( int i = 0; i < m_conversionInfos.size(); i++ ) {
