@@ -860,6 +860,15 @@ public class DefaultSemanticParser implements ISemanticParser {
 
     private void setComputedInValue(SemanticElement se) {
         String rule = se.getComputedInValue().getExpression();
+
+        if (se.getParent() != null) {
+            for(IElementValue needsChildEV : getElementValuesWithoutChild(se)) {
+                IElementValue childEV = new XElementValue(se, valueSet);
+                needsChildEV.addChild(childEV);
+                childEV.setParent(needsChildEV);
+            }
+        }
+
         if (valueSet.getElementValuesByType(se).size() > 0) {
             for (int i = 0; i < valueSet.getElementValuesByType(se).size(); i++) {
                 evalNrl(se, rule, (XElementValue) valueSet.getElementValuesByType(se).get(i));
@@ -867,6 +876,21 @@ public class DefaultSemanticParser implements ISemanticParser {
         } else {
             evalNrl(se, rule, new XElementValue(se, valueSet));
         }
+    }
+
+    private List<IElementValue> getElementValuesWithoutChild(SemanticElement semanticElement) {
+        List<IElementValue> parentElementValues = valueSet.getElementValuesByType(semanticElement.getParent());
+        List<IElementValue> result = new ArrayList<IElementValue>(parentElementValues);
+
+        for (IElementValue parentElementValue : parentElementValues) {
+            for (IElementValue childElementValue : valueSet.getElementValuesByType(semanticElement)) {
+                if (parentElementValue.getChildren().contains(childElementValue)) {
+                    result.remove(parentElementValue);
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     private void evalNrl(SemanticElement se, String rule, XElementValue xe) {
