@@ -28,6 +28,8 @@ import org.openhealthtools.mdht.mdmi.*;
  */
 public class XslUtil {
    public static final XPathFactory XPATH_FACTORY = new org.apache.xpath.jaxp.XPathFactoryImpl();
+
+   private static final XCache      CACHE         = new XCache();
    
    /**
     * Get the namespaces from a DOM document.
@@ -80,91 +82,25 @@ public class XslUtil {
          throw new IllegalArgumentException("The root element may not be null!");
       if( xpath == null || xpath.length() <= 0 )
          throw new IllegalArgumentException("The xpath cannot be null or empty!");
-      if( xpath.startsWith("/") )
-         throw new IllegalArgumentException("The xpath cannot start with '/' - absolute xpaths not supported!");
-      return getNodes(root, parseXPath(xpath));
-   }
-   
-   private static ArrayList<Node> getNodes( Element root, ArrayList<XNode> xpath ) {
-      if( xpath.size() == 1 ) // last one
-         return getNodes(root, xpath.get(0));
-      XNode x = xpath.get(0);
-      xpath.remove(0);
-      if( x.isAttr )
-         throw new IllegalArgumentException("Invalid xpath, attributes must be the last in the path");
-      if( x.index <= 0 ) {
-         Element e = XmlUtil.getElement(root, x.nodeName);
-         if( e != null )
-            return getNodes(e, xpath);
-      }
-      else { // indexed
-         int index = x.index - 1;
-         ArrayList<Element> es = XmlUtil.getElements(root, x.nodeName);
-         if( es != null && index < es.size() )
-            return getNodes(es.get(index), xpath);
-      }
-      return new ArrayList<Node>();
-   }
-   
-   private static ArrayList<Node> getNodes( Element root, XNode x ) {
+      NodeList nodes = getNodeList(root, xpath);
       ArrayList<Node> a = new ArrayList<Node>();
-      if( x.isAttr ) {
-         Attr attr = root.getAttributeNode(x.nodeName);
-         if( attr != null )
-            a.add(attr);
-      }
-      else if( x.isText() ) {
-         NodeList lst = root.getChildNodes();
-         int size = lst.getLength();
-         for( int i = 0; i < size; i++ ) {
-            Node n = lst.item(i);
-            if( n.getNodeType() == Node.TEXT_NODE ) {
-               a.add((Text)n);
-            }
-         }
-      }
-      else if( x.index <= 0 ) {
-         ArrayList<Element> es = XmlUtil.getElements(root, x.nodeName);
-         if( es != null )
-            a.addAll(es);
-      }
-      else { // indexed
-         int index = x.index - 1;
-         ArrayList<Element> es = XmlUtil.getElements(root, x.nodeName);
-         if( es != null && index < es.size() )
-            a.add(es.get(index));
+      for( int i = 0; i < nodes.getLength(); i++ ) {
+         a.add(nodes.item(i));
       }
       return a;
    }
-   
-   private static ArrayList<XNode> parseXPath( String xpath ) {
-      if( xpath == null || xpath.length() <= 0 )
-         throw new IllegalArgumentException("Null or empty xpath!");
-      ArrayList<XNode> a = new ArrayList<XNode>();
-      String[] nodes = xpath.split("/");
-      for( int i = 0; i < nodes.length; i++ ) {
-         String n = nodes[i];
-         if( i + 1 == nodes.length && n.contains("@") ) {
-            if( n.startsWith("@") ) {
-               XNode xn = new XNode(n);
-               a.add(xn);
-            }
-            else {
-               String[] ns = n.split("@");
-               if( ns.length != 2 )
-                  throw new IllegalArgumentException("Invalid xpath '" + xpath + "', cannot contain more than one @");
-               XNode xn = new XNode(ns[0]);
-               a.add(xn);
-               XNode an = new XNode("@" + ns[1]);
-               a.add(an);
-            }
-         }
-         else {
-            XNode xn = new XNode(n);
-            a.add(xn);
-         }
-      }
-      return a;
+
+   /**
+    * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
+    * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
+    * 
+    * @param node The node relative to which the evaluation of the rule takes place.
+    * @param rule The rule to evaluate.
+    * @return The string result of the evaluation.
+    * @throws RuntimeException If the rule is invalid, or its evaluation fails for any reason.
+    */
+   public static String getString( Node node, String rule ) {
+      return getString(node, getRule(rule));
    }
 
    /**
@@ -209,6 +145,19 @@ public class XslUtil {
          throw new MdmiException(ex, err);
       }
       return value;
+   }
+
+   /**
+    * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
+    * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
+    * 
+    * @param node The node relative to which the evaluation of the rule takes place.
+    * @param rule The rule to evaluate.
+    * @return The Node result of the evaluation.
+    * @throws RuntimeException If the rule is invalid, or its evaluation fails for any reason.
+    */
+   public static Node getNode( Node node, String rule ) {
+      return getNode(node, getRule(rule));
    }
 
    /**
@@ -269,6 +218,19 @@ public class XslUtil {
     * @return The NodeList result of the evaluation.
     * @throws RuntimeException If the rule is invalid, or its evaluation fails for any reason.
     */
+   public static NodeList getNodeList( Node node, String rule ) {
+      return getNodeList(node, getRule(rule));
+   }
+
+   /**
+    * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
+    * nodes, like <code>node1/node2</code>.
+    * 
+    * @param node The node relative to which the evaluation of the rule takes place.
+    * @param rule The rule to evaluate.
+    * @return The NodeList result of the evaluation.
+    * @throws RuntimeException If the rule is invalid, or its evaluation fails for any reason.
+    */
    public static NodeList getNodeList( Node node, XPathExpression rule ) {
       NodeList value = null;
       try {
@@ -281,17 +243,23 @@ public class XslUtil {
       return value;
    }
 
+   private static XPathExpression getRule( String rule ) {
+      return getRule(rule, null);
+   }
+
    private static XPathExpression getRule( String rule, NamespaceContext context ) {
-      XPathExpression r = null;
-      XPath xpath = XPATH_FACTORY.newXPath();
-      if( context != null )
-         xpath.setNamespaceContext(context);
-      try {
-         r = xpath.compile(rule);
-      }
-      catch( Exception ex ) {
-         String err = "XslUtil.getRule(): Error compiling xpath expression '" + rule + "'";
-         throw new MdmiException(ex, err);
+      XPathExpression r = CACHE.getExpression(rule);
+      if( r == null ) {
+         XPath xpath = XPATH_FACTORY.newXPath();
+         if( context != null )
+            xpath.setNamespaceContext(context);
+         try {
+            r = xpath.compile(rule);
+         }
+         catch( Exception ex ) {
+            String err = "XslUtil.getRule(): Error compiling xpath expression '" + rule + "'";
+            throw new MdmiException(ex, err);
+         }
       }
       return r;
    }
@@ -311,43 +279,73 @@ public class XslUtil {
       }
       return sb.toString();
    }
-   
-   private static class XNode {
-      String nodeName;
-      int index = 0; // indexes are 1 based
-      boolean isAttr;
-      
-      XNode( String s ) {
-         if( s == null || s.length() <= 0 )
-            throw new IllegalArgumentException("Null or empty node name!");
-         if( s.startsWith("@") ) {
-            nodeName = s.substring(1);
-            isAttr = true;
+
+   private static class XC {
+      String          rule;
+      XPathExpression expression;
+      Date            lastUsed;
+   }
+
+   private static class XCache {
+      private final ArrayList<XC>            m_cache         = new ArrayList<XC>();
+      private final HashMap<String, Integer> m_ruleNameIndex = new HashMap<String, Integer>();
+      private final TreeMap<Date, Integer>   m_lastUsedIndex = new TreeMap<Date, Integer>();
+      private final Object                   lock            = new Object();
+      private int                            maxSize         = 0x4000;
+
+      XPathExpression getExpression( String rule ) {
+         synchronized( lock ) {
+            Integer i = m_ruleNameIndex.get(rule);
+            if( i == null )
+               return null;
+            XC xc = m_cache.get(i.intValue());
+            xc.lastUsed = new Date();
+            return xc.expression;
          }
-         else if( s.contains("[") ) {
-            int i = s.indexOf('[');
-            try {
-               int j = s.indexOf(']');
-               index = Integer.valueOf(s.substring(i + 1, j));
+      }
+
+      void addExpression( String rule, XPathExpression expression ) {
+         synchronized( lock ) {
+            Integer i = m_ruleNameIndex.get(rule);
+            if( i != null ) {
+               XC xc = m_cache.get(i.intValue());
+               xc.expression = expression;
+               xc.lastUsed = new Date();
+               return;
             }
-            catch( Exception ex ) {
-               throw new RuntimeException("Invalid indexed node " + s, ex);
-            }
-            if( index <= 0 )
-               throw new RuntimeException("Invalid index for node " + s + ", index must be greater than 0!");
-            nodeName = s.substring(0, i);
          }
-         else
-            nodeName = s;
-      }
-      
-      boolean isText() {
-         return "text()".equals(nodeName);
-      }
-      
-      @Override
-      public String toString() {
-         return index <= 0 ? (isAttr ? "@" + nodeName : nodeName) : nodeName + "[" + index + "]";
+
+         if( m_cache.size() < maxSize ) {
+            // still below cache limit
+            XC xc = new XC();
+            xc.rule = rule;
+            xc.expression = expression;
+            xc.lastUsed = new Date();
+            synchronized( lock ) {
+               Integer i = m_cache.size();
+               m_cache.add(xc);
+               m_ruleNameIndex.put(xc.rule, i);
+               m_lastUsedIndex.put(xc.lastUsed, i);
+            }
+         }
+         else {
+            // need to remove the oldest one from the cache
+            synchronized( lock ) {
+               NavigableMap.Entry<Date, Integer> last = m_lastUsedIndex.lastEntry();
+               Integer pos = last.getValue();
+               XC xcOld = m_cache.get(pos);
+               m_ruleNameIndex.remove(xcOld.rule);
+               m_cache.remove(pos);
+
+               XC xc = new XC();
+               xc.rule = rule;
+               xc.expression = expression;
+               xc.lastUsed = new Date();
+               m_cache.set(pos, xc);
+               m_ruleNameIndex.put(xc.rule, pos);
+               m_lastUsedIndex.put(xc.lastUsed, pos);
+            }
+         }
       }
    }
 } // XslUtil
