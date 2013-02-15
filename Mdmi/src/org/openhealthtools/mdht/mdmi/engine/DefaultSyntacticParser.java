@@ -27,7 +27,7 @@ import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.util.*;
 
 public class DefaultSyntacticParser implements ISyntacticParser {
-   protected static final String DEFAULT_NS = "DEFAULT_NS"; 
+   protected static final String DEFAULT_NS = "DEFAULT_NS";
    protected NamespaceContext context;
    
    @Override
@@ -140,7 +140,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
             if( xpath == null )
                throw new MdmiException("Invalid empty xpath for leaf node {0}", getNodePath(node));
             LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)node;
-            ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath);
+            ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
             int actualCount = xmlNodes.size();
             if( actualCount < leaf.getMinOccurs() )
                throw new MdmiException("Invalid cardinality for leaf node {0}, expected {1}, found {2}",
@@ -164,7 +164,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
                parseBag(y, root);
             }
             else {
-               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath);
+               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
                int actualCount = xmlNodes.size();
                if( actualCount < bag.getMinOccurs() )
                   throw new MdmiException("Invalid cardinality for bag node {0}, expected {1}, found {2}",
@@ -189,7 +189,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
                parseChoice(y, root);
             }
             else {
-               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath);
+               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
                int actualCount = xmlNodes.size();
                if( actualCount < choice.getMinOccurs() )
                   throw new MdmiException("Invalid cardinality for choice node {0}, expected {1}, found{2}",
@@ -224,7 +224,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
             if( xpath == null )
                throw new MdmiException("Invalid empty xpath for leaf node {0}", getNodePath(node));
             LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)node;
-            ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath);
+            ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
             int actualCount = xmlNodes.size();
             if( actualCount < leaf.getMinOccurs() ) // not found, continue
                continue; // not found
@@ -245,7 +245,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
                parseBag(y, root);
             }
             else {
-               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath);
+               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
                int actualCount = xmlNodes.size();
                if( actualCount < bag.getMinOccurs() )
                   continue; // not found
@@ -270,7 +270,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
                parseChoice(y, root);
             }
             else {
-               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath);
+               ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
                int actualCount = xmlNodes.size();
                if( actualCount < choice.getMinOccurs() )
                   continue; // not found
@@ -318,7 +318,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          for( int j = 0; j < ynodes.size(); j++ ) {
             if( node instanceof LeafSyntaxTranslator ) {
                YLeaf y = (YLeaf)ynodes.get(j);
-               setValue(root, xpath, y, j);
+                setValue(root, xpath, y, j);
             }
             else if( node instanceof Bag ) {
                YBag y = (YBag)ynodes.get(j);
@@ -345,7 +345,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
       for( int j = 0; j < ynodes.size(); j++ ) {
          if( node instanceof LeafSyntaxTranslator ) {
             YLeaf y = (YLeaf)ynodes.get(j);
-            setValue(root, xpath, y, j);
+             setValue(root, xpath, y, j);
          }
          else if( node instanceof Bag ) {
             YBag y = (YBag)ynodes.get(j);
@@ -367,7 +367,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
    private void serializeLeaf( YLeaf yroot, Element root ) {
       LeafSyntaxTranslator rootLeaf = yroot.getLeaf();
       String xpath = location(rootLeaf);
-      setValue(root, xpath, yroot, 0);
+       setValue(root, xpath, yroot, 0);
    }
    
    /**
@@ -382,6 +382,18 @@ public class DefaultSyntacticParser implements ISyntacticParser {
       if( xpath == null || xpath.length() <= 0 )
          serializeBag(ybag, root); // mapped to content
 
+       if (hasPredicate(xpath)) {
+           ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
+           if (yindex < xmlNodes.size()) {
+               org.w3c.dom.Node xmlNode = xmlNodes.get(yindex);
+
+               if (xmlNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                   serializeBag(ybag, (Element) xmlNode);
+               }
+           }
+           return;
+       }
+
       int pos = xpath.indexOf('/');
       if( pos == 0 )
          throw new MdmiException("Invalid xpath expression {0}, absolute paths not supported!", xpath);
@@ -391,7 +403,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
       if( pos < 0 ) {
          int p = xpath.indexOf('[');
          Element e = null;
-         if( 0 <= p ) {
+         if( isIndexed(xpath)) {
             String nodeName = xpath.substring(0, p);
             p = Integer.valueOf(xpath.substring(p + 1, xpath.indexOf(']'))) - 1; // index is one-based
             ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
@@ -423,7 +435,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          xpath = xpath.substring(pos + 1);
          int p = nodeNameInd.indexOf('[');
          Element e = null;
-         if( 0 <= p ) {
+         if( isIndexed(nodeNameInd) ) {
             String nodeName = nodeNameInd.substring(0, p);
             p = Integer.valueOf(nodeNameInd.substring(p + 1, nodeNameInd.indexOf(']'))) - 1; // index is one-based
             ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
@@ -442,8 +454,25 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          setBag(e, xpath, ybag, yindex);
       }
    }
-   
-   /**
+
+    private boolean isIndexed(String source) {
+        int bracketPos = source.indexOf('[');
+        if (bracketPos >= 0) {
+            try {
+                Integer.valueOf(source.substring(bracketPos + 1, source.lastIndexOf(']')));
+            } catch (NumberFormatException ex) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean hasPredicate(String xpath) {
+        return xpath.indexOf('[') >= 0 && !isIndexed(xpath);
+    }
+
+    /**
     * Set the values from the given YChoice into the specified xpath relative to the given node.
     * 
     * @param root The root XML element relative to which we serialize.
@@ -550,22 +579,21 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          return; // <-- NOTE
       }
 
-      int sp = xpath.indexOf('/');
-      if( sp == 0 )
+       int separatorPosition = xpath.indexOf("/");
+       if (separatorPosition == 0)
          throw new MdmiException("Invalid xpath expression {0}, absolute paths not supported!", xpath);
-      if( xpath.length() <= sp + 1 )
+       if (xpath.length() <= separatorPosition + 1)
          throw new MdmiException("Invalid xpath expression {0}, cannot end in'/' !", xpath);
 
-      int sa = xpath.indexOf('@');
-      if( sp < 0 && 0 < sa ) {
-         // it is elementName@attrName 
-         String nodeName = xpath.substring(0, sa);
-         xpath = xpath.substring(sa + 1);
-         int ps = nodeName.indexOf('[');
-         int pe = nodeName.indexOf(']');
-         boolean isIndexed = (0 < ps);
+       int attributePosition = xpath.indexOf("@");
+       if (separatorPosition < 0 && 0 < attributePosition) {
+           // it is elementName@attrName
+           String nodeName = xpath.substring(0, attributePosition - 1);
+           xpath = xpath.substring(attributePosition + 1, xpath.length() - 1);
+           int ps = nodeName.indexOf("[");
+           int pe = nodeName.indexOf("]");
          Element e = null;
-         if( isIndexed ) {
+            if (isIndexed(nodeName)) {
             // nodeName = 'element[2]'
             int index = Integer.valueOf(nodeName.substring(ps + 1, pe));
             nodeName = nodeName.substring(0, ps);
@@ -592,13 +620,13 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          return; // <-- NOTE
       }
       
-      if( sp < 0 && sa < 0 ) {
-         // it is 'elementName' 
-         int ps = xpath.indexOf('[');
-         int pe = xpath.indexOf(']');
-         boolean isIndexed = (0 < ps);
-         Element e = null;
-         if( isIndexed ) {
+
+        if (separatorPosition < 0 && attributePosition < 0) {
+            // it is 'elementName'
+            int ps = xpath.indexOf("[");
+            int pe = xpath.indexOf("]");
+            Element e = null;
+            if (isIndexed(xpath)) {
             // nodeName = 'element[2]'
             int index = Integer.valueOf(xpath.substring(ps + 1, pe));
             xpath = xpath.substring(0, ps);
@@ -624,16 +652,15 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          e.setTextContent(value);
          return; // <-- NOTE
       }
-      
-      String nodeName = xpath.substring(0, sp);
-      xpath = xpath.substring(sp + 1);
-      boolean isLast = (xpath.indexOf('/') < 0);
-      boolean isAttr = (0 <= xpath.indexOf('@'));
-      int ps = nodeName.indexOf('[');
-      int pe = nodeName.indexOf(']');
-      boolean isIndexed = (0 < ps);
-      Element e = null;
-      if( isIndexed ) {
+
+       String nodeName = xpath.substring(0, separatorPosition);
+       xpath = xpath.substring(separatorPosition + 1);
+       boolean isLast = (xpath.indexOf("/") < 0);
+       boolean isAttr = (0 <= xpath.indexOf("@"));
+       int ps = nodeName.indexOf("[");
+       int pe = nodeName.indexOf("]");
+       Element e = null;
+       if (isIndexed(nodeName)) {
          // nodeName = 'element[2]'
          int index = Integer.valueOf(nodeName.substring(ps + 1, pe));
          nodeName = nodeName.substring(0, ps);

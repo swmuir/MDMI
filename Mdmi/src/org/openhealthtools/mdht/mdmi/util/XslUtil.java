@@ -77,12 +77,12 @@ public class XslUtil {
     * @param xpath The actual XPath expression.
     * @return The list of nodes that match (if any). Will never be null.
     */
-   public static ArrayList<Node> getNodes( Element root, String xpath ) {
+   public static ArrayList<Node> getNodes( Element root, String xpath, NamespaceContext context) {
       if( root == null )
          throw new IllegalArgumentException("The root element may not be null!");
       if( xpath == null || xpath.length() <= 0 )
          throw new IllegalArgumentException("The xpath cannot be null or empty!");
-      NodeList nodes = getNodeList(root, xpath);
+      NodeList nodes = getNodeList(root, xpath, context);
       ArrayList<Node> a = new ArrayList<Node>();
       for( int i = 0; i < nodes.getLength(); i++ ) {
          a.add(nodes.item(i));
@@ -163,7 +163,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -212,7 +212,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The NodeList result of the evaluation.
@@ -260,6 +260,8 @@ public class XslUtil {
             String err = "XslUtil.getRule(): Error compiling xpath expression '" + rule + "'";
             throw new MdmiException(ex, err);
          }
+
+           CACHE.addExpression(rule, r);
       }
       return r;
    }
