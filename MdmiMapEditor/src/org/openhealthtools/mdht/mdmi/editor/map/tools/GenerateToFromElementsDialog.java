@@ -29,6 +29,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -84,6 +85,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 	private ButtonGroup  m_directionGroup = new ButtonGroup();
 	
+	private JCheckBox m_filterByDatatypeButton   = new JCheckBox(s_res.getString("GenerateToFromElementsDialog.filterByDataType"));
+
+	
 	private JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
 	private JTextField  m_name = new JTextField();
 
@@ -109,8 +113,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private void buildUI() {
 		// 
 		//                             
-		// Direction:            [ ] Iso   ( ) From   ( ) To
-		// Business Element Ref: [__________________|v]
+		// Direction:            ( ) Iso   ( ) From   ( ) To
+		// Business Element:     [x] Filter by Data Type
+		//                       [_______________________|v]
 		// Name:                 [                    ]
 		//  -- Semantic Element ------------------------
 		// | Data Type:         text                    |
@@ -127,6 +132,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_isoButton.setSelected(true);
 		m_fromBERButton.setSelected(false);
 		m_toBERButton.setSelected(false);
+		m_filterByDatatypeButton.setSelected(true);	// start out checked 
 		m_prevButton = m_isoButton;
 		
 		m_directionGroup.add(m_isoButton);
@@ -144,6 +150,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		JPanel mainPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.insets = Standards.getInsets();
+		// add extra bottom insets
+		gbc.insets.bottom = 2*Standards.BOTTOM_INSET;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.WEST;
@@ -153,30 +161,50 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		// Direction 
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.NONE;
+		gbc.insets.right = 0;	// don't need insets since the next component has FlowLayout padding
 		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.direction")), gbc);
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets.left = 0;
-		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		gbc.insets.right = Standards.RIGHT_INSET;
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, Standards.LEFT_INSET, 0));
 		buttons.add(m_isoButton);
 		buttons.add(m_fromBERButton);
 		buttons.add(m_toBERButton);
 		mainPanel.add(buttons, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
-
-		// Business Element
+		
+		// Filter by BE
 		gbc.gridx = 0;
 		gbc.gridy++;
 		gbc.weightx = 0;
+		gbc.insets.bottom = 0;	// make this group closer to the next (BE LIst)
 		gbc.fill = GridBagConstraints.NONE;
-		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.businessElement")), gbc);
+		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.businessElementLabel")), gbc);
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets.left = 0;
+		mainPanel.add(m_filterByDatatypeButton, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
+		gbc.insets.bottom = 2*Standards.BOTTOM_INSET;
+		
+
+		// Business Element List
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		mainPanel.add(new JLabel(" "), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.insets.top = 0;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
 		mainPanel.add(m_businessElementSelector, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
+		gbc.insets.top = Standards.TOP_INSET;
 		
 		
 		// Name
@@ -229,6 +257,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_isoButton.addActionListener(m_directionListener);
 		m_fromBERButton.addActionListener(m_directionListener);
 		m_toBERButton.addActionListener(m_directionListener);
+		m_filterByDatatypeButton.addActionListener(m_directionListener);
 
 		m_SEfieldNameSelector.addActionListener(m_fieldNameListener);
 		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
@@ -252,7 +281,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
 		for (MdmiBusinessElementReference bizElem : group.getDomainDictionary().getBusinessElements()) {
 			
-			if (m_isoButton.isSelected()) {
+			if (m_filterByDatatypeButton.isSelected()) {
 				// only add BERs with same datatype as SE
 				if (bizElem.getReferenceDatatype() == m_semanticElement.getDatatype()) {
 					m_businessElementSelector.addItem(bizElem);
@@ -322,6 +351,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_isoButton.removeActionListener(m_directionListener);
 		m_toBERButton.removeActionListener(m_directionListener);
 		m_fromBERButton.removeActionListener(m_directionListener);
+		m_filterByDatatypeButton.removeActionListener(m_directionListener);
 		m_BEfieldNameSelector.removeActionListener(m_fieldNameListener);
 		m_SEfieldNameSelector.removeActionListener(m_fieldNameListener);
 		
@@ -586,8 +616,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			m_beDatatype.setText(UNDEFINED_TYPE);
 		}
 
-		// fill fields (not for iso)
-		if (!m_isoButton.isSelected()) {
+		// fill fields (not for filtered)
+		if (!m_filterByDatatypeButton.isSelected()) {
 			populateFieldNames(m_BEfieldNameSelector, dataType, null);
 		}
 	}
@@ -678,13 +708,26 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			fillInName();
-			
+
+			Object source = e.getSource();
 			// if Iso button was checked or un-checked, we need to repopulate
-			if (e.getSource() == m_isoButton || m_prevButton == m_isoButton) {
+			if (source instanceof JRadioButton) {
+				
+				// disable/deselect filterByDatatypeButton if not ISO
+				m_filterByDatatypeButton.setEnabled(source == m_isoButton);
+				m_filterByDatatypeButton.setSelected(source == m_isoButton);
+					
+				if (source == m_isoButton || m_prevButton == m_isoButton) {
+					// filtering has changed, so repopulate
+					populateBusinessElements();
+				}
+				
+				m_prevButton = (JRadioButton) source;
+
+			} else if (source == m_filterByDatatypeButton) {
 				populateBusinessElements();
 			}
 			
-			m_prevButton = (JRadioButton) e.getSource();
 			setDirty(true);
 		}
 	}
