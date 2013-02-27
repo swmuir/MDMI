@@ -39,12 +39,14 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -876,37 +878,62 @@ public class MdmiModelTree extends JPanel {
 			Map<EditableObjectNode, List<EditableObjectNode>> affectedNodes) {
 
 		StringBuffer confirmMsg = new StringBuffer();
+		String openingLine = "";
+		String closingLine = "";
 
 		// show each affected node
 		if (affectedNodes.size() > 0) {
 			// There are one or more elements that have dependencies on the items
 			// you will be removing.
-			confirmMsg.append(s_res.getString("MdmiModelTree.deleteDependencies"));
+			openingLine = s_res.getString("MdmiModelTree.deleteDependencies");
 			int count = 1;
 			for (EditableObjectNode referenceNode : affectedNodes.keySet()) {
 				// #. Type_of_Object object_name
-				confirmMsg.append("\n ");
-				confirmMsg.append(MessageFormat.format(s_res
-						.getString("MdmiModelTree.dependencyFormat"),
+				String msg = MessageFormat.format(s_res.getString("MdmiModelTree.dependencyFormat"),
 						formatItemNumber(count++), referenceNode.getDisplayType(),
-						referenceNode.getDisplayName()));
+						referenceNode.getDisplayName());
+				confirmMsg.append(msg).append("\n");
 			}
-			confirmMsg.append("\n\n");
+			//confirmMsg.append("\n");
 		}
 
 		// Do you really want to delete this/these items?
 		if (deletedNodes.size() == 1) {
 			EditableObjectNode node = (EditableObjectNode) deletedNodes.get(0);
-			confirmMsg.append(MessageFormat.format(s_res
-					.getString("MdmiModelTree.deleteConfirmOne"), node
-					.getDisplayType(), node.getDisplayName()));
+			closingLine = MessageFormat.format(s_res.getString("MdmiModelTree.deleteConfirmOne"),
+					node.getDisplayType(), node.getDisplayName());
 
 		} else {
-			confirmMsg.append(s_res.getString("MdmiModelTree.deleteConfirmMulti"));
+			closingLine = s_res.getString("MdmiModelTree.deleteConfirmMulti");
 		}
 
 		String title = s_res.getString("MdmiModelTree.deleteTitle");
-		int confirm = JOptionPane.showConfirmDialog(this, confirmMsg.toString(),
+		// Wrap in scroll pane if too long
+		Object message;
+		if (affectedNodes.size() > 11) {
+			JPanel panel = new JPanel(new BorderLayout());
+			// opening line
+			panel.add(new JLabel(openingLine), BorderLayout.NORTH);
+			// scroll pane
+			JTextArea textArea = new JTextArea(11, 60);
+			textArea.setFont(panel.getFont());
+			textArea.setLineWrap(false);
+			textArea.setOpaque(false);
+			textArea.setEditable(false);
+			textArea.setText(confirmMsg.toString());
+			panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+			message = panel;
+			// closing line
+			panel.add(new JLabel(closingLine), BorderLayout.SOUTH);
+		} else {
+			StringBuffer buf = new StringBuffer();
+			buf.append(openingLine);
+			if (buf.length() > 0) buf.append("\n");
+			buf.append(confirmMsg);
+			buf.append(closingLine);
+			message = buf.toString();
+		}
+		int confirm = JOptionPane.showConfirmDialog(this, message,
 				title, JOptionPane.YES_NO_OPTION);
 		return confirm;
 	}
@@ -916,7 +943,7 @@ public class MdmiModelTree extends JPanel {
 		return String.format("% 3d.", number);
 	}
 
-	/** Move this node one postion up relative to its siblings */
+	/** Move this node one position up relative to its siblings */
 	public boolean moveUp(EditableObjectNode node) {
 		if (node.canMoveUp()) {
 			EditableObjectNode parentNode = (EditableObjectNode) node.getParent();
