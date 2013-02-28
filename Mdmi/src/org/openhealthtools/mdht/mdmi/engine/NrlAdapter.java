@@ -14,14 +14,17 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
-import java.io.*;
-import java.util.*;
-
 import net.sourceforge.nrl.parser.NRLError;
+import org.openhealthtools.mdht.mdmi.ElementValueSet;
+import org.openhealthtools.mdht.mdmi.IElementValue;
+import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
+import org.openhealthtools.mdht.mdmi.MdmiException;
+import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.util.JarClassLoader;
 
-import org.openhealthtools.mdht.mdmi.*;
-import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NrlAdapter implements IExpressionInterpreter {
    IExpressionInterpreter m_adapter = null;
@@ -43,6 +46,10 @@ public class NrlAdapter implements IExpressionInterpreter {
       try {
          File i = new File("NRL/nrl-interpreter.jar");
          File f = new File("nrl-adapter.jar");
+          if( !i.exists() || !f.exists() ) {
+              i = new File("./bin/NRL/nrl-interpreter.jar");
+              f = new File("./bin/nrl-adapter.jar");
+          }
          if( !i.exists() || !f.exists() ) {
             i = new File("../bin/NRL/nrl-interpreter.jar");
             f = new File("../bin/nrl-adapter.jar");
