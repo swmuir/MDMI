@@ -66,7 +66,7 @@ public class NrlAdapter implements IExpressionInterpreter {
          System.out.println(ex.getMessage());
       }
    }
-   
+
    public void initialize( ElementValueSet eset, XElementValue context, String name, XValue value ) {
       if( m_adapter != null )
          m_adapter.initialize(eset, context, name, value);

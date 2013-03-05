@@ -14,17 +14,20 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.testui;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.List;
-
-import javax.swing.*;
-
 import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.*;
+import org.openhealthtools.mdht.mdmi.util.FileUtil;
+import org.openhealthtools.mdht.mdmi.util.StringUtil;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.util.List;
 
 @SuppressWarnings( "serial" )
 public class FrmMain extends JFrame {
@@ -68,6 +71,7 @@ public class FrmMain extends JFrame {
 	private JLabel     lblMessage;
 	private JTextArea  txtSourceMessage;
 	private JTextArea  txtTargetMessage;
+    private JButton    btnSaveTransformationResult;
 	
 	private JLabel     lblElements;
 	private JList      lstElements;
@@ -215,6 +219,48 @@ public class FrmMain extends JFrame {
       }
    }
    
+    void onSaveTransformationResult() {
+        String lastDir = Main.properties().getProperty( "ui.user.lastDirs.lastDirectory" );
+        String lastSaveDir = Main.properties().getProperty("ui.user.lastDirs.lastSaveTransformationResult");
+        if ( lastSaveDir == null || lastSaveDir.length() <= 0 ){
+            if (!(lastDir == null || lastDir.length() <= 0)){
+                lastSaveDir = lastDir;
+            }
+        }
+        JFileChooser jFileChooser = new JFileChooser(lastSaveDir);
+        jFileChooser.setDialogTitle("Save transformation result");
+        if (jFileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File saveFile = null;
+        String saveFileName = null;
+        try {
+            saveFile = jFileChooser.getSelectedFile();
+            saveFileName = saveFile.getName();
+            if (getExtension(saveFileName)== null) {
+                saveFile = new File(saveFile.getAbsolutePath()+".xml");
+            }
+            if (!saveFile.exists()) {
+                saveFile.createNewFile();
+            }
+            FileWriter fw = new FileWriter(saveFile.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(txtTargetMessage.getText());
+            bw.close();
+        } catch (IOException ex) {
+            DlgShowException.doModal(this, ex, String.format("Save %s fails", saveFileName));
+        }
+        if (saveFile.exists()) {
+            Main.properties().setProperty("ui.user.lastDirs.lastSaveTransformationResult", saveFile.getAbsolutePath());
+        }
+    }
+    
+    String getExtension(String fileName){
+        int index = fileName.lastIndexOf('.');
+        if (index <= 0) return  null;
+        return   fileName.substring(index);
+    }
+
    void setSourceMap( String s ) {
    	txtSourceMap.setText( s );
    	cmbSourceMdl.removeAllItems();
@@ -495,6 +541,16 @@ public class FrmMain extends JFrame {
       txtTargetMessage.setFont( new Font("monospaced", 0, 11) );
       JScrollPane scrTargetMessage = new JScrollPane( txtTargetMessage ); 
    	
+      btnSaveTransformationResult = new JButton("Save");
+      btnSaveTransformationResult.setToolTipText("Save transformation result");
+      btnSaveTransformationResult.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onSaveTransformationResult();
+            }
+      });
+
+
       lstElements = new JList();
       lstElements.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
       lstElements.setCellRenderer( new ElementsRenderer() );
@@ -513,27 +569,28 @@ public class FrmMain extends JFrame {
       pnlSouth = new PnlLog();
    	
       JPanel pnlCenter = new JPanel( new GridBagLayout() );
-      pnlCenter.add( lblSource       , new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( lblTarget       , new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( lblMap          , new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( txtSourceMap    , new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( btnSourceMap    , new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( txtTargetMap    , new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( btnTargetMap    , new GridBagConstraints(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( lblMdl          , new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( cmbSourceMdl    , new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( cmbTargetMdl    , new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( lblMsg          , new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( txtSourceMsg    , new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( btnSourceMsg    , new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( txtTargetMsg    , new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( btnTargetMsg    , new GridBagConstraints(5, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( lblMessage      , new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( scrSourceMessage, new GridBagConstraints(1, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( btnTransfer     , new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( scrTargetMessage, new GridBagConstraints(4, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( lblElements     , new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
-      pnlCenter.add( scrElements     , new GridBagConstraints(2, 6, 1, 2, 0.2, 0.2, GridBagConstraints.WEST  , GridBagConstraints.BOTH      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( lblSource                              , new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( lblTarget                              , new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( lblMap                                 , new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( txtSourceMap                           , new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( btnSourceMap                           , new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( txtTargetMap                           , new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( btnTargetMap                           , new GridBagConstraints(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( lblMdl                                 , new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( cmbSourceMdl                           , new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( cmbTargetMdl                           , new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( lblMsg                                 , new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( txtSourceMsg                           , new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( btnSourceMsg                           , new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( txtTargetMsg                           , new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( btnTargetMsg                           , new GridBagConstraints(5, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( lblMessage                             , new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( scrSourceMessage                       , new GridBagConstraints(1, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( btnTransfer                            , new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( scrTargetMessage                       , new GridBagConstraints(4, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add(btnSaveTransformationResult             , new GridBagConstraints(5, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add( lblElements                            , new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( scrElements                            , new GridBagConstraints(2, 6, 1, 2, 0.2, 0.2, GridBagConstraints.WEST  , GridBagConstraints.BOTH      , new Insets(5, 5, 5, 5), 0, 0) );
    	
    	this.addWindowListener( new WindowAdapter() {
          public void windowClosing(WindowEvent e) {
