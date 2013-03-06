@@ -50,8 +50,9 @@ public class FrmMain extends JFrame {
    private JLabel     lblSource;
    private JLabel     lblTarget;
    private JLabel     lblMap;
-	private JTextField txtSourceMap;
-	private JButton    btnSourceMap;
+   private JTextField txtSourceMap;
+   private JButton    btnSourceMap;
+   private JButton    btnUpdateMap;
 
 	private JTextField txtTargetMap;
 	private JButton    btnTargetMap;
@@ -164,6 +165,13 @@ public class FrmMain extends JFrame {
          setTargetMap( lastFileU );
       }
    }
+
+
+    void onUpdateMaps() {
+        //sorry about it code, but i don't want to change setSourceMap and setTargetMap functions:)
+        setSourceMap( txtSourceMap.getText() );
+        setTargetMap( txtTargetMap.getText() );
+    }
 
    void onSelSourceMsg() {
       String lastDir = Main.properties().getProperty( "ui.user.lastDirs.lastDirectory" );
@@ -458,17 +466,19 @@ public class FrmMain extends JFrame {
 //         System.out.println( "Attributes: " + ua.getAttributes(true).toString() );
          
          pnlSouth.addText("Starting transfer...");
+         long start = System.currentTimeMillis();
          MdmiTransferInfo ti = new MdmiTransferInfo( sMod, sMsg, tMod, tMsg, elements );
          ti.useDictionary = true;
          Mdmi.INSTANCE.executeTransfer( ti );
          txtTargetMessage.setText( StringUtil.getString(tMsg.getData()) );
-         pnlSouth.addText("Transfer completed successfully...");
+         long finish = System.currentTimeMillis();
+         pnlSouth.addText(String.format("Transfer completed successfully. It takes %.3f sec.", (finish - start) / 1000f));
 		}
 		catch( Exception ex ) {
 			DlgShowException.doModal( this, ex, "FrmMain.setSourceMsg() fails" );
 		}
    }
-   
+
    private void initUI() {
       lblSource = new JLabel( "SOURCE" );
       lblTarget = new JLabel( "TARGET" );
@@ -485,6 +495,14 @@ public class FrmMain extends JFrame {
             onSelSourceMap();
          }
       } );
+
+       btnUpdateMap = new JButton( "Update Maps" );
+       btnUpdateMap.setToolTipText( "Update source and target maps to open." );
+       btnUpdateMap.addActionListener( new java.awt.event.ActionListener() {
+           public void actionPerformed( ActionEvent e ) {
+               onUpdateMaps();
+           }
+       } );
 
       txtTargetMap = new JTextField();
       txtTargetMap.setColumns( 48 );
@@ -578,6 +596,7 @@ public class FrmMain extends JFrame {
       pnlCenter.add( btnTargetMap                           , new GridBagConstraints(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
       pnlCenter.add( lblMdl                                 , new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
       pnlCenter.add( cmbSourceMdl                           , new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
+      pnlCenter.add( btnUpdateMap                           , new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
       pnlCenter.add( cmbTargetMdl                           , new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
       pnlCenter.add( lblMsg                                 , new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE      , new Insets(5, 5, 5, 5), 0, 0) );
       pnlCenter.add( txtSourceMsg                           , new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0) );
