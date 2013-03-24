@@ -65,6 +65,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities.DataDictionaryTransferHandler;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.BusinessElementReferenceNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
@@ -162,6 +163,9 @@ public class TableViewer extends PrintableView  {
 		m_table = new JTable(m_tableModel);
 		m_table.setColumnSelectionAllowed(true);	// allow single item selection
 
+		// allow dropping from another application
+		m_table.setDragEnabled(true);
+		m_table.setTransferHandler(new DataDictionaryTransferHandler());
 		
 		int rowHeight = m_table.getRowHeight();
 		m_table.setRowHeight(18);	// a bit bigger since we'll use 16x16 icons
@@ -773,7 +777,7 @@ public class TableViewer extends PrintableView  {
 		Collections.sort(elements, new Comparators.BusinessElementReferenceComparator());
 
 		// first item is blank
-		comboBox.removeAll();
+		comboBox.removeAllItems();
 		comboBox.addItem(AdvancedSelectionField.BLANK_ENTRY);
 		for (MdmiBusinessElementReference element : elements) {
 			comboBox.addItem(element);

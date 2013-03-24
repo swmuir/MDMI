@@ -14,32 +14,58 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tools;
 
+import java.awt.Frame;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.TransferHandler;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.xml.stream.XMLStreamException;
+
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
+import org.openhealthtools.mdht.mdmi.editor.common.components.ExceptionDetailsDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.MapEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.console.LinkedObject;
-import org.openhealthtools.mdht.mdmi.editor.map.tree.*;
-import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.DomainDictionaryReferenceNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.MessageGroupNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.MessageSyntaxModelNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.NewObjectInfo;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode;
+import org.openhealthtools.mdht.mdmi.model.DTComplex;
+import org.openhealthtools.mdht.mdmi.model.DTSPrimitive;
+import org.openhealthtools.mdht.mdmi.model.Field;
+import org.openhealthtools.mdht.mdmi.model.MapBuilderCSV;
+import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
+import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
+import org.openhealthtools.mdht.mdmi.model.MdmiDomainDictionaryReference;
+import org.openhealthtools.mdht.mdmi.model.MessageGroup;
+import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
+import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.syntax.XSDReader;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.reader.MapBuilderXMIDirect;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.writer.XMIWriterDirect;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.xml.stream.XMLStreamException;
-import java.awt.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.List;
 
 
 /**
@@ -333,6 +359,21 @@ public class ModelIOUtilities {
 
         return null;
     }
+    
+    /** Prompt the user for a file and read it */
+    public static ArrayList<MessageGroup> promptAndReadModel() {
+    	ModelValidationResults results = new ModelValidationResults();
+        ArrayList<MessageGroup> newGroups = new ArrayList<MessageGroup>();
+
+        String fileName = readModel(newGroups, results);
+        
+        if (fileName != null) {
+            // return groups
+            return newGroups;
+        }
+        
+        return null;
+    }
 
 
     /**
@@ -344,12 +385,9 @@ public class ModelIOUtilities {
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
         try {
-            ModelValidationResults results = new ModelValidationResults();
-            List<MessageGroup> newGroups = new ArrayList<MessageGroup>();
+            List<MessageGroup> newGroups = promptAndReadModel();
 
-            String fileName = readModel(newGroups, results);
-
-            if (fileName != null) {
+            if (newGroups != null) {
                 // update tree (warn if datatype is already in tree)
                 addImportedDatatypesToTree(newGroups, true, true);
 
@@ -460,7 +498,7 @@ public class ModelIOUtilities {
      *
      * @param datatype
      * @param groupNode
-     * @param copyIfExists If an object already exists, copy the data from the datatypes
+     * @param copyIfExists If an object already exists, copy the data from the datatype
      */
     private static void addImportedDatatypeFields(DTComplex datatype, MessageGroupNode groupNode, boolean copyIfExists) {
 		MdmiDatatype found;
@@ -493,12 +531,9 @@ public class ModelIOUtilities {
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
         try {
-            ModelValidationResults results = new ModelValidationResults();
-            List<MessageGroup> newGroups = new ArrayList<MessageGroup>();
+            List<MessageGroup> newGroups = promptAndReadModel();
 
-            String fileName = readModel(newGroups, results);
-
-            if (fileName != null) {
+            if (newGroups != null) {
                 // update tree - overwrite and warn if reference exists
                 addImportedBusinessElementRefToTree(newGroups, true, true);
             }
@@ -578,7 +613,7 @@ public class ModelIOUtilities {
      * New businessElementReferences will be marked as "imported".
      * Datatypes will be added if necessary
      */
-    private static void addImportedBusinessElementRefToTree(List<MessageGroup> newGroups, boolean copyIfExists, boolean warnIfExists) {
+    public static void addImportedBusinessElementRefToTree(List<MessageGroup> newGroups, boolean copyIfExists, boolean warnIfExists) {
         MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
 
         for (MessageGroup newGroup : newGroups) {
@@ -655,6 +690,60 @@ public class ModelIOUtilities {
             }
         }
         return null;
+    }
+    
+    public static class DataDictionaryTransferHandler extends TransferHandler {
+
+		@Override
+		public boolean canImport(TransferHandler.TransferSupport info) {
+			// we only import Strings
+			if (!info.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+				return false;
+			}
+			return true;
+		}
+
+		@Override
+		public boolean importData(TransferHandler.TransferSupport info) {
+			if (!info.isDrop()) {
+				return false;
+			}
+
+			// Check for String flavor
+			if (!info.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+				return false;
+			}
+
+			// read it
+		    Transferable t = info.getTransferable();
+		    String data;
+		    try {
+				data = (String) t.getTransferData(DataFlavor.stringFlavor);
+				
+				// try to import it
+				ByteArrayInputStream is = new ByteArrayInputStream(data.getBytes());
+				ModelValidationResults results = new ModelValidationResults();
+
+	            List<MessageGroup> newGroups = MapBuilderXMIDirect.build(is, results);
+	            if (newGroups != null) {
+	                // update tree - overwrite and warn if reference exists
+	                addImportedBusinessElementRefToTree(newGroups, true, true);
+	            }
+				
+				
+			} catch (Exception e) {
+				ExceptionDetailsDialog.showException(SystemContext.getApplicationFrame(), e);
+			}
+
+
+			return true;
+		}
+
+		@Override
+		public int getSourceActions(JComponent c) {
+			return COPY;
+		}
+
     }
 
     /**

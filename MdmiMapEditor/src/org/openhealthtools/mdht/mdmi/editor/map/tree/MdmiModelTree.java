@@ -65,6 +65,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.console.LinkedObject;
 import org.openhealthtools.mdht.mdmi.editor.map.console.ReferenceLink;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities.DataDictionaryTransferHandler;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 
 /** Component presenting a tree of MessageGroup components */
@@ -115,6 +116,10 @@ public class MdmiModelTree extends JPanel {
 		m_messageElementsTree.setRootVisible(false);
 		m_messageElementsTree.getSelectionModel().setSelectionMode(
 				TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+		
+
+		m_messageElementsTree.setDragEnabled(true);
+		m_messageElementsTree.setTransferHandler(new DataDictionaryTransferHandler());
 
 		m_treeCellRenderer = new EditableObjectNodeRendererPlus();
 		m_mouseListener = new MouseClickListener();
