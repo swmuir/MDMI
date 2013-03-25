@@ -22,10 +22,7 @@ import org.openhealthtools.mdht.mdmi.util.StringUtil;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.List;
 
@@ -251,8 +248,9 @@ public class FrmMain extends JFrame {
             if (!saveFile.exists()) {
                 saveFile.createNewFile();
             }
-            FileWriter fw = new FileWriter(saveFile.getAbsoluteFile());
-            BufferedWriter bw = new BufferedWriter(fw);
+            OutputStream fw = new FileOutputStream(saveFile.getAbsoluteFile());
+            OutputStreamWriter writer = new OutputStreamWriter(fw, "UTF-8");
+            BufferedWriter bw = new BufferedWriter(writer);
             bw.write(txtTargetMessage.getText());
             bw.close();
         } catch (IOException ex) {
