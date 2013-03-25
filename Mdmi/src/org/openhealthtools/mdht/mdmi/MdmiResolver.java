@@ -235,7 +235,7 @@ public class MdmiResolver {
                syntacticSvcProvider = DEFAULT_SYN_PARSER;
             }
             else {
-               File fn = mapInfo.synSvcJarName == null ? null : Mdmi.INSTANCE.fileFromRelPath(mapInfo.synSvcJarName);
+               File fn = mapInfo.synSvcJarName == null ? null : new File(mapInfo.synSvcJarName);
                try {
                   syntacticSvcProvider = Util.getInstance(cn, fn, null, null);
                }
@@ -254,7 +254,7 @@ public class MdmiResolver {
                semanticSvcProvider = DEFAULT_SEM_PARSER;
             }
             else {
-               File fn = mapInfo.semSvcJarName == null ? null : Mdmi.INSTANCE.fileFromRelPath(mapInfo.semSvcJarName);
+               File fn = mapInfo.semSvcJarName == null ? null : new File(mapInfo.semSvcJarName);
                try {
                   semanticSvcProvider = Util.getInstance(cn, fn, null, null);
                }

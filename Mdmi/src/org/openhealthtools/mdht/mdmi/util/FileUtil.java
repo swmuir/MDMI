@@ -239,6 +239,7 @@ public final class FileUtil {
     * @param g The second file
     * @return True if the files exist and are identical, false otherwise
     */
+   @SuppressWarnings( "resource" )
    public static boolean compareFiles( File f, File g ) {
       if( f == null || g == null )
          return false;

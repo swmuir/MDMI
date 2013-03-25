@@ -20,7 +20,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
 /** 
  * Syntax tree node - base class of all classes in the syntax tree.
  */
-abstract class YNode implements ISyntaxNode {
+public abstract class YNode implements ISyntaxNode {
    protected Node  m_node  ;
    protected YNode m_parent;
    

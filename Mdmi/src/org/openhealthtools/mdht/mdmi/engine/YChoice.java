@@ -24,7 +24,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
  * 
  * @author goancea
  */
-class YChoice extends YNode {
+public final class YChoice extends YNode {
    private Choice           m_choice;
    private ArrayList<YNode> m_nodes; // can be more than one, but all the same type
 
@@ -49,7 +49,8 @@ class YChoice extends YNode {
     */
    public YChoice( Choice choice, YNode parent, YNode value ) {
       this(choice, parent);
-      m_nodes.add(value);
+      if( value != null )
+         m_nodes.add(value);
    }
 
    /**
@@ -97,6 +98,18 @@ class YChoice extends YNode {
                   m_choice.getName(), ynode.getNode().getName());
       }
       m_nodes.add(ynode);
+   }
+   
+   /**
+    * Force the choice to the new ynode value passed in. Will delete the old choice.
+    * If the new choice node is null, then the choice becomes empty again.
+    * 
+    * @param ynode YNode replacing the existing choice. May be null.
+    */
+   public void forceChoice( YNode ynode ) {
+      m_nodes.clear();
+      if( ynode != null )
+         m_nodes.add(ynode);
    }
 
    /**

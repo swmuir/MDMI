@@ -99,6 +99,7 @@ public class JarClassLoader extends URLClassLoader {
    /**
     * Loads all classes from all jar files in list
     */
+   @SuppressWarnings( "resource" )
    public void loadAllClasses() {
       URL[] urls = getURLs();
       for( int i = 0; i < urls.length; i++ ) {

@@ -494,6 +494,10 @@ public final class MdmiConfig {
          MapInfo me = new MapInfo();
          me.mapName = XmlUtil.getText(XmlUtil.getElement(root, MAP_NAME));
          me.mapFileName = XmlUtil.getText(XmlUtil.getElement(root, MAP_FILE_NAME));
+         File mf = new File(me.mapFileName);
+         if( !mf.exists() )
+            mf = Mdmi.INSTANCE.fileFromRelPath(me.mapFileName);
+         me.mapFileName = canonicalPathName(mf);
 
          Element e = XmlUtil.getElement(root, MAP_BUILDER_CLASS_NAME);
          if( e != null )
@@ -503,16 +507,26 @@ public final class MdmiConfig {
          if( e != null ) {
             me.synSvcClassName = XmlUtil.getText(e);
             Element f = XmlUtil.getElement(root, SYN_SVC_JAR_NAME);
-            if( f != null )
+            if( f != null ) {
                me.synSvcJarName = XmlUtil.getText(f);
+               File file = new File(me.synSvcJarName);
+               if( !file.exists() )
+                  file = Mdmi.INSTANCE.fileFromRelPath(me.synSvcJarName);
+               me.synSvcJarName = canonicalPathName(file);
+            }
          }
 
          e = XmlUtil.getElement(root, SEM_SVC_CLASS_NAME);
          if( e != null ) {
             me.semSvcClassName = XmlUtil.getText(e);
             Element f = XmlUtil.getElement(root, SEM_SVC_JAR_NAME);
-            if( f != null )
+            if( f != null ) {
                me.semSvcJarName = XmlUtil.getText(f);
+               File file = new File(me.semSvcJarName);
+               if( !file.exists() )
+                  file = Mdmi.INSTANCE.fileFromRelPath(me.semSvcJarName);
+               me.semSvcJarName = canonicalPathName(file);
+            }
          }
 
          return me;
@@ -566,6 +580,12 @@ public final class MdmiConfig {
          p.providerName = root.getAttribute(PROVIDER_NAME);
          p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
          p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
+         if( p.jarFileName != null ) {
+            File file = new File(p.jarFileName);
+            if( !file.exists() )
+               file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
+            p.jarFileName = canonicalPathName(file);
+         }
          return p;
       }
    } // MdmiConfig$ExternalProviderInfo
@@ -617,6 +637,12 @@ public final class MdmiConfig {
          p.providerName = root.getAttribute(PROVIDER_NAME);
          p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
          p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
+         if( p.jarFileName != null ) {
+            File file = new File(p.jarFileName);
+            if( !file.exists() )
+               file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
+            p.jarFileName = canonicalPathName(file);
+         }
          return p;
       }
    } // MdmiConfig$PreProcessorInfo
@@ -668,7 +694,21 @@ public final class MdmiConfig {
          p.providerName = root.getAttribute(PROVIDER_NAME);
          p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
          p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
+         if( p.jarFileName != null ) {
+            File file = new File(p.jarFileName);
+            if( !file.exists() )
+               file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
+            p.jarFileName = canonicalPathName(file);
+         }
          return p;
       }
    } // MdmiConfig$PostProcessorInfo
-} // MdmiConfig
+   
+   private static String canonicalPathName( File f ) {
+      try {
+         return f.getCanonicalPath();
+      }
+      catch( Exception ex ) {
+         return f.getAbsolutePath();
+      }
+   }} // MdmiConfig

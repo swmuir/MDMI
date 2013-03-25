@@ -25,9 +25,9 @@ import org.openhealthtools.mdht.mdmi.model.*;
 public class MdmiUow implements Runnable {
    MdmiEngine       owner;
    MdmiTransferInfo transferInfo;
-   YNode            srcSyntaxModel;
+   ISyntaxNode      srcSyntaxModel;
    ElementValueSet  srcSemanticModel;
-   YNode            trgSyntaxModel;
+   ISyntaxNode      trgSyntaxModel;
    ElementValueSet  trgSemanticModel;
 
    /**
@@ -90,7 +90,6 @@ public class MdmiUow implements Runnable {
          return;
       ISemanticParser trgSemProv = getSemProv(transferInfo.getTargetMessageGroup());
       ISyntacticParser trgSynProv = getSynProv(transferInfo.getTargetMessageGroup());
-      trgSemanticModel = new ElementValueSet();
       System.out.println("");
       System.out.println("---------- TARGET MESSAGE START ----------");
       trgSyntaxModel = (YNode)trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
@@ -118,7 +117,10 @@ public class MdmiUow implements Runnable {
    void processOutboundTargetMessage() {
       ISemanticParser trgSemProv = getSemProv(transferInfo.getTargetMessageGroup());
       ISyntacticParser trgSynProv = getSynProv(transferInfo.getTargetMessageGroup());
-      trgSyntaxModel = (YNode)trgSemProv.createSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
+      if( trgSyntaxModel != null )
+         trgSemProv.updateSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel, trgSyntaxModel);
+      else
+         trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
       System.out.println("");
       System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
       System.out.println(trgSyntaxModel.toString());

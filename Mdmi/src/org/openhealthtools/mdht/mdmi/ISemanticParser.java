@@ -32,13 +32,23 @@ public interface ISemanticParser {
    public void buildSemanticModel( MessageModel mdl, ISyntaxNode root, ElementValueSet eset );
 
    /**
-    * Create a syntax tree represented by the YNode returned, from the given semantic content (element set) and the
-    * message model.
+    * Create a new syntax tree represented from the given semantic content (element set) and 
+    * based on the specified message model.
     * 
     * @param mdl The MessageModel that applies.
     * @param eset The semantic content (element set).
-    * @return The syntax tree corresponding to the
+    * @return The syntax tree corresponding to the existing syntactic model.
     */
-   public ISyntaxNode createSyntacticModel( MessageModel mdl, ElementValueSet eset );
+   public ISyntaxNode createNewSyntacticModel( MessageModel mdl, ElementValueSet eset );
+
+   /**
+    * Update the syntax tree represented by the syntax node given from the given semantic content (element set) and 
+    * based on the specified message model.
+    * 
+    * @param mdl The MessageModel that applies.
+    * @param eset The semantic content (element set).
+    * @param yroot The syntax tree corresponding to the existing syntactic model.
+    */
+   public void updateSyntacticModel( MessageModel mdl, ElementValueSet eset, ISyntaxNode yroot );
 } // ISemanticParser
 

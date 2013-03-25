@@ -24,7 +24,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
  * 
  * @author goancea
  */
-final class YBag extends YNode {
+public final class YBag extends YNode {
    private Bag              m_bag;
    private ArrayList<YNode> m_nodes; // more than one, mixed types
 

@@ -193,6 +193,7 @@ public class XDataStruct extends XData {
       for( int i = 0; i < m_values.size(); i++ ) {
          XValue v = (XValue)m_values.get( i );
          sb.append( v.toString(indent + "  ") );
+         sb.append("\r\n");
       }
       return sb.toString();
    }

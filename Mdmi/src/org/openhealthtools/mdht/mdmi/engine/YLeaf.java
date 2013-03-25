@@ -22,7 +22,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
  * 
  * @author goancea
  */
-class YLeaf extends YNode {
+public final class YLeaf extends YNode {
    private LeafSyntaxTranslator m_leaf;
    private String               m_value;
 

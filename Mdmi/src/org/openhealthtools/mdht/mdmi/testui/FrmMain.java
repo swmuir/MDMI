@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
-@SuppressWarnings( "serial" )
+@SuppressWarnings( {"serial", "rawtypes", "unchecked"} )
 public class FrmMain extends JFrame {
 	/** Default location for 'normal', i.e. non-maximized, state */
    private static final int   DEF_X    = 50;
@@ -58,7 +58,7 @@ public class FrmMain extends JFrame {
 	private JButton    btnTargetMap;
 
 	private JLabel     lblMdl;
-	private JComboBox  cmbSourceMdl;
+   private JComboBox  cmbSourceMdl;
 
 	private JComboBox  cmbTargetMdl;
 	
@@ -274,8 +274,16 @@ public class FrmMain extends JFrame {
    	cmbSourceMdl.removeAllItems();
    	try {
    		MdmiConfig.MapInfo me = new MdmiConfig.MapInfo("SOURCE", s);
-	      if( Mdmi.INSTANCE.getConfig().getMapInfo(me.mapName) != null )
-	         Mdmi.INSTANCE.getConfig().removeMapInfo(me.mapName);
+         MdmiConfig.MapInfo oldMe = Mdmi.INSTANCE.getConfig().getMapInfoByFileName(s);
+         if( oldMe != null ) {
+            me.synSvcJarName = oldMe.synSvcJarName;
+            me.synSvcClassName = oldMe.synSvcClassName;
+            me.semSvcJarName = oldMe.semSvcJarName;
+            me.semSvcClassName = oldMe.semSvcClassName;
+         }
+         oldMe = Mdmi.INSTANCE.getConfig().getMapInfo(me.mapName);
+         if( oldMe != null )
+            Mdmi.INSTANCE.getConfig().removeMapInfo(me.mapName);
 	      sourceMessageGroups = Mdmi.INSTANCE.getResolver().resolveOne(me);
 	      for( MessageGroup mg : sourceMessageGroups ) {
 				Collection<MessageModel> mdls = mg.getModels();
@@ -297,8 +305,16 @@ public class FrmMain extends JFrame {
    	cmbTargetMdl.removeAllItems();
    	try {
    		MdmiConfig.MapInfo me = new MdmiConfig.MapInfo("TARGET", s);
-	      if( Mdmi.INSTANCE.getConfig().getMapInfo(me.mapName) != null )
-	      	Mdmi.INSTANCE.getConfig().removeMapInfo(me.mapName);
+         MdmiConfig.MapInfo oldMe = Mdmi.INSTANCE.getConfig().getMapInfoByFileName(s);
+         if( oldMe != null ) {
+            me.synSvcJarName = oldMe.synSvcJarName;
+            me.synSvcClassName = oldMe.synSvcClassName;
+            me.semSvcJarName = oldMe.semSvcJarName;
+            me.semSvcClassName = oldMe.semSvcClassName;
+         }
+         oldMe = Mdmi.INSTANCE.getConfig().getMapInfo(me.mapName);
+         if( oldMe != null )
+            Mdmi.INSTANCE.getConfig().removeMapInfo(me.mapName);
 	      targetMessageGroups = Mdmi.INSTANCE.getResolver().resolveOne(me);
 	      for( MessageGroup mg : targetMessageGroups ) {
 				Collection<MessageModel> mdls = mg.getModels();
@@ -450,6 +466,7 @@ public class FrmMain extends JFrame {
          	throw new RuntimeException("No target message selected or entered!");
          MdmiMessage tMsg = new MdmiMessage( txtTargetMessage.getText() );
 			
+         @SuppressWarnings( "deprecation" )
          Object[] items = lstElements.getSelectedValues();
          if( items == null || items.length <= 0 )
          	throw new RuntimeException("No elements to transfer selected!");

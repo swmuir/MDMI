@@ -1,17 +1,17 @@
 /*******************************************************************************
-* Copyright (c) 2012 Firestar Software, Inc.
-* All rights reserved. This program and the accompanying materials
-* are made available under the terms of the Eclipse Public License v1.0
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v10.html
-*
-* Contributors:
-*     Firestar Software, Inc. - initial API and implementation
-*
-* Author:
-*     Gabriel Oancea
-*
-*******************************************************************************/
+ * Copyright (c) 2012 Firestar Software, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Firestar Software, Inc. - initial API and implementation
+ *
+ * Author:
+ *     Gabriel Oancea
+ *
+ *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
 import java.net.*;
@@ -54,10 +54,20 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    @Override
-   public YNode createSyntacticModel( MessageModel mdl, ElementValueSet eset ) {
-      if( mdl == null || eset == null )
+   public ISyntaxNode createNewSyntacticModel( MessageModel mdl, ElementValueSet eset ) {
+      Node root = mdl.getSyntaxModel().getRoot();
+      if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 )
+         throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(root));
+      YNode yroot = createYNode(root);
+      updateSyntacticModel(mdl, eset, yroot);
+      return yroot;
+   }
+
+   @Override
+   public void updateSyntacticModel( MessageModel mdl, ElementValueSet eset, ISyntaxNode yr ) {
+      if( mdl == null || eset == null || yr == null )
          throw new IllegalArgumentException("Null argument!");
-      valueSet = eset;
+      YNode yroot = (YNode)yr;
 
       // 1. set computed SEs
       SemanticElementSet set = mdl.getElementSet();
@@ -67,30 +77,28 @@ public class DefaultSemanticParser implements ISemanticParser {
             setComputedInValue(se);
       }
 
-      // 2. Create the syntax model
+      // 2. Update the syntax model
       Node root = mdl.getSyntaxModel().getRoot();
       if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 )
          throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(root));
-      YNode yroot = null;
-      Context context = new Context(valueSet);
-      SemanticElement me = root.getSemanticElement();
-      if( me == null ) {
-         if( isSet(root, context) ) {
-            yroot = createYNode(root, null);
-            createChildYNodes(yroot, context);
+      XElementValues values = new XElementValues(eset);
+      // top level XElementValues
+      for( XElementValues.XES xes : values.elementValues ) {
+         YNode ynode = ensureAbsolutePath(yroot, xes.semanticElement);
+         ArrayList<YNode> ynodes = new ArrayList<YNode>();
+         int n = xes.elementValues.size();
+         if( n == 1 )
+            ynodes.add(ynode);
+         else {
+            YNode parent = (YNode)ynode.getParent();
+            ynodes = ensureParentHasChildren(parent, ynode.getNode(), n);
+         }
+         for( int i = 0; i < n; i++ ) {
+            XElementValues.XE xe = xes.elementValues.get(i);
+            ynode = ynodes.get(i);
+            setYNodeValuesAndChildren(ynode, xe);
          }
       }
-      else {
-         ArrayList<IElementValue> xes = context.getElementValues(me);
-         if( xes.size() > 1 )
-            throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(root));
-         if( xes.size() == 1 ) {
-            yroot = createYNode(root, null);
-            XElementValue xe = (XElementValue)xes.get(0);
-            createChildYNodes(yroot, xe, context);
-         }
-      }
-      return yroot;
    }
 
    private void getElements( YNode yroot ) {
@@ -259,8 +267,7 @@ public class DefaultSemanticParser implements ISemanticParser {
             String fieldName = n.getFieldName();
             XValue xv = xs.getValue(fieldName);
             if( xv == null )
-               throw new MdmiException("Invalid mapping for node "
-                     + DefaultSyntacticParser.getNodePath(ybag.getNode()));
+               throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
             getValue(yn, xv, xe);
          }
       }
@@ -376,8 +383,7 @@ public class DefaultSemanticParser implements ISemanticParser {
             String fieldName = n.getFieldName();
             XValue xvalue = xs.getValue(fieldName);
             if( xvalue == null )
-               throw new MdmiException("Invalid mapping for node "
-                     + DefaultSyntacticParser.getNodePath(ybag.getNode()));
+               throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
             getValue(yn, xvalue, owner);
          }
       }
@@ -407,154 +413,66 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    // ==================================================================================================================
-   // owner does not have a ME
-   private void createChildYNodes( YNode owner, Context context ) {
-      Node node = owner.getNode();
-      if( node instanceof Bag ) {
-         // top-level bag unmapped
-         Bag bag = (Bag)node;
-         Collection<Node> nodes = bag.getNodes();
-         for( Iterator<Node> it = nodes.iterator(); it.hasNext(); ) {
-            Node n = it.next();
-            SemanticElement me = n.getSemanticElement();
-            if( me == null ) {
-               if( isSet(n, context) ) {
-                  YNode yn = createYNode(n, owner);
-                  createChildYNodes(yn, context);
-               }
-            }
-            else {
-               ArrayList<IElementValue> xes = context.getElementValues(me);
-               int max = n.getMaxOccurs();
-               if( max < 0 )
-                  max = Integer.MAX_VALUE;
-               for( int i = 0; i < xes.size() && i <= max; i++ ) {
-                  XElementValue xe = (XElementValue)xes.get(i);
-                  YNode yn = createYNode(n, owner);
-                  createChildYNodes(yn, xe, context);
-               }
-            }
+   // create top-level root node
+   private YNode createYNode( Node node ) {
+      if( node instanceof Bag )
+         return new YBag((Bag)node, null);
+      if( node instanceof Choice )
+         return new YChoice((Choice)node, null);
+      return new YLeaf((LeafSyntaxTranslator)node, null);
+   }
+
+   /**
+    * Set the value(s) and then the children recursively for the specified YNode from
+    * the given element value wrapper.
+    * 
+    * @param ynode
+    * @param xe
+    */
+   private void setYNodeValuesAndChildren( YNode ynode, XElementValues.XE xe ) {
+      // 1. set the value of the ynode first
+      Object value = xe.elementValue.getValue().getValue();
+      setYNodeValues(ynode, value);
+
+      // 2. recursively go through its child nodes and set the values
+      for( XElementValues.XES xes : xe.children ) {
+         YNode ychild = ensureRelativePath(ynode, xes.semanticElement);
+         ArrayList<YNode> ynodes = new ArrayList<YNode>();
+         int n = xes.elementValues.size();
+         if( n == 1 )
+            ynodes.add(ychild);
+         else {
+            ynodes = ensureParentHasChildren(ynode, ychild.getNode(), n);
          }
-      }
-      else if( node instanceof Choice ) {
-         // top-level choice unmapped
-         Choice choice = (Choice)node;
-         Collection<Node> nodes = choice.getNodes();
-         for( Iterator<Node> it = nodes.iterator(); it.hasNext(); ) {
-            Node n = it.next();
-            SemanticElement me = n.getSemanticElement();
-            if( me == null ) {
-               if( isSet(n, context) ) {
-                  YNode yn = createYNode(n, owner);
-                  createChildYNodes(yn, context);
-                  break; // <-- NOTE, this is a choice
-               }
-            }
-            else {
-               ArrayList<IElementValue> xes = context.getElementValues(me);
-               int max = n.getMaxOccurs();
-               if( max < 0 )
-                  max = Integer.MAX_VALUE;
-               int count = 0;
-               for( int i = 0; i < xes.size() && i <= max; i++ ) {
-                  XElementValue xe = (XElementValue)xes.get(i);
-                  YNode yn = createYNode(n, owner);
-                  createChildYNodes(yn, xe, context);
-                  count++;
-               }
-               if( count > 0 )
-                  break; // <-- NOTE, this is a choice
-            }
+         for( int i = 0; i < n; i++ ) {
+            XElementValues.XE xeChild = xes.elementValues.get(i);
+            ychild = ynodes.get(i);
+            setYNodeValuesAndChildren(ychild, xeChild);
          }
-      }
-      else { // Leaf
-         // top-level leaf unmapped, ignore
       }
    }
 
-   // the ynode is mapped to the XE given
-   private void createChildYNodes( YNode ynode, XElementValue xe, Context ownerContext ) {
+   // set the node value(s) for all fields
+   private void setYNodeValues( YNode ynode, Object value ) {
       Node node = ynode.getNode();
       if( node instanceof Bag ) {
-         // top-level bag mapped, process
-         createChildYNodesForBag((YBag)ynode, xe, ownerContext);
-      }
-      else if( node instanceof Choice ) {
-         // top-level choice mapped, process
-         createChildYNodesForChoice((YChoice)ynode, xe, ownerContext);
-      }
-      else { // Leaf
-         setLeafValue((YLeaf)ynode, xe);
-      }
-   }
-
-   // the ynode is mapped to the XE given
-   private void setChildYNodes( YNode ynode, Object value ) {
-      Node node = ynode.getNode();
-      if( node instanceof Bag ) {
-         // top-level bag mapped, process
          if( !(value instanceof XDataStruct) )
             throw new IllegalArgumentException("Invalid map: expected XDataStruct for node "
                   + ynode.getNode().getName());
-         setChildYNodesForBag((YBag)ynode, (XDataStruct)value);
+         setYNodeValuesForBag((YBag)ynode, (XDataStruct)value);
       }
       else if( node instanceof Choice ) {
-         // top-level choice mapped, process
          if( !(value instanceof XDataChoice) )
             throw new IllegalArgumentException("Invalid map: expected XDataChoice for node "
                   + ynode.getNode().getName());
-         setChildYNodesForChoice((YChoice)ynode, (XDataChoice)value);
+         setYNodeValuesForChoice((YChoice)ynode, (XDataChoice)value);
       }
       else { // Leaf
          setLeafValue((YLeaf)ynode, value);
       }
    }
 
-   private void createChildYNodesForBag( YBag ybag, XElementValue xe, Context ownerContext ) {
-      Node node = ybag.getNode();
-      Bag bag = (Bag)node;
-      Collection<Node> nodes = bag.getNodes();
-
-      Context context = null; // NOTE this is a temporary fix for old maps
-      if( xe.getChildCount() <= 0 )
-         context = ownerContext;
-      else
-         context = new Context(xe);
-
-      Object value = xe.getValue().getValue();
-      if( value == null )
-         throw new IllegalArgumentException("Null value!");
-      if( !(value instanceof XDataStruct) )
-         throw new IllegalArgumentException("Invalid structure!");
-      XDataStruct xds = (XDataStruct)value;
-      for( Iterator<Node> it = nodes.iterator(); it.hasNext(); ) {
-         Node n = it.next();
-         if( n.getSemanticElement() != null ) {
-            ArrayList<IElementValue> xes = context.getElementValues(n.getSemanticElement());
-            int max = n.getMaxOccurs();
-            if( max < 0 )
-               max = Integer.MAX_VALUE;
-            for( int i = 0; i < xes.size() && i < max; i++ ) {
-               XElementValue nxe = (XElementValue)xes.get(i);
-               YNode yn = createYNode(n, ybag);
-               createChildYNodes(yn, nxe, context);
-            }
-         }
-         else {
-            String fieldName = n.getFieldName();
-            XValue xvalue = xds.getValue(fieldName);
-            if( xvalue == null || xvalue.size() <= 0 )
-               continue;
-            for( int i = 0; i < xvalue.size(); i++ ) {
-               Object xv = xvalue.getValue(i);
-               YNode yn = createYNode(n, ybag);
-               setChildYNodes(yn, xv);
-            }
-         }
-      }
-   }
-
-   private void setChildYNodesForBag( YBag ybag, XDataStruct xds ) {
+   private void setYNodeValuesForBag( YBag ybag, XDataStruct xds ) {
       Node node = ybag.getNode();
       Bag bag = (Bag)node;
       Collection<Node> nodes = bag.getNodes();
@@ -567,75 +485,22 @@ public class DefaultSemanticParser implements ISemanticParser {
             continue;
          for( int i = 0; i < xvalue.size(); i++ ) {
             Object xv = xvalue.getValue(i);
-            YNode yn = createYNode(n, ybag);
-            setChildYNodes(yn, xv);
+            YNode yn = ensureYNodeExists(ybag, n, i);
+            setYNodeValues(yn, xv);
          }
       }
    }
 
-   private void createChildYNodesForChoice( YChoice ychoice, XElementValue xe, Context ownerContext ) {
-      Node node = ychoice.getNode();
-      Choice choice = (Choice)node;
-      Collection<Node> nodes = choice.getNodes();
-
-      Context context = null; // NOTE this is a temporary fix for old maps
-      if( xe.getChildCount() <= 0 )
-         context = ownerContext;
-      else
-         context = new Context(xe);
-
-      Object value = xe.getValue().getValue();
-      if( value == null )
-         throw new IllegalArgumentException("Null value!");
-      if( !(value instanceof XDataChoice) )
-         throw new IllegalArgumentException("Invalid structure!");
-      XDataChoice xdc = (XDataChoice)value;
-      XValue xvalue = xdc.getValue();
-      if( xvalue == null || xvalue.size() <= 0 ) {
-         for( Iterator<Node> it = nodes.iterator(); it.hasNext(); ) {
-            Node n = it.next();
-            if( n.getSemanticElement() != null ) {
-               ArrayList<IElementValue> xes = context.getElementValues(n.getSemanticElement());
-               int max = n.getMaxOccurs();
-               if( max < 0 )
-                  max = Integer.MAX_VALUE;
-               for( int i = 0; i < xes.size() && i < max; i++ ) {
-                  XElementValue nxe = (XElementValue)xes.get(i);
-                  YNode yn = createYNode(n, ychoice);
-                  createChildYNodes(yn, nxe, context);
-               }
-               if( xes.size() > 0 )
-                  return; // <-- NOTE this is a choice
-            }
-         }
-      }
-      else {
-         Node n = getNodeForFieldName(choice, xvalue.getName());
-         for( int i = 0; i < xvalue.size(); i++ ) {
-            Object xv = xvalue.getValue(i);
-            YNode yn = createYNode(n, ychoice);
-            setChildYNodes(yn, xv);
-         }
-      }
-   }
-
-   private void setChildYNodesForChoice( YChoice ychoice, XDataChoice xdc ) {
-      Node node = ychoice.getNode();
-      Choice choice = (Choice)node;
-
+   private void setYNodeValuesForChoice( YChoice ychoice, XDataChoice xdc ) {
       XValue xvalue = xdc.getValue();
       if( xvalue != null && xvalue.size() > 0 ) {
-         Node n = getNodeForFieldName(choice, xvalue.getName());
+         Node n = ychoice.getChosenNode();
          for( int i = 0; i < xvalue.size(); i++ ) {
             Object xv = xvalue.getValue(i);
-            YNode yn = createYNode(n, ychoice);
-            setChildYNodes(yn, xv);
+            YNode yn = ensureYNodeExists(ychoice, n, i);
+            setYNodeValues(yn, xv);
          }
       }
-   }
-
-   private void setLeafValue( YLeaf yleaf, XElementValue xe ) {
-      setLeafValue(yleaf, xe.getValue().getValue());
    }
 
    private void setLeafValue( YLeaf yleaf, Object value ) {
@@ -714,134 +579,285 @@ public class DefaultSemanticParser implements ISemanticParser {
       return dt;
    }
 
-   private YNode createYNode( Node node, YNode owner ) {
+   /**
+    * Ensure the child of the specified parent exists, at the given index. Return the ynode at the given index. Will
+    * create it if necessary.
+    * 
+    * @param parent The parent ynode.
+    * @param node The child type.
+    * @param index The index of the child in the parent children of the same type.
+    * @return The ynode at the requested index (may be creating it if need be).
+    */
+   private YNode ensureYNodeExists( YNode parent, Node node, int index ) {
       YNode ynode = null;
-      if( node instanceof Bag ) {
-         //System.out.println("Creating bag node " + node.getName() + (owner == null ? "" : " as child of " + owner.getNode().getName()));
-         ynode = new YBag((Bag)node, owner);
+      if( parent instanceof YBag ) {
+         YBag ybag = (YBag)parent;
+         if( node instanceof Bag ) {
+            Bag bag = (Bag)node;
+            ArrayList<YNode> ynodes = ybag.getYNodesForNode(bag);
+            while( ynodes.size() <= index ) {
+               ynode = new YBag(bag, ybag);
+               ybag.addYNode(ynode);
+               ynodes = ybag.getYNodesForNode(bag);
+            }
+            return ynodes.get(index);
+         }
+         else if( node instanceof Choice ) {
+            Choice choice = (Choice)node;
+            ArrayList<YNode> ynodes = ybag.getYNodesForNode(choice);
+            while( ynodes.size() <= index ) {
+               ynode = new YChoice(choice, ybag);
+               ybag.addYNode(ynode);
+               ynodes = ybag.getYNodesForNode(choice);
+            }
+            return ynodes.get(index);
+         }
+         else {
+            LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)node;
+            ArrayList<YNode> ynodes = ybag.getYNodesForNode(leaf);
+            while( ynodes.size() <= index ) {
+               ynode = new YLeaf(leaf, ybag);
+               ybag.addYNode(ynode);
+               ynodes = ybag.getYNodesForNode(leaf);
+            }
+            return ynodes.get(index);
+         }
+
       }
-      else if( node instanceof Choice ) {
-         //System.out.println("Creating choice node " + node.getName() + (owner == null ? "" : " as child of " + owner.getNode().getName()));
-         ynode = new YChoice((Choice)node, owner);
+      else if( parent instanceof YLeaf ) {
+         YChoice ychoice = (YChoice)parent;
+         if( node instanceof Bag ) {
+            Bag bag = (Bag)node;
+            if( ychoice.getChosenNode() != bag )
+               ychoice.forceChoice(null);
+            ArrayList<YNode> ynodes = ychoice.getYNodes();
+            while( ynodes.size() <= index ) {
+               ynode = new YBag(bag, ychoice);
+               ychoice.addYNode(ynode);
+               ynodes = ychoice.getYNodes();
+            }
+            return ynodes.get(index);
+         }
+         else if( node instanceof Choice ) {
+            Choice choice = (Choice)node;
+            if( ychoice.getChosenNode() != choice )
+               ychoice.forceChoice(null);
+            ArrayList<YNode> ynodes = ychoice.getYNodes();
+            while( ynodes.size() <= index ) {
+               ynode = new YChoice(choice, ychoice);
+               ychoice.addYNode(ynode);
+               ynodes = ychoice.getYNodes();
+            }
+            return ynodes.get(index);
+         }
+         else {
+            LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)node;
+            if( ychoice.getChosenNode() != leaf )
+               ychoice.forceChoice(null);
+            ArrayList<YNode> ynodes = ychoice.getYNodes();
+            while( ynodes.size() <= index ) {
+               ynode = new YLeaf(leaf, ychoice);
+               ychoice.addYNode(ynode);
+               ynodes = ychoice.getYNodes();
+            }
+            return ynodes.get(index);
+         }
+
       }
       else {
-         //System.out.println("Creating leaf node " + node.getName() + (owner == null ? "" : " as child of " + owner.getNode().getName()));
-         ynode = new YLeaf((LeafSyntaxTranslator)node, owner);
+         throw new IllegalArgumentException("Invalid state: parent is a leaf!");
       }
-      if( owner != null ) {
-         if( owner instanceof YBag )
-            ((YBag)owner).addYNode(ynode);
-         else if( owner instanceof YChoice )
-            ((YChoice)owner).addYNode(ynode);
-         else
-            throw new IllegalArgumentException("Invalid state: owner is a leaf!");
-      }
-      return ynode;
    }
 
    /**
-    * Returns true if the node appears in the context between min and max times.
-    *
-    * @param node The node.
-    * @param context The context.
-    * @return True if the node appears in the context between min and max times.
+    * Get the relative path from the node the se given is mapped to to the specified node. If the given node is null, it
+    * will return the absolute path.
+    * 
+    * @param se The semantic element mapped to the node we want an absolute path.
+    * @param node The node relative to which we want the path (excluding the node given).
+    * @return The relative path from the node the se given is mapped to to the specified node. If the given node is
+    *         null, it will return the absolute path.
     */
-   private boolean isSet( Node node, Context context ) {
-      SemanticElement me = node.getSemanticElement();
-      if( me != null ) {
-         int count = context.getCount(me);
-         return isNodeSet(node, count);
+   private ArrayList<Node> getPath( SemanticElement se, Node node ) {
+      ArrayList<Node> path = new ArrayList<Node>();
+      Node n = se.getSyntaxNode();
+      while( n != null && n != node ) {
+         path.add(0, n);
+         n = n.getParentNode();
       }
+      return path;
+   }
 
-      if( node instanceof Bag ) {
-         Bag bag = (Bag)node;
-         Collection<Node> nodes = bag.getNodes();
-         for( Iterator<Node> i = nodes.iterator(); i.hasNext(); ) {
-            Node n = i.next();
-            if( !isSet(n, context) ) {
-            	System.out.println("Error: isSet returning from " + n.getName() + " (" + n.getLocation() + ")");
-               return false;
-            }
+   /**
+    * Get the ynode to which the semantic element passed in is mapped to. Assumes the path is absolute, i.e. relative to
+    * the root of the syntax tree. Will create the ynodes on the path, if required.
+    * 
+    * @param yroot The root of the syntax tree.
+    * @param se The semantic element to which the syntax node to look for is mapped.
+    * @return The ynode corresponding to the SE passed in.
+    */
+   private YNode ensureAbsolutePath( YNode yroot, SemanticElement se ) {
+      ArrayList<Node> path = getPath(se, null);
+      if( path.size() == 1 )
+         return yroot;
+      int index = 1;
+      YNode parent = yroot;
+      do {
+         Node current = path.get(index++);
+         parent = ensureParentHasChild(parent, current);
+      } while( index < path.size() );
+      return parent;
+   }
+
+   /**
+    * Get the ynode to which the semantic element passed in is mapped to. Assumes the path is relative to the given
+    * ynode. Will create the ynodes on the path, if required.
+    * 
+    * @param ynode The node relative to which we ensure we have a path
+    * @param se The semantic element to which the syntax node to look for is mapped.
+    * @return The ynode corresponding to the SE passed in.
+    */
+   private YNode ensureRelativePath( YNode ynode, SemanticElement se ) {
+      ArrayList<Node> path = getPath(se, ynode.getNode());
+      if( path.size() == 1 )
+         return ynode;
+      int index = 1;
+      YNode parent = ynode;
+      do {
+         Node current = path.get(index++);
+         parent = ensureParentHasChild(parent, current);
+      } while( index < path.size() );
+      return parent;
+   }
+
+   /**
+    * Ensure parent has at least one child of the given type.
+    * 
+    * @param parent The parent.
+    * @param childType The child type.
+    * @return The existing node, either existing of newly created.
+    */
+   private YNode ensureParentHasChild( YNode parent, Node childType ) {
+      if( parent.getNode() instanceof LeafSyntaxTranslator )
+         throw new MdmiException("Invalid parent, found leaf, expected a bag or a choice!");
+      if( parent.getNode() instanceof Bag ) {
+         YBag ybag = (YBag)parent;
+         ArrayList<YNode> nodes = ybag.getYNodesForNode(childType);
+         if( 0 < nodes.size() )
+            return nodes.get(0); // get the first if more than one
+         // need to add a node of that type
+         if( childType instanceof Bag ) {
+            YBag child = new YBag((Bag)childType, ybag);
+            ybag.addYNode(child);
+            return child;
          }
-         return true;
-      }
-      else if( node instanceof Choice ) {
-         Choice choice = (Choice)node;
-         Collection<Node> nodes = choice.getNodes();
-         for( Iterator<Node> i = nodes.iterator(); i.hasNext(); ) {
-            Node n = i.next();
-            if( isSet(n, context) )
-               return true;
-         }
-         return false;
-      }
-      return false;
-   }
-
-   // returns true if the count is between min and max for the given node
-   private static boolean isNodeSet( Node node, int count ) {
-      //if( count <= 0 )
-      //   return false;
-      if( count < node.getMinOccurs() )
-         return false;
-      if( node.getMaxOccurs() < 0 )
-         return true;
-      return count <= node.getMaxOccurs();
-   }
-
-   private static Node getNodeForFieldName( Choice choice, String fieldName ) {
-      Collection<Node> nodes = choice.getNodes();
-      for( Iterator<Node> it = nodes.iterator(); it.hasNext(); ) {
-         Node node = it.next();
-         if( fieldName.equals(node.getFieldName()) )
-            return node;
-      }
-      return null;
-   }
-
-   private static class Context {
-      ElementValueSet eset;
-      XElementValue   owner;
-
-      Context( ElementValueSet eset ) {
-         this.eset = eset;
-      }
-
-      Context( XElementValue owner ) {
-         this.owner = owner;
-      }
-
-      boolean isSet() {
-         return eset != null;
-      }
-
-      int getCount( SemanticElement me ) {
-         int count = 0;
-         if( isSet() ) {
-            ArrayList<IElementValue> xes = eset.getElementValuesByType(me);
-            count = xes.size();
+         else if( childType instanceof Choice ) {
+            YChoice child = new YChoice((Choice)childType, ybag);
+            ybag.addYNode(child);
+            return child;
          }
          else {
-            ArrayList<IElementValue> xes = owner.getChildren();
-            for( IElementValue xe : xes ) {
-               if( me == xe.getSemanticElement() )
-                  count++;
+            YLeaf child = new YLeaf((LeafSyntaxTranslator)childType, ybag);
+            ybag.addYNode(child);
+            return child;
+         }
+      }
+      else {
+         YChoice ychoice = (YChoice)parent;
+         ArrayList<YNode> nodes = ychoice.getYNodes();
+         if( 0 < nodes.size() )
+            return nodes.get(0); // get the first if more than one
+         // need to add a node of that type
+         if( childType instanceof Bag ) {
+            YBag child = new YBag((Bag)childType, ychoice);
+            ychoice.addYNode(child);
+            return child;
+         }
+         else if( childType instanceof Choice ) {
+            YChoice child = new YChoice((Choice)childType, ychoice);
+            ychoice.addYNode(child);
+            return child;
+         }
+         else {
+            YLeaf child = new YLeaf((LeafSyntaxTranslator)childType, ychoice);
+            ychoice.addYNode(child);
+            return child;
+         }
+      }
+   }
+
+   private ArrayList<YNode> ensureParentHasChildren( YNode parent, Node childType, int n ) {
+      if( parent.getNode() instanceof LeafSyntaxTranslator )
+         throw new MdmiException("Invalid parent, found leaf, expected a bag or a choice!");
+      if( parent.getNode() instanceof Bag ) {
+         YBag ybag = (YBag)parent;
+         ArrayList<YNode> nodes = ybag.getYNodesForNode(childType);
+         if( n <= nodes.size() ) {
+            while( n < nodes.size() )
+               nodes.remove(nodes.size() - 1); // return exact number n of references
+            return nodes;
+         }
+         // need to add nodes of that type
+         for( int i = nodes.size(); i < n; i++ ) {
+            if( childType instanceof Bag ) {
+               YBag child = new YBag((Bag)childType, ybag);
+               ybag.addYNode(child);
+               nodes.add(child);
+            }
+            else if( childType instanceof Choice ) {
+               YChoice child = new YChoice((Choice)childType, ybag);
+               ybag.addYNode(child);
+               nodes.add(child);
+            }
+            else {
+               YLeaf child = new YLeaf((LeafSyntaxTranslator)childType, ybag);
+               ybag.addYNode(child);
+               nodes.add(child);
             }
          }
-         return count;
+         return nodes;
       }
-
-      ArrayList<IElementValue> getElementValues( SemanticElement me ) {
-         if( isSet() )
-            return eset.getElementValuesByType(me);
-         ArrayList<IElementValue> a = new ArrayList<IElementValue>();
-         ArrayList<IElementValue> xes = owner.getChildren();
-         for( IElementValue xe : xes ) {
-            if( me == xe.getSemanticElement() )
-               a.add(xe);
+      else {
+         YChoice ychoice = (YChoice)parent;
+         ArrayList<YNode> nodes = ychoice.getYNodes();
+         if( n <= nodes.size() ) {
+            while( n < nodes.size() )
+               nodes.remove(nodes.size() - 1); // return exact number n of references
+            return nodes;
          }
-         return a;
+         // need to add nodes of that type
+         for( int i = nodes.size(); i < n; i++ ) {
+            if( childType instanceof Bag ) {
+               YBag child = new YBag((Bag)childType, ychoice);
+               ychoice.addYNode(child);
+               nodes.add(child);
+            }
+            else if( childType instanceof Choice ) {
+               YChoice child = new YChoice((Choice)childType, ychoice);
+               ychoice.addYNode(child);
+               nodes.add(child);
+            }
+            else {
+               YLeaf child = new YLeaf((LeafSyntaxTranslator)childType, ychoice);
+               ychoice.addYNode(child);
+               nodes.add(child);
+            }
+         }
+         return nodes;
       }
+   }
+
+   @SuppressWarnings( "unused" )
+   private String pathToString( ArrayList<Node> path, boolean isAbsolute ) {
+      StringBuilder sb = new StringBuilder();
+      if( isAbsolute )
+         sb.append('/');
+      for( int i = 0; i < path.size(); i++ ) {
+         if( 0 < i )
+            sb.append('/');
+         sb.append(path.get(i).getName());
+      }
+      return sb.toString();
    }
 
    private void setComputedValue( SemanticElement se ) {
@@ -858,43 +874,44 @@ public class DefaultSemanticParser implements ISemanticParser {
       adapter.evalAction(xe, rule);
    }
 
-    private void setComputedInValue(SemanticElement se) {
-        String rule = se.getComputedInValue().getExpression();
+   private void setComputedInValue( SemanticElement se ) {
+      String rule = se.getComputedInValue().getExpression();
 
-        if (se.getParent() != null) {
-            for(IElementValue needsChildEV : getElementValuesWithoutChild(se)) {
-                IElementValue childEV = new XElementValue(se, valueSet);
-                needsChildEV.addChild(childEV);
-                childEV.setParent(needsChildEV);
+      if( se.getParent() != null ) {
+         for( IElementValue needsChildEV : getElementValuesWithoutChild(se) ) {
+            IElementValue childEV = new XElementValue(se, valueSet);
+            needsChildEV.addChild(childEV);
+            childEV.setParent(needsChildEV);
+         }
+      }
+
+      if( valueSet.getElementValuesByType(se).size() > 0 ) {
+         for( int i = 0; i < valueSet.getElementValuesByType(se).size(); i++ ) {
+            evalNrl(se, rule, (XElementValue)valueSet.getElementValuesByType(se).get(i));
+         }
+      }
+      else {
+         evalNrl(se, rule, new XElementValue(se, valueSet));
+      }
+   }
+
+   private List<IElementValue> getElementValuesWithoutChild( SemanticElement semanticElement ) {
+      List<IElementValue> parentElementValues = valueSet.getElementValuesByType(semanticElement.getParent());
+      List<IElementValue> result = new ArrayList<IElementValue>(parentElementValues);
+
+      for( IElementValue parentElementValue : parentElementValues ) {
+         for( IElementValue childElementValue : valueSet.getElementValuesByType(semanticElement) ) {
+            if( parentElementValue.getChildren().contains(childElementValue) ) {
+               result.remove(parentElementValue);
+               break;
             }
-        }
+         }
+      }
+      return result;
+   }
 
-        if (valueSet.getElementValuesByType(se).size() > 0) {
-            for (int i = 0; i < valueSet.getElementValuesByType(se).size(); i++) {
-                evalNrl(se, rule, (XElementValue) valueSet.getElementValuesByType(se).get(i));
-            }
-        } else {
-            evalNrl(se, rule, new XElementValue(se, valueSet));
-        }
-    }
-
-    private List<IElementValue> getElementValuesWithoutChild(SemanticElement semanticElement) {
-        List<IElementValue> parentElementValues = valueSet.getElementValuesByType(semanticElement.getParent());
-        List<IElementValue> result = new ArrayList<IElementValue>(parentElementValues);
-
-        for (IElementValue parentElementValue : parentElementValues) {
-            for (IElementValue childElementValue : valueSet.getElementValuesByType(semanticElement)) {
-                if (parentElementValue.getChildren().contains(childElementValue)) {
-                    result.remove(parentElementValue);
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    private void evalNrl(SemanticElement se, String rule, XElementValue xe) {
-        IExpressionInterpreter adapter = new NrlAdapter(valueSet, xe, "", null);
-        adapter.evalAction(xe, rule);
-    }
+   private void evalNrl( SemanticElement se, String rule, XElementValue xe ) {
+      IExpressionInterpreter adapter = new NrlAdapter(valueSet, xe, "", null);
+      adapter.evalAction(xe, rule);
+   }
 } // DefaultMdmiSemanticParser

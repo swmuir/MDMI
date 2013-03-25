@@ -46,16 +46,17 @@ public class NrlAdapter implements IExpressionInterpreter {
       try {
          File i = new File("NRL/nrl-interpreter.jar");
          File f = new File("nrl-adapter.jar");
-          if( !i.exists() || !f.exists() ) {
-              i = new File("./bin/NRL/nrl-interpreter.jar");
-              f = new File("./bin/nrl-adapter.jar");
-          }
+         if( !i.exists() || !f.exists() ) {
+            i = new File("./bin/NRL/nrl-interpreter.jar");
+            f = new File("./bin/nrl-adapter.jar");
+         }
          if( !i.exists() || !f.exists() ) {
             i = new File("../bin/NRL/nrl-interpreter.jar");
             f = new File("../bin/nrl-adapter.jar");
          }
          if( !i.exists() || !f.exists() )
             return;
+         @SuppressWarnings( "resource" )
          JarClassLoader jl = new JarClassLoader(i);
          jl.addJarFile(f);
          Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");

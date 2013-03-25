@@ -293,9 +293,8 @@ public final class XValue implements IValue {
                      XDataStruct x = (XDataStruct)m_values.get( i );
                      sb.append( x.toString(indent + "  ") );
                   }
-                  sb.append( "\r\n" );
                }
-               sb.append( indent + "}\r\n" );
+               sb.append( indent + "}" );
             }
          }
       }
