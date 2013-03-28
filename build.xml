@@ -9,6 +9,9 @@
 	<target name="buildNrl" depends="buildMdmi">
 		<ant dir="NrlAdapter"/>
 	</target>
-	<target name="buildall" depends="buildMdmi, buildMdmiMapEditor, buildNrl">
+    <target name="buildMdmiPlugins" depends="buildMdmi">
+        <ant dir="MdmiPlugins"/>
+    </target>
+	<target name="buildall" depends="buildMdmi, buildMdmiMapEditor, buildNrl, buildMdmiPlugins">
 	</target>
 </project>
