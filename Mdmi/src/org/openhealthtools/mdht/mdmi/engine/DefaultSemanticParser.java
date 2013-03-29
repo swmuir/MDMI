@@ -473,13 +473,17 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    private void setYNodeValuesForBag( YBag ybag, XDataStruct xds ) {
+      if( xds.getValues().size() <= 0 )
+         return; // nothing to set
+      
       Node node = ybag.getNode();
       Bag bag = (Bag)node;
       Collection<Node> nodes = bag.getNodes();
-
       for( Iterator<Node> it = nodes.iterator(); it.hasNext(); ) {
          Node n = it.next();
          String fieldName = n.getFieldName();
+         if( fieldName == null )
+            continue;
          XValue xvalue = xds.getValue(fieldName);
          if( xvalue == null || xvalue.size() <= 0 )
             continue;
@@ -492,6 +496,8 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    private void setYNodeValuesForChoice( YChoice ychoice, XDataChoice xdc ) {
+      if( xdc.getValue() == null )
+         return;
       XValue xvalue = xdc.getValue();
       if( xvalue != null && xvalue.size() > 0 ) {
          Node n = ychoice.getChosenNode();
@@ -672,7 +678,15 @@ public class DefaultSemanticParser implements ISemanticParser {
    /**
     * Get the relative path from the node the se given is mapped to to the specified node. If the given node is null, it
     * will return the absolute path.
+    * <pre>
+    * NodeA
+    *   NodeB
+    *     NodeC
     * 
+    * getPath(NodeA, null) returns {NodeA}
+    * getPath(NodeC, null) returns {NodeA, NodeB, NodeC}
+    * getPath(NodeC, NodeA) return {NodeB, NodeC}
+    * </pre>
     * @param se The semantic element mapped to the node we want an absolute path.
     * @param node The node relative to which we want the path (excluding the node given).
     * @return The relative path from the node the se given is mapped to to the specified node. If the given node is
@@ -719,9 +733,7 @@ public class DefaultSemanticParser implements ISemanticParser {
     */
    private YNode ensureRelativePath( YNode ynode, SemanticElement se ) {
       ArrayList<Node> path = getPath(se, ynode.getNode());
-      if( path.size() == 1 )
-         return ynode;
-      int index = 1;
+      int index = 0;
       YNode parent = ynode;
       do {
          Node current = path.get(index++);

@@ -34,10 +34,12 @@ final class XElementValues {
          if( v.getParent() == null ) {
             XE xe = new XE(v);
             XES xes = get(v.getSemanticElement());
-            if( xes == null )
+            if( xes == null ) {
                xes = new XES(v.getSemanticElement());
+               elementValues.add(xes);
+            }
             xes.elementValues.add(xe);
-            elementValues.add( xes );
+            elementValues.add(xes);
             addChildren( xe );
          }
       }
@@ -57,8 +59,10 @@ final class XElementValues {
          XElementValue v = (XElementValue)value;
          SemanticElement se = v.getSemanticElement();
          XES xes = xe.get(se);
-         if( xes == null )
+         if( xes == null ) {
             xes = new XES(se);
+            xe.children.add(xes);
+         }
          XE child = new XE(v);
          xes.elementValues.add(child);
          addChildren(child);

@@ -1,0 +1,1 @@
+copy /Y ..\bin\mdmi.jar WebContent\WEB-INF\lib
