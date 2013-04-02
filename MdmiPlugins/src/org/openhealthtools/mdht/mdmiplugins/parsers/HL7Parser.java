@@ -1,11 +1,16 @@
 package org.openhealthtools.mdht.mdmiplugins.parsers;
 
-import java.util.*;
-
-import org.openhealthtools.mdht.mdmi.*;
-import org.openhealthtools.mdht.mdmi.engine.*;
+import org.openhealthtools.mdht.mdmi.ISyntacticParser;
+import org.openhealthtools.mdht.mdmi.ISyntaxNode;
+import org.openhealthtools.mdht.mdmi.MdmiException;
+import org.openhealthtools.mdht.mdmi.MdmiMessage;
+import org.openhealthtools.mdht.mdmi.engine.YBag;
+import org.openhealthtools.mdht.mdmi.engine.YLeaf;
+import org.openhealthtools.mdht.mdmi.engine.YNode;
 import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.*;
+import org.openhealthtools.mdht.mdmi.util.StringUtil;
+
+import java.util.ArrayList;
 
 public class HL7Parser implements ISyntacticParser {
    private static final String FIELD_DELIMITER    = "|";
@@ -20,7 +25,6 @@ public class HL7Parser implements ISyntacticParser {
          return null; // <---- NOTE message can be empty
       m_dataBuffer = StringUtil.getString(data);
       m_dataBuffer = m_dataBuffer.trim();
-
       YBag yroot = null;
       try {
          MessageSyntaxModel syn = mdl.getSyntaxModel();
@@ -31,13 +35,29 @@ public class HL7Parser implements ISyntacticParser {
          Bag root = (Bag)node;
          ArrayList<Node> nodes = root.getNodes();
          for( int i = 0; i < nodes.size(); i++ ) {
-            Node childNode = nodes.get(i);
-            if( !(childNode instanceof Bag) )
-               throw new MdmiException("Node error expected a bag, found {0}", childNode.getClass().getName());
-            Bag sectionBag = (Bag)childNode;
-            YBag section = new YBag(sectionBag, yroot);
-            yroot.addYNode(section);
-            readSection(sectionBag, section);
+            boolean isEndSection = false;
+             Node childNode = nodes.get(i);
+             Bag sectionBag = (Bag)childNode;
+             int occurs = 0;
+             while (!isEndSection){
+                if( !(childNode instanceof Bag) ) {
+                    throw new MdmiException("Node error expected a bag, found {0}", childNode.getClass().getName());
+                }
+                YBag section = new YBag(sectionBag, yroot);
+                isEndSection = ! readSectionLine(sectionBag, section);
+                if (!isEndSection){
+                    yroot.addYNode(section);
+                    occurs++;
+                }
+            }
+             int minOccurs = sectionBag.getMinOccurs();
+             int maxOccurs = sectionBag.getMaxOccurs();
+             if( occurs < minOccurs ){
+                 throw new MdmiException("Section {0}, expected at least {1} instances, found only {2}", sectionBag.getName().trim(), minOccurs, occurs);
+             }
+             if( occurs > maxOccurs ){
+                 throw new MdmiException("Section {0}, expected less than {1} instances, found {2}", sectionBag.getName().trim(), maxOccurs, occurs);
+             }
          }
       }
       catch( MdmiException ex ) {
@@ -77,32 +97,24 @@ public class HL7Parser implements ISyntacticParser {
       }
    }
 
-   private void readSection( Bag sectionBag, YBag section ) {
-      int minOccurs = sectionBag.getMinOccurs();
-      int maxOccurs = sectionBag.getMaxOccurs();
-      if( maxOccurs < 0 )
-         maxOccurs = Integer.MAX_VALUE;
-      int i = 0;
-      String sectionName = sectionBag.getName().trim();
-      while( i < maxOccurs ) {
-         String line = readLine();
-         if( line == null || line.length() <= 0 )
-            break;
-         String[] fields = parseLine(line);
-         if( fields == null || fields.length <= 0 )
+    private boolean readSectionLine( Bag sectionBag, YBag section ) {
+        String sectionName = sectionBag.getName().trim();
+        String line = readLine();
+        if( line == null || line.length() <= 0 ){
+            return false;
+        }
+        String[] fields = parseLine(line);
+        if( fields == null || fields.length <= 0 )
             throw new MdmiException("Section {0}, cannot parse line {1}", sectionName, line);
-         String name = fields[0].trim();
-         if( !sectionName.equalsIgnoreCase(name) ) {
+        String name = fields[0].trim();
+        if( !sectionName.equalsIgnoreCase(name) ) {
             undoReadLine(line);
-            break;
-         }
-         readOneSection(sectionBag, section, fields);
-         i++;
-      }
-      if( i < minOccurs )
-         throw new MdmiException("Section {0}, expected at least {1} instances, found only {2}", sectionName,
-               minOccurs, i);
-   }
+            return false;
+        }
+        readOneSection(sectionBag, section, fields);
+        return true;
+    }
+
 
    private void readOneSection( Bag sectionBag, YBag section, String[] fields ) {
       ArrayList<Node> nodes = sectionBag.getNodes();
