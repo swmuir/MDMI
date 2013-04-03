@@ -423,8 +423,7 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    /**
-    * Set the value(s) and then the children recursively for the specified YNode from
-    * the given element value wrapper.
+    * Set the value(s) and then the children recursively for the specified YNode from the given element value wrapper.
     * 
     * @param ynode
     * @param xe
@@ -475,7 +474,7 @@ public class DefaultSemanticParser implements ISemanticParser {
    private void setYNodeValuesForBag( YBag ybag, XDataStruct xds ) {
       if( xds.getValues().size() <= 0 )
          return; // nothing to set
-      
+
       Node node = ybag.getNode();
       Bag bag = (Bag)node;
       Collection<Node> nodes = bag.getNodes();
@@ -678,6 +677,7 @@ public class DefaultSemanticParser implements ISemanticParser {
    /**
     * Get the relative path from the node the se given is mapped to to the specified node. If the given node is null, it
     * will return the absolute path.
+    * 
     * <pre>
     * NodeA
     *   NodeB
@@ -687,6 +687,7 @@ public class DefaultSemanticParser implements ISemanticParser {
     * getPath(NodeC, null) returns {NodeA, NodeB, NodeC}
     * getPath(NodeC, NodeA) return {NodeB, NodeC}
     * </pre>
+    * 
     * @param se The semantic element mapped to the node we want an absolute path.
     * @param node The node relative to which we want the path (excluding the node given).
     * @return The relative path from the node the se given is mapped to to the specified node. If the given node is

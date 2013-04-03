@@ -1,16 +1,11 @@
 package org.openhealthtools.mdht.mdmiplugins.parsers;
 
-import org.openhealthtools.mdht.mdmi.ISyntacticParser;
-import org.openhealthtools.mdht.mdmi.ISyntaxNode;
-import org.openhealthtools.mdht.mdmi.MdmiException;
-import org.openhealthtools.mdht.mdmi.MdmiMessage;
-import org.openhealthtools.mdht.mdmi.engine.YBag;
-import org.openhealthtools.mdht.mdmi.engine.YLeaf;
-import org.openhealthtools.mdht.mdmi.engine.YNode;
-import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.StringUtil;
+import java.util.*;
 
-import java.util.ArrayList;
+import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.engine.*;
+import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.util.*;
 
 public class HL7Parser implements ISyntacticParser {
    private static final String FIELD_DELIMITER    = "|";
@@ -35,29 +30,26 @@ public class HL7Parser implements ISyntacticParser {
          Bag root = (Bag)node;
          ArrayList<Node> nodes = root.getNodes();
          for( int i = 0; i < nodes.size(); i++ ) {
-            boolean isEndSection = false;
-             Node childNode = nodes.get(i);
-             Bag sectionBag = (Bag)childNode;
-             int occurs = 0;
-             while (!isEndSection){
-                if( !(childNode instanceof Bag) ) {
-                    throw new MdmiException("Node error expected a bag, found {0}", childNode.getClass().getName());
-                }
-                YBag section = new YBag(sectionBag, yroot);
-                isEndSection = ! readSectionLine(sectionBag, section);
-                if (!isEndSection){
-                    yroot.addYNode(section);
-                    occurs++;
-                }
+            Node childNode = nodes.get(i);
+            if( !(childNode instanceof Bag) )
+               throw new MdmiException("Node error expected a bag, found {0}", childNode.getClass().getName());
+            Bag sectionBag = (Bag)childNode;
+            int minOccurs = sectionBag.getMinOccurs();
+            int maxOccurs = sectionBag.getMaxOccurs();
+            if( maxOccurs < 0 )
+               maxOccurs = Integer.MAX_VALUE;
+            int count = 0;
+            while( count < maxOccurs ) {
+               YBag section = new YBag(sectionBag, yroot);
+               if( !readSectionLine(sectionBag, section) )
+                  break;
+               yroot.addYNode(section);
+               count++;
             }
-             int minOccurs = sectionBag.getMinOccurs();
-             int maxOccurs = sectionBag.getMaxOccurs();
-             if( occurs < minOccurs ){
-                 throw new MdmiException("Section {0}, expected at least {1} instances, found only {2}", sectionBag.getName().trim(), minOccurs, occurs);
-             }
-             if( occurs > maxOccurs ){
-                 throw new MdmiException("Section {0}, expected less than {1} instances, found {2}", sectionBag.getName().trim(), maxOccurs, occurs);
-             }
+            if( count < minOccurs ) {
+               throw new MdmiException("Section {0}, expected at least {1} instances, found only {2}", sectionBag
+                     .getName().trim(), minOccurs, count);
+            }
          }
       }
       catch( MdmiException ex ) {
@@ -97,24 +89,22 @@ public class HL7Parser implements ISyntacticParser {
       }
    }
 
-    private boolean readSectionLine( Bag sectionBag, YBag section ) {
-        String sectionName = sectionBag.getName().trim();
-        String line = readLine();
-        if( line == null || line.length() <= 0 ){
-            return false;
-        }
-        String[] fields = parseLine(line);
-        if( fields == null || fields.length <= 0 )
-            throw new MdmiException("Section {0}, cannot parse line {1}", sectionName, line);
-        String name = fields[0].trim();
-        if( !sectionName.equalsIgnoreCase(name) ) {
-            undoReadLine(line);
-            return false;
-        }
-        readOneSection(sectionBag, section, fields);
-        return true;
-    }
-
+   private boolean readSectionLine( Bag sectionBag, YBag section ) {
+      String sectionName = sectionBag.getName().trim();
+      String line = readLine();
+      if( line == null || line.length() <= 0 )
+         return false;
+      String[] fields = parseLine(line);
+      if( fields == null || fields.length <= 0 )
+         throw new MdmiException("Section {0}, cannot parse line {1}", sectionName, line);
+      String name = fields[0].trim();
+      if( !sectionName.equalsIgnoreCase(name) ) {
+         undoReadLine(line);
+         return false;
+      }
+      readOneSection(sectionBag, section, fields);
+      return true;
+   }
 
    private void readOneSection( Bag sectionBag, YBag section, String[] fields ) {
       ArrayList<Node> nodes = sectionBag.getNodes();
@@ -126,8 +116,8 @@ public class HL7Parser implements ISyntacticParser {
             index = Integer.parseInt(location);
          }
          catch( Exception ex ) {
-            throw new MdmiException("Section {0}, field {1} cannot parse location {2}"
-                  , sectionBag.getName(), i, location);
+            throw new MdmiException("Section {0}, field {1} cannot parse location {2}", sectionBag.getName(), i,
+                  location);
          }
          String value = fields[index];
 
@@ -151,18 +141,18 @@ public class HL7Parser implements ISyntacticParser {
                   index = Integer.parseInt(location);
                }
                catch( Exception ex ) {
-                  throw new MdmiException("Section {0}, field {1} subfield {2} cannot parse location {3}"
-                        , sectionBag.getName(), i, j, location);
+                  throw new MdmiException("Section {0}, field {1} subfield {2} cannot parse location {3}",
+                        sectionBag.getName(), i, j, location);
                }
                index--; // index is one-based
                if( !(subfieldNode instanceof LeafSyntaxTranslator) )
-                  throw new MdmiException("Section {0} field {1} subfield {2}: expected a leaf, found {3}"
-                        , sectionBag.getName(), i, j, subfieldNode.getClass().getName());
+                  throw new MdmiException("Section {0} field {1} subfield {2}: expected a leaf, found {3}",
+                        sectionBag.getName(), i, j, subfieldNode.getClass().getName());
                LeafSyntaxTranslator subfieldLeaf = (LeafSyntaxTranslator)subfieldNode;
                if( subfields.length <= index ) {
                   if( subfieldLeaf.isRequired() )
-                     throw new MdmiException("Section {0} field {1} subfield {2} is required and was not supplied"
-                           , sectionBag.getName(), i, j);
+                     throw new MdmiException("Section {0} field {1} subfield {2} is required and was not supplied",
+                           sectionBag.getName(), i, j);
                }
                else {
                   YLeaf subfield = new YLeaf(subfieldLeaf, field);
@@ -170,11 +160,11 @@ public class HL7Parser implements ISyntacticParser {
                   field.addYNode(subfield);
                   subfield.setValue(subfieldValue);
                }
-            }            
+            }
          }
          else
-            throw new MdmiException("Section {0} field {1}: expected a leaf or a bag, found {2}"
-                  , sectionBag.getName(), i, childNode.getClass().getName());
+            throw new MdmiException("Section {0} field {1}: expected a leaf or a bag, found {2}", sectionBag.getName(),
+                  i, childNode.getClass().getName());
       }
    }
 
@@ -197,8 +187,8 @@ public class HL7Parser implements ISyntacticParser {
                   sb.append(SUBFIELD_DELIMITER);
                YNode subfield = subfieldNodes.get(j);
                if( !(subfield instanceof YLeaf) )
-                  throw new MdmiException("Section {0} field {1} subfield {2}: expected a leaf, found {3}"
-                        , sectionBag.getName(), i, j, subfield.getClass().getName());
+                  throw new MdmiException("Section {0} field {1} subfield {2}: expected a leaf, found {3}",
+                        sectionBag.getName(), i, j, subfield.getClass().getName());
                YLeaf leaf = (YLeaf)subfield;
                sb.append(leaf.getValue());
             }
