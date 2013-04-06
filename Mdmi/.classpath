@@ -12,6 +12,5 @@
 	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/jersey-bundle-1.12.jar"/>
 	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/jsr311-api-1.1.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="APACHE"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
