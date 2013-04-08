@@ -248,6 +248,9 @@ public class MdmiDatatypeProxy {
                f.setDatatype(t);
             }
          }
+         case EXTERNAL:
+         case ENUMERATED:
+            break;
          default:
             throw new MdmiException("Invalid data type category returned from the service: NONE and PRIMITIVE not allowed!");
       }
@@ -260,11 +263,13 @@ public class MdmiDatatypeProxy {
       if( dt instanceof DTExternal ) {
          DTExternal t = (DTExternal)dt;
          ndt.setReferenceUri(t.getTypeSpec().toString());
+         ndt.setType(MdmiNetDatatypeCategory.EXTERNAL);
       }
       else if( dt instanceof DTSDerived ) {
          DTSDerived t = (DTSDerived)dt;
          ndt.setBaseType(t.getBaseType().getName());
          ndt.setRestriction(t.getRestriction());
+         ndt.setType(MdmiNetDatatypeCategory.DERIVED);
       }
       else if( dt instanceof DTSEnumerated ) {
          DTSEnumerated t = (DTSEnumerated)dt;
@@ -275,6 +280,7 @@ public class MdmiDatatypeProxy {
             l.setCode(el.getCode());
             ndt.getEnumLiterals().add(l);
          }
+         ndt.setType(MdmiNetDatatypeCategory.ENUMERATED);
       }
       else if( dt instanceof DTCStructured ) {
          DTCStructured t = (DTCStructured)dt;
@@ -287,6 +293,7 @@ public class MdmiDatatypeProxy {
             fl.setDataType(f.getDatatype().getName());
             ndt.getFields().add(fl);
          }
+         ndt.setType(MdmiNetDatatypeCategory.STRUCTURE);
       }
       else if( dt instanceof DTCChoice ) {
          DTCChoice t = (DTCChoice)dt;
@@ -299,6 +306,7 @@ public class MdmiDatatypeProxy {
             fl.setDataType(f.getDatatype().getName());
             ndt.getFields().add(fl);
          }
+         ndt.setType(MdmiNetDatatypeCategory.CHOICE);
       }
       else
          throw new MdmiException("Invalid data type conversion requested: PRIMITIVE not allowed!");

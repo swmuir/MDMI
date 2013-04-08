@@ -93,7 +93,7 @@ public class WebServiceTest {
    }
 
    private static URI getBaseUri() {
-      return UriBuilder.fromUri("http://localhost:8080/mdmisvc").build();
+      return UriBuilder.fromUri("http://localhost:8080/MdmiSvc").build();
    }
 
    private static String getToken() {

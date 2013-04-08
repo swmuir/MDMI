@@ -290,38 +290,40 @@ public class MdmiBusinessElementReference implements IClassifier {
          MdmiBusinessElementRule x = m_businessRules.get(i);
          x.toString(out, indent + "  ");
       }
-      MessageGroup g = m_domainDictionaryReference.getMessageGroup();
-      out.append(indent + "ToBusinessElement (FromMdmi) rules {\r\n");
-      Collection<MessageModel> models = g.getModels();
-      for( Iterator<MessageModel> it = models.iterator(); it.hasNext(); ) {
-         MessageModel m = it.next();
-         ArrayList<SemanticElement> a = getSourceSemanticElements(m);
-         if( a.size() > 0 ) {
-            out.append(indent + "  Model " + m.getMessageModelName() + ": ");
-            for( int i = 0; i < a.size(); i++ ) {
-               SemanticElement se = a.get(i);
-               if( i > 0 )
-                  out.append(", ");
-               out.append(se.getName());
+      if( m_domainDictionaryReference != null ) {
+         MessageGroup g = m_domainDictionaryReference.getMessageGroup();
+         out.append(indent + "ToBusinessElement (FromMdmi) rules {\r\n");
+         Collection<MessageModel> models = g.getModels();
+         for( Iterator<MessageModel> it = models.iterator(); it.hasNext(); ) {
+            MessageModel m = it.next();
+            ArrayList<SemanticElement> a = getSourceSemanticElements(m);
+            if( a.size() > 0 ) {
+               out.append(indent + "  Model " + m.getMessageModelName() + ": ");
+               for( int i = 0; i < a.size(); i++ ) {
+                  SemanticElement se = a.get(i);
+                  if( i > 0 )
+                     out.append(", ");
+                  out.append(se.getName());
+               }
+               out.append("\r\n");
             }
-            out.append("\r\n");
          }
-      }
-      out.append(indent + "}\r\n");
-      out.append(indent + "ToMessageElement (ToMdmi) rules {\r\n");
-      models = g.getModels();
-      for( Iterator<MessageModel> it = models.iterator(); it.hasNext(); ) {
-         MessageModel m = it.next();
-         ArrayList<SemanticElement> a = getTargetSemanticElements(m);
-         if( a.size() > 0 ) {
-            out.append(indent + "  Model " + m.getMessageModelName() + ": ");
-            for( int i = 0; i < a.size(); i++ ) {
-               SemanticElement se = a.get(i);
-               if( i > 0 )
-                  out.append(", ");
-               out.append(se.getName());
+         out.append(indent + "}\r\n");
+         out.append(indent + "ToMessageElement (ToMdmi) rules {\r\n");
+         models = g.getModels();
+         for( Iterator<MessageModel> it = models.iterator(); it.hasNext(); ) {
+            MessageModel m = it.next();
+            ArrayList<SemanticElement> a = getTargetSemanticElements(m);
+            if( a.size() > 0 ) {
+               out.append(indent + "  Model " + m.getMessageModelName() + ": ");
+               for( int i = 0; i < a.size(); i++ ) {
+                  SemanticElement se = a.get(i);
+                  if( i > 0 )
+                     out.append(", ");
+                  out.append(se.getName());
+               }
+               out.append("\r\n");
             }
-            out.append("\r\n");
          }
       }
       out.append(indent + "}\r\n");

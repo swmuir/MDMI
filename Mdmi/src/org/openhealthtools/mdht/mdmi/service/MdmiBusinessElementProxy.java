@@ -131,10 +131,11 @@ public class MdmiBusinessElementProxy {
       br.setReadonly(true);
       String tn = nbr.getDataType();
       MdmiDatatype t = null;
-      if( messageGroup != null )
+      if( messageGroup != null ) {
          t = messageGroup.getDatatype(tn);
-      if( t == null )
-         throw new MdmiException("Cannot find data type {0} for BER {1}", tn, nbr.getName());
+         if( t == null )
+            throw new MdmiException("Cannot find data type {0} for BER {1}", tn, nbr.getName());
+      }
       br.setReferenceDatatype(t);
       return br;
    }
