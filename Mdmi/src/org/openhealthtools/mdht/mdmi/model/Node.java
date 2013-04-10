@@ -123,10 +123,6 @@ public abstract class Node {
       return 1 <= m_minOccurs;
    }
 
-    public boolean isUnbound() {
-        return m_maxOccurs == -1 || m_maxOccurs > 1;
-    }
-   
    @Override
    public String toString() {
       StringBuffer out = new StringBuffer();

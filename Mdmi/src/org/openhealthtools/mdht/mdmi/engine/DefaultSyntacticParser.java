@@ -376,101 +376,18 @@ public class DefaultSyntacticParser implements ISyntacticParser {
     * @param root The root XML element relative to which we serialize.
     * @param xpath The XPath to store it at, relative root the root element.
     * @param ybag The YBag containing the values to store.
-    * @param yindex The index of the ynode to store
+    * @param yindex The index of the ynode to store, used when having multiple instances of ybag.
     */
    private void setBag( Element root, String xpath, YBag ybag, int yindex ) {
       if( xpath == null || xpath.length() <= 0 )
          serializeBag(ybag, root); // mapped to content
 
-      if( hasPredicate(xpath) ) {
-         ArrayList<org.w3c.dom.Node> xmlNodes = XslUtil.getNodes(root, xpath, context);
-         if( yindex < xmlNodes.size() ) {
-            org.w3c.dom.Node xmlNode = xmlNodes.get(yindex);
-
-            if( xmlNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE ) {
-               serializeBag(ybag, (Element)xmlNode);
-            }
-         }
-         return;
-      }
-
-      int pos = xpath.indexOf('/');
-      if( pos == 0 )
-         throw new MdmiException("Invalid xpath expression {0}, absolute paths not supported!", xpath);
-      if( xpath.length() <= pos + 1 )
-         throw new MdmiException("Invalid xpath expression {0}, cannot end in'/' !", xpath);
-
-      if( pos < 0 ) {
-         int p = xpath.indexOf('[');
-         Element e = null;
-         if( isIndexed(xpath) ) {
-            String nodeName = xpath.substring(0, p);
-            p = Integer.valueOf(xpath.substring(p + 1, xpath.indexOf(']'))) - 1; // index is one-based
-            ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-            while( elems.size() < p + 1 ) {
-               e = XmlUtil.addElement(root, nodeName);
-               elems.add(e);
-            }
-            e = elems.get(p);
-         }
-         else {
-            String nodeName = xpath;
-            if( ybag.getBag().isSingle() ) {
-               e = XmlUtil.getElement(root, nodeName);
-               if( e == null )
-                  e = XmlUtil.addElement(root, nodeName);
-            }
-            else {
-               ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-               if( yindex < elems.size() )
-                  e = elems.get(yindex);
-               else
-                  e = XmlUtil.addElement(root, nodeName);
-            }
-         }
-         serializeBag(ybag, e);
-      }
-      else {
-         String nodeNameInd = xpath.substring(0, pos);
-         xpath = xpath.substring(pos + 1);
-         int p = nodeNameInd.indexOf('[');
-         Element e = null;
-         if( isIndexed(nodeNameInd) ) {
-            String nodeName = nodeNameInd.substring(0, p);
-            p = Integer.valueOf(nodeNameInd.substring(p + 1, nodeNameInd.indexOf(']'))) - 1; // index is one-based
-            ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-            while( elems.size() < p + 1 ) {
-               e = XmlUtil.addElement(root, nodeName);
-               elems.add(e);
-            }
-            e = elems.get(p);
-         }
-         else {
-            String nodeName = nodeNameInd;
-            e = XmlUtil.getElement(root, nodeName);
-            if( e == null )
-               e = XmlUtil.addElement(root, nodeName);
-         }
-         setBag(e, xpath, ybag, yindex);
-      }
-   }
-
-   private boolean isIndexed( String source ) {
-      int bracketPos = source.indexOf('[');
-      if( bracketPos >= 0 ) {
-         try {
-            Integer.valueOf(source.substring(bracketPos + 1, source.lastIndexOf(']')));
-         }
-         catch( NumberFormatException ex ) {
-            return false;
-         }
-         return true;
-      }
-      return false;
-   }
-
-   private boolean hasPredicate( String xpath ) {
-      return xpath.indexOf('[') >= 0 && !isIndexed(xpath);
+      org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
+      if( xmlNode == null || xmlNode.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
+         throw new MdmiException("Invalid xpath expression {0} for element {1}, ybag {2}", xpath, root.getNodeName()
+               , ybag.toString());
+      Element e = (Element)xmlNode;
+      serializeBag(ybag, e);
    }
 
    /**
@@ -485,65 +402,12 @@ public class DefaultSyntacticParser implements ISyntacticParser {
       if( xpath == null || xpath.length() <= 0 )
          serializeChoice(ychoice, root); // mapped to content
 
-      int pos = xpath.indexOf('/');
-      if( pos == 0 )
-         throw new MdmiException("Invalid xpath expression {0}, absolute paths not supported!", xpath);
-      if( xpath.length() <= pos + 1 )
-         throw new MdmiException("Invalid xpath expression {0}, cannot end in'/' !", xpath);
-
-      if( pos < 0 ) {
-         int p = xpath.indexOf('[');
-         Element e = null;
-         if( 0 <= p ) {
-            String nodeName = xpath.substring(0, p);
-            p = Integer.valueOf(xpath.substring(p + 1, xpath.indexOf(']'))) - 1; // index is one-based
-            ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-            while( elems.size() < p + 1 ) {
-               e = XmlUtil.addElement(root, nodeName);
-               elems.add(e);
-            }
-            e = elems.get(p);
-         }
-         else {
-            String nodeName = xpath;
-            if( ychoice.getChoice().isSingle() ) {
-               e = XmlUtil.getElement(root, nodeName);
-               if( e == null )
-                  e = XmlUtil.addElement(root, nodeName);
-            }
-            else {
-               ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-               if( yindex < elems.size() )
-                  e = elems.get(yindex);
-               else
-                  e = XmlUtil.addElement(root, nodeName);
-            }
-         }
-         serializeChoice(ychoice, e);
-      }
-      else {
-         String nodeNameInd = xpath.substring(0, pos);
-         xpath = xpath.substring(pos + 1);
-         int p = nodeNameInd.indexOf('[');
-         Element e = null;
-         if( 0 <= p ) {
-            String nodeName = nodeNameInd.substring(0, p);
-            p = Integer.valueOf(nodeNameInd.substring(p + 1, nodeNameInd.indexOf(']'))) - 1; // index is one-based
-            ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-            while( elems.size() < p + 1 ) {
-               e = XmlUtil.addElement(root, nodeName);
-               elems.add(e);
-            }
-            e = elems.get(p);
-         }
-         else {
-            String nodeName = nodeNameInd;
-            e = XmlUtil.getElement(root, nodeName);
-            if( e == null )
-               e = XmlUtil.addElement(root, nodeName);
-         }
-         setChoice(e, xpath, ychoice, yindex);
-      }
+      org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
+      if( xmlNode == null || xmlNode.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
+         throw new MdmiException("Invalid xpath expression {0} for element {1}, ychoice {2}", xpath, root.getNodeName()
+               , ychoice.toString());
+      Element e = (Element)xmlNode;
+      serializeChoice(ychoice, e);
    }
 
    /**
@@ -559,141 +423,23 @@ public class DefaultSyntacticParser implements ISyntacticParser {
     */
    private void setValue( Element root, String xpath, YLeaf yleaf, int yindex ) {
       String value = yleaf.getValue();
-      if( xpath.startsWith("@") ) {
-         // @attributeName
-         if( value != null && 0 < value.length() )
-            root.setAttribute(xpath.substring(1), value);
-         return; // <-- NOTE
+      org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
+      
+      if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
+         Attr o = (Attr)xmlNode;
+         o.setTextContent(value);
       }
-
-      if( xpath.equals("text()") ) {
-         // text()
-         if( value != null && 0 < value.length() )
-            root.setTextContent(value);
-         return; // <-- NOTE
+      else if( xmlNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE ) {
+         Element o = (Element)xmlNode;
+         XmlUtil.setText(o, value);
       }
-
-      int separatorPosition = xpath.indexOf("/");
-      if( separatorPosition == 0 )
-         throw new MdmiException("Invalid xpath expression {0}, absolute paths not supported!", xpath);
-      if( xpath.length() <= separatorPosition + 1 )
-         throw new MdmiException("Invalid xpath expression {0}, cannot end in'/' !", xpath);
-
-      int attributePosition = xpath.indexOf("@");
-      if( separatorPosition < 0 && 0 < attributePosition ) {
-         // it is elementName@attrName
-         String nodeName = xpath.substring(0, attributePosition - 1);
-         xpath = xpath.substring(attributePosition + 1, xpath.length() - 1);
-         int ps = nodeName.indexOf("[");
-         int pe = nodeName.indexOf("]");
-         Element e = null;
-         if( isIndexed(nodeName) ) {
-            // nodeName = 'element[2]'
-            int index = Integer.valueOf(nodeName.substring(ps + 1, pe));
-            nodeName = nodeName.substring(0, ps);
-            ArrayList<Element> es = XmlUtil.getElements(root, nodeName);
-            while( es.size() <= index ) {
-               Element x = XmlUtil.addElement(root, nodeName);
-               es.add(x);
-            }
-            e = es.get(index);
-         }
-         else if( yleaf.getLeaf().isSingle() ) {
-            e = XmlUtil.getElement(root, nodeName);
-            if( e == null )
-               e = XmlUtil.addElement(root, nodeName);
-         }
-         else {
-            ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-            if( yindex < elems.size() )
-               e = elems.get(yindex);
-            else
-               e = XmlUtil.addElement(root, nodeName);
-         }
-         e.setAttribute(xpath, value);
-         return; // <-- NOTE
+      else if( xmlNode.getNodeType() == org.w3c.dom.Node.TEXT_NODE ) {
+         Text o = (Text)xmlNode;
+         o.setTextContent(value);
       }
-
-      if( separatorPosition < 0 && attributePosition < 0 ) {
-         // it is 'elementName'
-         int ps = xpath.indexOf("[");
-         int pe = xpath.indexOf("]");
-         Element e = null;
-         if( isIndexed(xpath) ) {
-            // nodeName = 'element[2]'
-            int index = Integer.valueOf(xpath.substring(ps + 1, pe));
-            xpath = xpath.substring(0, ps);
-            ArrayList<Element> es = XmlUtil.getElements(root, xpath);
-            while( es.size() <= index ) {
-               Element x = XmlUtil.addElement(root, xpath);
-               es.add(x);
-            }
-            e = es.get(index);
-         }
-         else if( yleaf.getLeaf().isSingle() ) {
-            e = XmlUtil.getElement(root, xpath);
-            if( e == null )
-               e = XmlUtil.addElement(root, xpath);
-         }
-         else {
-            ArrayList<Element> elems = XmlUtil.getElements(root, xpath);
-            if( yindex < elems.size() )
-               e = elems.get(yindex);
-            else
-               e = XmlUtil.addElement(root, xpath);
-         }
-         e.setTextContent(value);
-         return; // <-- NOTE
-      }
-
-      String nodeName = xpath.substring(0, separatorPosition);
-      xpath = xpath.substring(separatorPosition + 1);
-      boolean isLast = (xpath.indexOf("/") < 0);
-      boolean isAttr = (0 <= xpath.indexOf("@"));
-      int ps = nodeName.indexOf("[");
-      int pe = nodeName.indexOf("]");
-      Element e = null;
-      if( isIndexed(nodeName) ) {
-         // nodeName = 'element[2]'
-         int index = Integer.valueOf(nodeName.substring(ps + 1, pe));
-         nodeName = nodeName.substring(0, ps);
-         ArrayList<Element> es = XmlUtil.getElements(root, nodeName);
-         while( es.size() <= index ) {
-            Element x = XmlUtil.addElement(root, nodeName);
-            es.add(x);
-         }
-         e = es.get(index);
-      }
-      else {
-         if( isLast ) {
-            // nodeName=element, xpath=text() | element@attr
-            if( isAttr ) {
-               e = XmlUtil.getElement(root, nodeName);
-               if( e == null )
-                  e = XmlUtil.addElement(root, nodeName);
-            }
-            else {
-               if( yleaf.getLeaf().isSingle() ) {
-                  e = XmlUtil.getElement(root, nodeName);
-                  if( e == null )
-                     e = XmlUtil.addElement(root, nodeName);
-               }
-               else {
-                  ArrayList<Element> elems = XmlUtil.getElements(root, nodeName);
-                  if( yindex < elems.size() )
-                     e = elems.get(yindex);
-                  else
-                     e = XmlUtil.addElement(root, nodeName);
-               }
-            }
-         }
-         else {
-            e = XmlUtil.getElement(root, nodeName);
-            if( e == null )
-               e = XmlUtil.addElement(root, nodeName);
-         }
-      }
-      setValue(e, xpath, yleaf, yindex);
+      else
+         throw new MdmiException("Invalid XML node type for xpath expression {0} for element {1}, yleaf {2}: {3}"
+               , xpath, root.getNodeName(), yleaf.toString(), xmlNode.getNodeType());
    }
 
    /**
@@ -724,23 +470,6 @@ public class DefaultSyntacticParser implements ISyntacticParser {
       String p = getNodePath(parent);
       if( name.startsWith("@") )
          return p + name;
-      return p + '/' + name;
-   }
-
-   /**
-    * Get the XML document path to the given node.
-    * 
-    * @param node The node.
-    * @return The path (XPath) to this node.
-    */
-   static String getXmlPath( org.w3c.dom.Node node ) {
-      org.w3c.dom.Node parent = node.getParentNode();
-      String name = node.getNodeName();
-      if( parent == null || parent.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
-         return node.getNodeName();
-      String p = getXmlPath(parent);
-      if( node.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE )
-         return p + '@' + name;
       return p + '/' + name;
    }
 } // DefaultMdmiSyntaxParser

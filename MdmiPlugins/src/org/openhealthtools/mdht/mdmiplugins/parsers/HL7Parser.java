@@ -13,9 +13,11 @@ import org.openhealthtools.mdht.mdmi.util.StringUtil;
 import java.util.ArrayList;
 
 public class HL7Parser implements ISyntacticParser {
-   private static final String FIELD_DELIMITER    = "|";
-   private static final String SUBFIELD_DELIMITER = "^";
-   private String              m_dataBuffer;
+   static final String FIELD_DELIMITER = "|";
+   static final String SUBFIELD_DELIMITER = "^";
+   
+   private HL7Message m_message;
+   private String m_dataBuffer;
 
    public ISyntaxNode parse( MessageModel mdl, MdmiMessage msg ) {
       if( mdl == null || msg == null )
@@ -23,8 +25,8 @@ public class HL7Parser implements ISyntacticParser {
       byte[] data = msg.getData();
       if( data == null )
          return null; // <---- NOTE message can be empty
-      m_dataBuffer = StringUtil.getString(data);
-      m_dataBuffer = m_dataBuffer.trim();
+      m_message = new HL7Message();
+      m_message.load(data);
       YBag yroot = null;
       try {
          MessageSyntaxModel syn = mdl.getSyntaxModel();
@@ -43,17 +45,18 @@ public class HL7Parser implements ISyntacticParser {
             int maxOccurs = sectionBag.getMaxOccurs();
             if( maxOccurs < 0 )
                maxOccurs = Integer.MAX_VALUE;
-            int count = 0;
-            while( count < maxOccurs ) {
-               YBag section = new YBag(sectionBag, yroot);
-               if( !readSectionLine(sectionBag, section) )
-                  break;
-               yroot.addYNode(section);
-               count++;
-            }
-            if( count < minOccurs ) {
-               throw new MdmiException("Section {0}, expected at least {1} instances, found only {2}", sectionBag
-                     .getName().trim(), minOccurs, count);
+            ArrayList<HL7Section> sections = m_message.getSections(sectionBag.getName().trim());
+            if( sections.size() < minOccurs )
+               throw new MdmiException("Section {0}, expected at least {1} instances, found only {2}"
+                     , sectionBag.getName().trim(), minOccurs, sections.size());
+            if( maxOccurs < sections.size() )
+               throw new MdmiException("Section {0}, expected at most {1} instances, found {2}"
+                     , sectionBag.getName().trim(), maxOccurs, sections.size());
+            for( int j = 0; j < sections.size(); j++ ) {
+               HL7Section section = sections.get(j);
+               YBag ybag = new YBag(sectionBag, yroot);
+               yroot.addYNode(ybag);
+               readOneSection(sectionBag, ybag, section);
             }
          }
       }
@@ -94,24 +97,7 @@ public class HL7Parser implements ISyntacticParser {
       }
    }
 
-   private boolean readSectionLine( Bag sectionBag, YBag section ) {
-      String sectionName = sectionBag.getName().trim();
-      String line = readLine();
-      if( line == null || line.length() <= 0 )
-         return false;
-      String[] fields = parseLine(line);
-      if( fields == null || fields.length <= 0 )
-         throw new MdmiException("Section {0}, cannot parse line {1}", sectionName, line);
-      String name = fields[0].trim();
-      if( !sectionName.equalsIgnoreCase(name) ) {
-         undoReadLine(line);
-         return false;
-      }
-      readOneSection(sectionBag, section, fields);
-      return true;
-   }
-
-   private void readOneSection( Bag sectionBag, YBag section, String[] fields ) {
+   private void readOneSection( Bag sectionBag, YBag ybag, HL7Section section ) {
       ArrayList<Node> nodes = sectionBag.getNodes();
       for( int i = 0; i < nodes.size(); i++ ) {
          Node childNode = nodes.get(i);
@@ -124,19 +110,29 @@ public class HL7Parser implements ISyntacticParser {
             throw new MdmiException("Section {0}, field {1} cannot parse location {2}", sectionBag.getName(), i,
                   location);
          }
-         String value = fields[index];
+         String value = null;
+         try {
+            value = section.fields[index];
+         }
+         catch( Exception ex ) {
+            throw new MdmiException("Section {0}, field {1} cannot read value at index {2}", sectionBag.getName(), i,
+                  index);
+         }
 
          if( childNode instanceof LeafSyntaxTranslator ) {
             LeafSyntaxTranslator fieldLeaf = (LeafSyntaxTranslator)childNode;
-            YLeaf field = new YLeaf(fieldLeaf, section);
-            section.addYNode(field);
+            if( fieldLeaf.isRequired() && (value == null || value.length() <= 0) )
+               throw new MdmiException("Section {0}, field {1} is required and no value was given"
+                     , sectionBag.getName(), i);
+            YLeaf field = new YLeaf(fieldLeaf, ybag);
+            ybag.addYNode(field);
             field.setValue(value);
          }
          else if( childNode instanceof Bag ) {
             String[] subfields = parseField(value);
             Bag fieldBag = (Bag)childNode;
-            YBag field = new YBag(fieldBag, section);
-            section.addYNode(field);
+            YBag field = new YBag(fieldBag, ybag);
+            ybag.addYNode(field);
             ArrayList<Node> fieldNodes = fieldBag.getNodes();
             for( int j = 0; j < fieldNodes.size(); j++ ) {
                Node subfieldNode = fieldNodes.get(j);
@@ -162,6 +158,9 @@ public class HL7Parser implements ISyntacticParser {
                else {
                   YLeaf subfield = new YLeaf(subfieldLeaf, field);
                   String subfieldValue = subfields[index];
+                  if( subfieldLeaf.isRequired() && (subfieldValue == null || subfieldValue.length() <= 0) )
+                     throw new MdmiException("Section {0}, field {1}, subfield {2} is required and no value was given"
+                           , sectionBag.getName(), i, j);
                   field.addYNode(subfield);
                   subfield.setValue(subfieldValue);
                }
@@ -208,51 +207,24 @@ public class HL7Parser implements ISyntacticParser {
       m_dataBuffer += sb.toString();
    }
 
-   private String[] parseLine( String line ) {
-      if( line == null )
-         throw new IllegalArgumentException("Null argument!");
-      return line.split("\\" + FIELD_DELIMITER);
-   }
-
    private String[] parseField( String value ) {
       if( value == null )
          throw new IllegalArgumentException("Null argument!");
-      return value.split("\\" + SUBFIELD_DELIMITER);
-   }
-
-   // read next line from the buffer, and remove it
-   private String readLine() {
-      if( m_dataBuffer == null || m_dataBuffer.trim().length() <= 0 )
-         return null;
-      String ret = null;
-      int n = m_dataBuffer.indexOf('\n');
-      if( n <= 0 ) {
-         ret = m_dataBuffer;
-         m_dataBuffer = null;
-      }
-      else {
-         ret = m_dataBuffer.substring(0, n);
-         if( m_dataBuffer.length() <= n + 1 )
-            m_dataBuffer = null;
+      ArrayList<String> a = new ArrayList<String>();
+      int i = value.indexOf(SUBFIELD_DELIMITER);
+      while( 0 <= i  ) {
+         if( i == 0 )
+            a.add("");
          else
-            m_dataBuffer = m_dataBuffer.substring(n + 1);
-         if( 0 < ret.length() && ret.charAt(ret.length() - 1) == '\r' )
-            ret = ret.substring(0, ret.length() - 1);
+            a.add(value.substring(0, i));
+         if( value.length() <= i + 1 )
+            value = "";
+         else
+            value = value.substring(i + 1);
+         i = value.indexOf(SUBFIELD_DELIMITER);
       }
-      if( ret != null )
-         ret = ret.trim();
-      return ret;
-   }
-
-   // undo read next line from the buffer, add the line back to the start of the buffer
-   private void undoReadLine( String line ) {
-      if( line == null || line.length() <= 0 )
-         throw new IllegalArgumentException("Null argument!");
-      if( m_dataBuffer == null || m_dataBuffer.trim().length() <= 0 ) {
-         m_dataBuffer = line;
-         return;
-      }
-      m_dataBuffer = line + '\n' + m_dataBuffer;
+      a.add(value);
+      return a.toArray(new String[0]);
    }
 
    static String location( Node node ) {
