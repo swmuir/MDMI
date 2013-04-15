@@ -1,16 +1,11 @@
 package org.openhealthtools.mdht.mdmiplugins.parsers;
 
-import org.openhealthtools.mdht.mdmi.ISyntacticParser;
-import org.openhealthtools.mdht.mdmi.ISyntaxNode;
-import org.openhealthtools.mdht.mdmi.MdmiException;
-import org.openhealthtools.mdht.mdmi.MdmiMessage;
-import org.openhealthtools.mdht.mdmi.engine.YBag;
-import org.openhealthtools.mdht.mdmi.engine.YLeaf;
-import org.openhealthtools.mdht.mdmi.engine.YNode;
-import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.StringUtil;
+import java.util.*;
 
-import java.util.ArrayList;
+import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.engine.*;
+import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.util.*;
 
 public class HL7Parser implements ISyntacticParser {
    static final String FIELD_DELIMITER = "|";
@@ -175,10 +170,9 @@ public class HL7Parser implements ISyntacticParser {
    private void writeSection( YBag section ) {
       StringBuffer sb = new StringBuffer(256);
       Bag sectionBag = section.getBag();
-
+      sb.append(sectionBag.getName()).append(FIELD_DELIMITER);
       ArrayList<YNode> ynodes = section.getYNodes();
       for( int i = 0; i < ynodes.size(); i++ ) {
-         sb.append(sectionBag.getName()).append(FIELD_DELIMITER);
          YNode child = ynodes.get(i);
          if( child instanceof YLeaf ) {
             YLeaf leaf = (YLeaf)child;
@@ -202,8 +196,8 @@ public class HL7Parser implements ISyntacticParser {
             throw new MdmiException("Section {0} field {1} write error - expecting a leaf or a bag, found {2}",
                   sectionBag.getName(), i, child.getClass().getName());
          sb.append(FIELD_DELIMITER);
-        sb.append('\n');
       }
+      sb.append('\n');
       m_dataBuffer += sb.toString();
    }
 
