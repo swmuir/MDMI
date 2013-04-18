@@ -19,8 +19,8 @@ public class SvcBusinessElements {
 
    @GET
    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON } )
-   public MdmiNetBusinessElement[] getAll() {
-      return collection.getAll().toArray(new MdmiNetBusinessElement[0]);
+   public MdmiNetBusinessElement[] getAll( @QueryParam("offset") String offset ) {
+      return collection.getAll(Integer.valueOf(offset)).toArray(new MdmiNetBusinessElement[0]);
    }
    
    @POST

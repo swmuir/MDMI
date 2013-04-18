@@ -30,11 +30,9 @@ public class MdmiDatatypeProxy {
    private WebResource service;
    private MessageGroup messageGroup;
    
-   public MdmiDatatypeProxy( URI uri, String token ) {
-      this(uri, token, null);
-   }
-   
    public MdmiDatatypeProxy( URI uri, String token, MessageGroup messageGroup ) {
+      if( uri == null || messageGroup == null )
+         throw new IllegalArgumentException("Null service URI or message group!");
       ClientConfig config = new DefaultClientConfig();
       Client client = Client.create(config);
       service = client.resource(uri);
@@ -42,19 +40,21 @@ public class MdmiDatatypeProxy {
       this.messageGroup = messageGroup;
    }
    
-   public MdmiDatatype[] getAll() {
+   public MdmiDatatype[] getAll( int offset ) {
       try {
          MdmiNetDatatype[] lst = new MdmiNetDatatype[0];
-         lst = service.path(RPATH).accept(MediaType.APPLICATION_XML).get(lst.getClass());
-         HashMap<String, MdmiDatatype> dataTypes = new HashMap<String, MdmiDatatype>(); 
+         lst = service.path(RPATH).queryParam("offset", String.valueOf(offset))
+               .accept(MediaType.APPLICATION_XML).get(lst.getClass());
+         ArrayList<MdmiDatatype> dataTypes = new ArrayList<MdmiDatatype>(); 
          for( int i = 0; i < lst.length; i++ ) {
             MdmiDatatype dt = toModel(lst[i]);
-            dataTypes.put(dt.getName(), dt);
+            messageGroup.addDatatype(dt);
+            dataTypes.add(dt);
          }
          for( int i = 0; i < lst.length; i++ ) {
-            resolveToModel(lst[i], dataTypes);
+            resolveToModel(lst[i], dataTypes.get(i));
          }
-         return dataTypes.values().toArray(new MdmiDatatype[] {});
+         return dataTypes.toArray(new MdmiDatatype[] {});
       }
       catch( MdmiException ex ) {
          throw ex;
@@ -68,10 +68,9 @@ public class MdmiDatatypeProxy {
       try {
          MdmiNetDatatype ndt = service.path(RPATH + "/" + value).accept(MediaType.APPLICATION_XML)
                .get(MdmiNetDatatype.class);
-         HashMap<String, MdmiDatatype> dataTypes = new HashMap<String, MdmiDatatype>(); 
          MdmiDatatype dt = toModel(ndt);
-         dataTypes.put(dt.getName(), dt);
-         resolveToModel(ndt, dataTypes);
+         messageGroup.addDatatype(dt);
+         resolveToModel(ndt, dt);
          return dt;
       }
       catch( MdmiException ex ) {
@@ -87,10 +86,12 @@ public class MdmiDatatypeProxy {
          MdmiNetDatatype o = fromModel(dt);
          MdmiNetDatatype ndt = service.path(RPATH).queryParam("token", token).accept(MediaType.APPLICATION_XML)
                .post(MdmiNetDatatype.class, o);
-         HashMap<String, MdmiDatatype> dataTypes = new HashMap<String, MdmiDatatype>(); 
          dt = toModel(ndt);
-         dataTypes.put(dt.getName(), dt);
-         resolveToModel(ndt, dataTypes);
+         resolveToModel(ndt, dt);
+         MdmiDatatype existing = messageGroup.getDatatype(dt.getName());
+         if( null != existing )
+            messageGroup.getDatatypes().remove(existing);
+         messageGroup.addDatatype(dt);
          return dt;
       }
       catch( MdmiException ex ) {
@@ -106,10 +107,12 @@ public class MdmiDatatypeProxy {
          MdmiNetDatatype o = fromModel(dt);
          MdmiNetDatatype ndt = service.path(RPATH + "/" + o.getName()).queryParam("token", token).accept(MediaType.APPLICATION_XML)
                .put(MdmiNetDatatype.class, o);
-         HashMap<String, MdmiDatatype> dataTypes = new HashMap<String, MdmiDatatype>(); 
          dt = toModel(ndt);
-         dataTypes.put(dt.getName(), dt);
-         resolveToModel(ndt, dataTypes);
+         resolveToModel(ndt, dt);
+         MdmiDatatype existing = messageGroup.getDatatype(dt.getName());
+         if( null != existing )
+            messageGroup.getDatatypes().remove(existing);
+         messageGroup.addDatatype(dt);
          return dt;
       }
       catch( MdmiException ex ) {
@@ -120,9 +123,11 @@ public class MdmiDatatypeProxy {
       }
    }
    
-   public void delete( String value ) {
+   public void delete( MdmiDatatype datatype ) {
       try {
-         service.path(RPATH + "/" + value).queryParam("token", token).delete(MdmiNetDatatype.class);
+         service.path(RPATH + "/" + datatype.getName()).queryParam("token", token).delete(MdmiNetDatatype.class);
+         if( null != messageGroup.getDatatype(datatype.getName()) )
+            messageGroup.getDatatypes().remove(datatype);
       }
       catch( Exception ex ) {
          throw new MdmiException(ex, "Proxy delete() failed!");
@@ -201,51 +206,52 @@ public class MdmiDatatypeProxy {
       }
    }
    
-   private void resolveToModel( MdmiNetDatatype ndt, HashMap<String, MdmiDatatype> dataTypes ) {
+   private void resolveToModel( MdmiNetDatatype ndt, MdmiDatatype dataType ) {
       switch( ndt.getType() ) {
          case DERIVED: {
-            DTSDerived dt = (DTSDerived)dataTypes.get(ndt.getName());
-            String tn = ndt.getBaseType();
-            MdmiDatatype t = dataTypes.get(tn);
-            if( t == null && messageGroup != null )
-               t = messageGroup.getDatatype(tn);
-            if( t == null )
-               throw new MdmiException("Cannot find base type {0} for data type {1}", tn, ndt.getName());
+            String tn = null;
             try {
-               dt.setBaseType((DTSimple)t);
+               DTSDerived dt = (DTSDerived)dataType;
+               tn = ndt.getBaseType();
+               dt.setBaseType((DTSimple)resolve(tn));
             }
             catch( Exception ex ) {
-               throw new MdmiException(ex, "Invalid base type {0} (must be DTSDerived) for data type {1}", tn, ndt.getName());
+               throw new MdmiException(ex, "Invalid base type {0} (must be DTSDerived) for data type {1}"
+                     , tn, ndt.getName());
             }
          }
          case STRUCTURE: {
-            DTCStructured dt = (DTCStructured)dataTypes.get(ndt.getName());
-            ArrayList<MdmiNetField> fields = ndt.getFields();
-            for( MdmiNetField field : fields ) {
-               Field f = dt.getField(field.getName());
-               String tn = field.getDataType();
-               MdmiDatatype t = dataTypes.get(tn);
-               if( t == null && messageGroup != null )
-                  t = messageGroup.getDatatype(tn);
-               if( t == null )
-                  throw new MdmiException("Cannot find base type {0} for data type {1} field {2}", tn, ndt.getName()
-                        , field.getName());
-               f.setDatatype(t);
+            String tn = null;
+            Field f = null;
+            try {
+               DTCStructured dt = (DTCStructured)dataType;
+               ArrayList<MdmiNetField> fields = ndt.getFields();
+               for( MdmiNetField field : fields ) {
+                  f = dt.getField(field.getName());
+                  tn = field.getDataType();
+                  f.setDatatype(resolve(tn));
+               }
+            }
+            catch( Exception ex ) {
+               throw new MdmiException("Cannot find data type {0} for field {1} or data type {2}", tn
+                     , f.getName(), ndt.getName());
             }
          }
          case CHOICE: {
-            DTCChoice dt = (DTCChoice)dataTypes.get(ndt.getName());
-            ArrayList<MdmiNetField> fields = ndt.getFields();
-            for( MdmiNetField field : fields ) {
-               Field f = dt.getField(field.getName());
-               String tn = field.getDataType();
-               MdmiDatatype t = dataTypes.get(tn);
-               if( t == null && messageGroup != null )
-                  t = messageGroup.getDatatype(tn);
-               if( t == null )
-                  throw new MdmiException("Cannot find base type {0} for data type {1} field {2}", tn, ndt.getName()
-                        , field.getName());
-               f.setDatatype(t);
+            String tn = null;
+            Field f = null;
+            try {
+               DTCChoice dt = (DTCChoice)dataType;
+               ArrayList<MdmiNetField> fields = ndt.getFields();
+               for( MdmiNetField field : fields ) {
+                  f = dt.getField(field.getName());
+                  tn = field.getDataType();
+                  f.setDatatype(resolve(tn));
+               }
+            }
+            catch( Exception ex ) {
+               throw new MdmiException("Cannot find data type {0} for field {1} or data type {2}", tn
+                     , f.getName(), ndt.getName());
             }
          }
          case EXTERNAL:
@@ -311,5 +317,18 @@ public class MdmiDatatypeProxy {
       else
          throw new MdmiException("Invalid data type conversion requested: PRIMITIVE not allowed!");
       return ndt;
+   }
+   
+   private MdmiDatatype resolve( String name ) {
+      MdmiDatatype t = messageGroup.getDatatype(name);
+      if( t != null )
+         return t;
+      try {
+         t = get(name);
+      }
+      catch( Exception ex ) {
+         throw new MdmiException(ex, "Cannot find datatype {0}", name);
+      }
+      return t;
    }
 } // MdmiDataTypeProxy

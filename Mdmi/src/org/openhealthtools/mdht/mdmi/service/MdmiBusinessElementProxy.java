@@ -32,26 +32,28 @@ public class MdmiBusinessElementProxy {
    private String token;
    private WebResource service;
    private MessageGroup messageGroup;
+   private MdmiDatatypeProxy dtProxy;
    
-   public MdmiBusinessElementProxy( URI uri, String token ) {
-      this(uri, token, null);
-   }
-   
-   public MdmiBusinessElementProxy( URI uri, String token, MessageGroup messageGroup  ) {
+   public MdmiBusinessElementProxy( URI uri, String token, MessageGroup messageGroup, MdmiDatatypeProxy dtProxy ) {
+      if( uri == null || messageGroup == null || dtProxy == null )
+         throw new IllegalArgumentException("Null service URI, or message group, or datatype proxy!");
       ClientConfig config = new DefaultClientConfig();
       Client client = Client.create(config);
       service = client.resource(uri);
       this.token = token;
       this.messageGroup = messageGroup;
+      this.dtProxy = dtProxy;
    }
    
-   public MdmiBusinessElementReference[] getAll() {
+   public MdmiBusinessElementReference[] getAll( int offset ) {
       try {
          MdmiNetBusinessElement[] lst = new MdmiNetBusinessElement[0];
-         lst = service.path(RPATH).accept(MediaType.APPLICATION_XML).get(lst.getClass());
+         lst = service.path(RPATH).queryParam("offset", String.valueOf(offset))
+               .accept(MediaType.APPLICATION_XML).get(lst.getClass());
          ArrayList<MdmiBusinessElementReference> a = new ArrayList<MdmiBusinessElementReference>();
          for( int i = 0; i < lst.length; i++ ) {
             MdmiBusinessElementReference br = toModel(lst[i]);
+            messageGroup.getDomainDictionary().addBusinessElement(br);
             a.add(br);
          }
          return a.toArray(new MdmiBusinessElementReference[] {});
@@ -68,7 +70,9 @@ public class MdmiBusinessElementProxy {
       try {
          MdmiNetBusinessElement nbr = service.path(RPATH + "/" + value).accept(MediaType.APPLICATION_XML)
                .get(MdmiNetBusinessElement.class);
-         return toModel(nbr);
+         MdmiBusinessElementReference br = toModel(nbr);
+         messageGroup.getDomainDictionary().addBusinessElement(br);
+         return br;
       }
       catch( MdmiException ex ) {
          throw ex;
@@ -83,7 +87,12 @@ public class MdmiBusinessElementProxy {
          MdmiNetBusinessElement o = fromModel(br);
          MdmiNetBusinessElement nbr = service.path(RPATH).queryParam("token", token).accept(MediaType.APPLICATION_XML)
                .post(MdmiNetBusinessElement.class, o);
-         return toModel(nbr);
+         br = toModel(nbr);
+         MdmiBusinessElementReference existing = messageGroup.getDomainDictionary().getBusinessElement(br.getName());
+         if( null != existing )
+            messageGroup.getDomainDictionary().getBusinessElements().remove(existing);
+         messageGroup.getDomainDictionary().addBusinessElement(br);
+         return br;
       }
       catch( MdmiException ex ) {
          throw ex;
@@ -98,7 +107,12 @@ public class MdmiBusinessElementProxy {
          MdmiNetBusinessElement o = fromModel(br);
          MdmiNetBusinessElement nbr = service.path(RPATH + "/" + o.getName()).queryParam("token", token).accept(MediaType.APPLICATION_XML)
                .put(MdmiNetBusinessElement.class, o);
-         return toModel(nbr);
+         br = toModel(nbr);
+         MdmiBusinessElementReference existing = messageGroup.getDomainDictionary().getBusinessElement(br.getName());
+         if( null != existing )
+            messageGroup.getDomainDictionary().getBusinessElements().remove(existing);
+         messageGroup.getDomainDictionary().addBusinessElement(br);
+         return br;
       }
       catch( MdmiException ex ) {
          throw ex;
@@ -108,9 +122,11 @@ public class MdmiBusinessElementProxy {
       }
    }
    
-   public void delete( String value ) {
+   public void delete( MdmiBusinessElementReference br ) {
       try {
-         service.path(RPATH + "/" + value).queryParam("token", token).delete(MdmiNetBusinessElement.class);
+         service.path(RPATH + "/" + br.getName()).queryParam("token", token).delete(MdmiNetBusinessElement.class);
+         if( null != messageGroup.getDatatype(br.getName()) )
+            messageGroup.getDomainDictionary().getBusinessElements().remove(br);
       }
       catch( Exception ex ) {
          throw new MdmiException(ex, "Proxy delete() failed!");
@@ -131,10 +147,13 @@ public class MdmiBusinessElementProxy {
       br.setReadonly(true);
       String tn = nbr.getDataType();
       MdmiDatatype t = null;
-      if( messageGroup != null ) {
+      try {
          t = messageGroup.getDatatype(tn);
          if( t == null )
-            throw new MdmiException("Cannot find data type {0} for BER {1}", tn, nbr.getName());
+            t = dtProxy.get(tn);
+      }
+      catch( Exception ex ) {
+         throw new MdmiException(ex, "Cannot find datatype {0} for BER {1}.", tn, nbr.getName());
       }
       br.setReferenceDatatype(t);
       return br;

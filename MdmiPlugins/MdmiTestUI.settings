@@ -2,7 +2,7 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>MdmiTestUI properties</comment>
-<entry key="ui.user.lastDirs.lastTargetMapDir">C:\ProjectsFirestar\MDMI\test\ABTest\MB.xmi</entry>
+<entry key="ui.user.lastDirs.lastTargetMapDir">C:\ProjectsFirestar\MDMI\test\testY\bug1\HL7Map.xmi</entry>
 <entry key="ui.windowSizeAndLocation.screenResolution_1280x1024.locationY">50</entry>
 <entry key="ui.windowSizeAndLocation.screenResolution_1280x1024.locationX">50</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1280.1024/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/dimensionH">199</entry>
@@ -16,14 +16,14 @@
 <entry key="ui.windowSizeAndLocation.screenResolution_1920x1080.locationY">50</entry>
 <entry key="ui.windowSizeAndLocation.screenResolution_1920x1080.locationX">50</entry>
 <entry key="ui.windowSizeAndLocation.screenResolution_1920x1080.dimensionH">810</entry>
-<entry key="ui.user.lastDirs.lastSourceMsgDir">C:\ProjectsFirestar\MDMI\test\ABTest\A01.xml</entry>
+<entry key="ui.user.lastDirs.lastSourceMsgDir">C:\ProjectsFirestar\MDMI\test\testY\bug1\HL7_source.hl7</entry>
 <entry key="ui.windowSizeAndLocation.screenResolution_1280x1024.dimensionH">768</entry>
-<entry key="ui.user.lastDirs.lastDirectory">C:\ProjectsFirestar\MDMI\test\ABTest</entry>
-<entry key="ui.user.lastDirs.lastTargetMsgDir">C:\ProjectsFirestar\MDMI\test\ABTest\B01.xml</entry>
+<entry key="ui.user.lastDirs.lastDirectory">C:\ProjectsFirestar\MDMI\test\testY\bug1</entry>
+<entry key="ui.user.lastDirs.lastTargetMsgDir">C:\ProjectsFirestar\MDMI\test\testY\bug1\HL7_target.hl7</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1920.1080/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/windowIsMaximized">false</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1280.1024/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/dimensionW">496</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1280.1024/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/locationY">272</entry>
-<entry key="ui.user.lastDirs.lastSourceMapDir">C:\ProjectsFirestar\MDMI\test\ABTest\MA.xmi</entry>
+<entry key="ui.user.lastDirs.lastSourceMapDir">C:\ProjectsFirestar\MDMI\test\testY\bug1\HL7Map.xmi</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1280.1024/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/locationX">320</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1280.1024/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/windowIsMaximized">false</entry>
 <entry key="ui/windowSizeAndLocation/screenResolution_1920.1080/dialogs/org.openhealthtools.mdht.mdmi.testui.DlgShowException/dimensionW">502</entry>

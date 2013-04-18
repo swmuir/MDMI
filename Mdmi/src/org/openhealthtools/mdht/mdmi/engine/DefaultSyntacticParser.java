@@ -14,28 +14,17 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
-import org.openhealthtools.mdht.mdmi.ISyntacticParser;
-import org.openhealthtools.mdht.mdmi.ISyntaxNode;
-import org.openhealthtools.mdht.mdmi.MdmiException;
-import org.openhealthtools.mdht.mdmi.MdmiMessage;
+import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.XmlParser;
-import org.openhealthtools.mdht.mdmi.util.XmlUtil;
-import org.openhealthtools.mdht.mdmi.util.XmlWriter;
-import org.openhealthtools.mdht.mdmi.util.XslUtil;
-import org.w3c.dom.Attr;
+import org.openhealthtools.mdht.mdmi.util.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Text;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.io.*;
+import java.util.*;
 
 public class DefaultSyntacticParser implements ISyntacticParser {
    protected static final String DEFAULT_NS = "DEFAULT_NS";
@@ -51,12 +40,9 @@ public class DefaultSyntacticParser implements ISyntacticParser {
 
       YNode yroot = null;
       try {
-//         XmlParser p = new XmlParser();
-//         Document doc = p.parse(new ByteArrayInputStream(data));
+         XmlParser p = new XmlParser();
+         Document doc = p.parse(new ByteArrayInputStream(data));
 
-          DocumentBuilderFactory Factory = DocumentBuilderFactory.newInstance();
-          DocumentBuilder builder = Factory.newDocumentBuilder();
-          Document doc = builder.parse(new ByteArrayInputStream(data));
          Element root = doc.getDocumentElement();
          context = XslUtil.getDocumentNamespaces(doc, DEFAULT_NS);
          MessageSyntaxModel syn = mdl.getSyntaxModel();

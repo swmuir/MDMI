@@ -81,6 +81,9 @@ public final class DlgShowException extends DlgBase {
       txtStackTrace.setEditable( false );
       txtStackTrace.setText(MdmiException.getFullDescription(m_exception));
       JScrollPane scr = new JScrollPane(txtStackTrace);
+      Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+      scr.setPreferredSize(new Dimension(screenSize.width/2, screenSize.height/2));
+      txtStackTrace.select(0, 0);
       
       this.getContentPane().add( txtMessage, BorderLayout.NORTH );
       this.getContentPane().add( scr, BorderLayout.CENTER );

@@ -9,18 +9,22 @@ import org.openhealthtools.mdht.mdmi.service.*;
 public class WebServiceTest {
    public static void main( String[] args ) {
       try {
-         MdmiDatatypeProxy pdt = new MdmiDatatypeProxy(getBaseUri(), getToken());
-         MdmiBusinessElementProxy pbe = new MdmiBusinessElementProxy(getBaseUri(), getToken());
+         MessageGroup testMap = new MessageGroup();
+         testMap.setName("TestMap");
+         testMap.setDomainDictionary(new MdmiDomainDictionaryReference());
          
+         MdmiDatatypeProxy pdt = new MdmiDatatypeProxy(getBaseUri(), getToken(), testMap);
+         MdmiBusinessElementProxy pbe = new MdmiBusinessElementProxy(getBaseUri(), getToken(), testMap, pdt);
+
          System.out.println("--- DATA TYPES -----------");
-         MdmiDatatype[] lstDT = pdt.getAll();
+         MdmiDatatype[] lstDT = pdt.getAll(0); // offset 0
          for( int i = 0; i < lstDT.length; i++ ) {
             System.out.println(lstDT[i].toString());
          }
          System.out.println("--------------------------");
          
          System.out.println("--- BUSINESS ELEMENTS ----");
-         MdmiBusinessElementReference[] lstBE = pbe.getAll();
+         MdmiBusinessElementReference[] lstBE = pbe.getAll(0);
          for( int i = 0; i < lstBE.length; i++ ) {
             System.out.println(lstBE[i].toString());
          }
@@ -29,6 +33,11 @@ public class WebServiceTest {
          DTExternal testDataDT = new DTExternal();
          testDataDT.setTypeName("CodeList");
          testDataDT.setTypeSpec(new URI("http://dictionary.mdmi.org/enums/CodeList"));
+         try {
+            pdt.delete(testDataDT);
+         }
+         catch( Exception ignoreDeleteFails ) {}
+         
          MdmiDatatype responseDT = pdt.add(testDataDT);
          System.out.println(responseDT);
          System.out.println("--------------------------");
@@ -51,7 +60,12 @@ public class WebServiceTest {
          testDataBE.setUniqueIdentifier("TestBer");
          testDataBE.setReference(new URI("http://dictionary.mdmi.org/bers/TestBer"));
          testDataBE.setReferenceDatatype(testDataDT);
-         MdmiBusinessElementReference responseBE = pbe.update(testDataBE);
+         try {
+            pbe.delete(testDataBE);
+         }
+         catch( Exception ignoreDeleteFails ) {}
+         
+         MdmiBusinessElementReference responseBE = pbe.add(testDataBE);
          System.out.println(responseBE);
          System.out.println("--------------------------");
          
@@ -70,18 +84,18 @@ public class WebServiceTest {
          System.out.println(responseBE);
          System.out.println("--------------------------");
          
-         pdt.delete(nameDT);
-         pbe.delete(nameBE);
+         pdt.delete(testDataDT);
+         pbe.delete(testDataBE);
          
          System.out.println("--- DATA TYPES -----------");
-         lstDT = pdt.getAll();
+         lstDT = pdt.getAll(0);
          for( int i = 0; i < lstDT.length; i++ ) {
             System.out.println(lstDT[i].toString());
          }
          System.out.println("--------------------------");
 
          System.out.println("--- BUSINESS ELEMENTS ----");
-         lstBE = pbe.getAll();
+         lstBE = pbe.getAll(0);
          for( int i = 0; i < lstBE.length; i++ ) {
             System.out.println(lstBE[i].toString());
          }

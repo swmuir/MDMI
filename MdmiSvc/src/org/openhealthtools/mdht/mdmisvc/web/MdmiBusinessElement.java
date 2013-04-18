@@ -82,8 +82,8 @@ class MdmiNetBusinessElementCollection {
       return o == null ? null : o.toBO();
    }
    
-   List<MdmiNetBusinessElement> getAll() {
-      List<MdmiNetBusinessElementDA> daList = ds.find(MdmiNetBusinessElementDA.class).asList();
+   List<MdmiNetBusinessElement> getAll( int offset ) {
+      List<MdmiNetBusinessElementDA> daList = ds.find(MdmiNetBusinessElementDA.class).limit(100).offset(offset).asList();
       List<MdmiNetBusinessElement> boList = new ArrayList<MdmiNetBusinessElement>();
       for( int i = 0; i < daList.size(); i++ ) {
          boList.add(daList.get(i).toBO());

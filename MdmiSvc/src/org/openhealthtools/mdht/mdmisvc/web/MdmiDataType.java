@@ -116,12 +116,12 @@ class MdmiNetDataTypeCollection {
       if( null == o )
          AppListener.logger.warn("MdmiNetDataType.find('" + name + "') not found!");
       else
-         AppListener.logger.warn("MdmiNetDataType.find('" + name + "') found: " + o.toString());
+         AppListener.logger.debug("MdmiNetDataType.find('" + name + "') found: " + o.toString());
       return o == null ? null : o.toBO();
    }
    
-   List<MdmiNetDatatype> getAll() {
-      List<MdmiNetDataTypeDA> daList = ds.find(MdmiNetDataTypeDA.class).asList();
+   List<MdmiNetDatatype> getAll( int offset ) {
+      List<MdmiNetDataTypeDA> daList = ds.find(MdmiNetDataTypeDA.class).limit(100).offset(offset).asList();
       List<MdmiNetDatatype> boList = new ArrayList<MdmiNetDatatype>();
       for( int i = 0; i < daList.size(); i++ ) {
          boList.add(daList.get(i).toBO());

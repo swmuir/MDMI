@@ -19,8 +19,8 @@ public class SvcDataTypes {
 
    @GET
    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON } )
-   public MdmiNetDatatype[] getAll() {
-      return collection.getAll().toArray(new MdmiNetDatatype[0]);
+   public MdmiNetDatatype[] getAll( @QueryParam("offset") String offset ) {
+      return collection.getAll(Integer.valueOf(offset)).toArray(new MdmiNetDatatype[0]);
    }
    
    @POST
