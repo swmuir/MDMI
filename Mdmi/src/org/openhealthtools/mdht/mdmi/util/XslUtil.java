@@ -348,7 +348,8 @@ public class XslUtil {
             i = indexOfNotInQuotes(spath, '@');
             name = spath.substring(0, i);
             spath = spath.substring(i + 1);
-            p = getOrCreateElement(p, name);
+            if( 0 < name.length() ) // cover the strange format elem/@attr
+               p = getOrCreateElement(p, name);
             return getOrCreateAttribute(p, spath);
          }
       }

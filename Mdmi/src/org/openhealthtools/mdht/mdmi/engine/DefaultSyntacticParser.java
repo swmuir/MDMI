@@ -23,6 +23,9 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Text;
 
 import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import java.io.*;
 import java.util.*;
 

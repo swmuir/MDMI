@@ -39,7 +39,7 @@ public final class XmlParser {
     * Default constructor, uses default values for all attributes.
     */
    public XmlParser() {
-      this(true, false, true, false, false, true, false);
+      this(true, false, true, false, false, false, false);
    }
 
    /**
@@ -62,12 +62,12 @@ public final class XmlParser {
          boolean expandEntityReferences, // default is true
          boolean ignoreComments, // default is false
          boolean ignoreElementWhitespace, // default is false
-         boolean namespaceAware, // default is true
+         boolean namespaceAware, // default is false
          boolean validating // default is false
    ) {
       m_strict = strict;
-      // force Xerces. Alternative: DocumentBuilderFactory.newInstance();
-      DocumentBuilderFactory factory = new org.apache.xerces.jaxp.DocumentBuilderFactoryImpl();
+      // force Xerces. Alternative: new org.apache.xerces.jaxp.DocumentBuilderFactoryImpl();
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setCoalescing(coalescing);
       factory.setExpandEntityReferences(expandEntityReferences);
       factory.setIgnoringComments(ignoreComments);
