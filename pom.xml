@@ -1,0 +1,64 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.openhealthtools.mdht.mdmi</groupId>
+    <artifactId>mdmi-parent</artifactId>
+    <name>mdmi-parent</name>
+    <packaging>pom</packaging>
+    <version>0.1.1-SNAPSHOT</version>
+    <repositories>
+        <repository>
+            <id>mdmi-3dparty</id>
+            <url>http://fpkloyalsrv01:8081/nexus/content/repositories/mdmi-3dparty</url>
+        </repository>
+    </repositories>
+    <modules>
+        <module>mdmi</module>
+        <module>mdmimapeditor</module>
+        <module>nrladapter</module>
+    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.11.0</version>
+        </dependency>
+        <dependency>
+            <groupId>xml-resolver</groupId>
+            <artifactId>xml-resolver</artifactId>
+            <version>1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+            <version>2.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr-runtime</artifactId>
+            <version>3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.nrl</groupId>
+            <artifactId>nrlparser</artifactId>
+            <version>1.4.14</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.nrl</groupId>
+            <artifactId>nrl</artifactId>
+            <version>1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.modeltwozero</groupId>
+            <artifactId>nrl-iterpreter</artifactId>
+            <version>1.5.0</version>
+        </dependency>
+    </dependencies>
+
+</project>
