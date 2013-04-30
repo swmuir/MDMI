@@ -14,27 +14,30 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.util;
 
-import org.openhealthtools.mdht.mdmi.*;
-import java.util.*;
+import org.openhealthtools.mdht.mdmi.MdmiException;
+import org.w3c.dom.*;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.*;
-import org.w3c.dom.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import java.util.*;
 
 /**
  * XSLT Utilities. By default is caching the last 0x4000 expressions parsed.
- * 
+ *
  * @author goancea
  */
 public class XslUtil {
    public static final XPathFactory XPATH_FACTORY = new org.apache.xpath.jaxp.XPathFactoryImpl();
-
+   public static final String DEFAULT_NS = "DEFAULT_NS";
    private static XCache  s_cache        ;
    private static boolean s_isInitialized;
-   
+
    /**
     * Initialize with a cache size. If negative or 0, caching is disabled.
-    * 
+    *
     * @param cacheSize Cache size. If negative or 0, caching is disabled.
     */
    public static void initialize( int cacheSize ) {
@@ -49,10 +52,10 @@ public class XslUtil {
          initialize(0x1000);
       return s_cache;
    }
-   
+
    /**
     * Get the namespaces from a DOM document.
-    * 
+    *
     * @param doc The document.
     * @param defaultNsPrefix The string to use as default prefix.
     * @return The map of namspaces used.
@@ -87,11 +90,11 @@ public class XslUtil {
          scan(children.get(i), ctx);
       }
    }
-   
+
    /**
     * Get the DOM nodes that match the XPath passed in, relative to the element given.
     * XPath must be relative.
-    * 
+    *
     * @param root The element to which the XPath is relative to.
     * @param xpath The actual XPath expression.
     * @return The list of nodes that match (if any). Will never be null.
@@ -112,7 +115,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The string result of the evaluation.
@@ -125,7 +128,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -139,7 +142,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The string result of the evaluation.
@@ -169,7 +172,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The Node result of the evaluation.
@@ -196,7 +199,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The Node result of the evaluation.
@@ -217,7 +220,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -244,7 +247,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The NodeList result of the evaluation.
@@ -278,7 +281,7 @@ public class XslUtil {
     * </pre>
     * More than one node of the specified type may be created (for the nodes which support this)
     * by using the ordinalIndex.
-    * 
+    *
     * @param parent Node relative to which the XPath expression will be evaluated.
     * @param path The XPath expression to evaluate
     * @param ordinalIndex The ordinal index if adding more than one node.
@@ -287,11 +290,11 @@ public class XslUtil {
    public static Node createNodeForPath( Element parent, String path, int ordinalIndex ) {
       if( parent == null || path == null || path.length() <= 0 )
          throw new IllegalArgumentException("Null or empty arguments!");
-      
+
       int isqb = indexOfNotInQuotes(path, '[');
       int islh = indexOfNotInQuotes(path, '/');
       int icat = indexOfNotInQuotes(path, '@');
-      
+
       // start with border cases
       if( isqb == 0 )
          throw new IllegalArgumentException("Invalid xpath expression '" + path + "', cannot start with '['");
@@ -331,7 +334,7 @@ public class XslUtil {
                return addElement(p, spath, ordinalIndex);
          }
          else {
-            // 0 < icat, that is elem@attr, or elem1/elem2/.../elemN@attr 
+            // 0 < icat, that is elem@attr, or elem1/elem2/.../elemN@attr
             if( icat < path.lastIndexOf('/') )
                throw new IllegalArgumentException("Invalid xpath expresion '" + path + "', cannot contain '/' after '@'");
             int i = islh;
@@ -380,7 +383,7 @@ public class XslUtil {
                   }
                   p = elems.get(index - 1);
                }
-               else { 
+               else {
                   // we have a predicate, first check if it exists
                   String pred = name + '[' + expr + ']';
                   boolean isFinal = spath.length() <= 0;
@@ -406,7 +409,7 @@ public class XslUtil {
                }
             }
             else {
-               // e/e, 
+               // e/e,
                name = spath.substring(0, y);
                spath = spath.substring(y + 1);
                p = getOrCreateElement(p, name);
@@ -421,7 +424,7 @@ public class XslUtil {
          return p;
       }
    }
-   
+
    private static Node addNodeBasedOnPredicate( Element p, String name, String expr, int ordinalIndex ) {
       if( p == null || name == null || expr == null || name.length() <= 0 || expr.length() <= 0 )
          throw new IllegalArgumentException("Invalid null or empty argument!");
@@ -435,7 +438,7 @@ public class XslUtil {
       }
       return child;
    }
-   
+
    private static void processPredicate( Element child, String expr ) {
       if( expr.startsWith("@") ) {
          // @attr='value'
@@ -459,7 +462,7 @@ public class XslUtil {
             throw new MdmiException("Can't handle predicate expression: " + expr);
       }
    }
-   
+
    // e1/e2/../text()='value'
    private static String[] parseElemValue( String s ) {
       if( s == null || s.length() <= 0 )
@@ -469,7 +472,7 @@ public class XslUtil {
       a[0] = s.substring(0, i);
       a[1] = s.substring(i + 2, s.length() - 1);
       return a;
-   } 
+   }
 
    // @name='value'
    private static String[] parseAttrValue( String s ) {
@@ -481,8 +484,8 @@ public class XslUtil {
       a[0] = s.substring(0, i);
       a[1] = s.substring(i + 2, s.length() - 1);
       return a;
-   } 
-   
+   }
+
    private static int xpathIndex( String expr ) {
       try {
          return Integer.valueOf(expr);
@@ -490,7 +493,7 @@ public class XslUtil {
       catch( Exception ignored ) {}
       return -1;
    }
-   
+
    private static String[] splitForBrackets( String s ) {
       String[] a = new String[3];
       int i = indexOfNotInQuotes(s, '[');
@@ -529,7 +532,7 @@ public class XslUtil {
          a[2] = s.substring(closeBindex + 1);
       return a;
    }
-   
+
    private static int indexOfNotInQuotes( String s, char x ) {
       int i = s.indexOf(x);
       if( i < 0 )
@@ -553,7 +556,7 @@ public class XslUtil {
       }
       return i;
    }
-   
+
    private static Attr getOrCreateAttribute( Element parent, String name ) {
       Attr a = parent.getAttributeNode(name);
       if( a == null ) {
@@ -563,14 +566,14 @@ public class XslUtil {
       }
       return a;
    }
-   
+
    private static Element getOrCreateElement( Element parent, String name ) {
       Element child = XmlUtil.getElement(parent, name);
       if( child == null )
          child = XmlUtil.addElement(parent, name);
       return child;
    }
-   
+
    private static Element addElement( Element parent, String name, int index ) {
       if( index < 0 )
          return getOrCreateElement(parent, name);
@@ -581,19 +584,48 @@ public class XslUtil {
       }
       return elems.get(index);
    }
-   
+
    private static XPathExpression getRule( String rule ) {
       return getRule(rule, null);
    }
 
-   private static XPathExpression getRule( String rule, NamespaceContext context ) {
+    private static void createNodeXPath(StringBuilder stringBuilder, String tag) {
+
+        int icln = indexOfNotInQuotes(tag, ':');
+        int icat = indexOfNotInQuotes(tag, '@');
+        if (icln<0 && icat!= 0){
+            stringBuilder.append(DEFAULT_NS);
+            stringBuilder.append(":");
+        }
+        stringBuilder.append(tag);
+
+    }
+
+   private static String getValidXpath(String xPath, NamespaceContext context){
+       String namespaceURI = context.getNamespaceURI(DEFAULT_NS);
+       // check if there is any default namespace
+       if(namespaceURI != null && !namespaceURI.isEmpty()){
+           StringBuilder stringBuilder = new StringBuilder();
+           String[] tags = xPath.split("/");
+           int length = tags.length;
+           for (int i = 0; i < length -1; i++) {
+               createNodeXPath(stringBuilder, tags[i]);
+               stringBuilder.append("/");
+           }
+           createNodeXPath(stringBuilder, tags[length-1]);
+           return stringBuilder.toString();
+       }
+       return  xPath;
+   }
+
+    private static XPathExpression getRule( String rule, NamespaceContext context ) {
       XPathExpression r = cache().getExpression(rule);
       if( r == null ) {
          XPath xpath = XPATH_FACTORY.newXPath();
          if( context != null )
             xpath.setNamespaceContext(context);
          try {
-            r = xpath.compile(rule);
+             r = xpath.compile(getValidXpath(rule, context));
          }
          catch( Exception ex ) {
             String err = "XslUtil.getRule(): Error compiling xpath expression '" + rule + "'";
@@ -637,7 +669,7 @@ public class XslUtil {
          if( 0 < cacheSize )
             maxSize = cacheSize;
       }
-      
+
       XPathExpression getExpression( String rule ) {
          synchronized( lock ) {
             Integer i = m_ruleNameIndex.get(rule);
