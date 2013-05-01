@@ -184,7 +184,7 @@ public class HL7Parser implements ISyntacticParser {
       Bag sectionBag = section.getBag();
       sb.append(sectionBag.getName()).append(FIELD_DELIMITER);
       ArrayList<YNode> ynodes = section.getYNodes();
-      sortFiledByLocation(ynodes);
+      sortFieldByLocation(ynodes);
       int location = 0;
       for( int i = 0; i < ynodes.size(); i++ ) {
          YNode child = ynodes.get(i);
@@ -220,7 +220,7 @@ public class HL7Parser implements ISyntacticParser {
       m_dataBuffer += sb.toString();
    }
 
-   private void sortFiledByLocation( ArrayList<YNode> subfieldNodes ) {
+   private void sortFieldByLocation( ArrayList<YNode> subfieldNodes ) {
       Collections.sort(subfieldNodes, new Comparator<YNode>() {
          public int compare( YNode node1, YNode node2 ) {
             Integer location1 = null;
