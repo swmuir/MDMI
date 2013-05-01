@@ -14,19 +14,15 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.util;
 
-import org.openhealthtools.mdht.mdmi.MdmiException;
-import org.w3c.dom.Document;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXParseException;
+import java.io.*;
+import java.util.*;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.ArrayList;
+import org.w3c.dom.*;
+import org.xml.sax.*;
+
+import javax.xml.parsers.*;
+
+import org.openhealthtools.mdht.mdmi.*;
 
 /**
  * Wrapper for an XML DOM parser.

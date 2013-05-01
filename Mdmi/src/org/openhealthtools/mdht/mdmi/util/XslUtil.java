@@ -1,43 +1,42 @@
 /*******************************************************************************
-* Copyright (c) 2012 Firestar Software, Inc.
-* All rights reserved. This program and the accompanying materials
-* are made available under the terms of the Eclipse Public License v1.0
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v10.html
-*
-* Contributors:
-*     Firestar Software, Inc. - initial API and implementation
-*
-* Author:
-*     Gabriel Oancea
-*
-*******************************************************************************/
+ * Copyright (c) 2012 Firestar Software, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Firestar Software, Inc. - initial API and implementation
+ *
+ * Author:
+ *     Gabriel Oancea
+ *
+ *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.util;
 
-import org.openhealthtools.mdht.mdmi.MdmiException;
-import org.w3c.dom.*;
+import java.util.*;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
-import java.util.*;
+import javax.xml.xpath.*;
+
+import org.w3c.dom.*;
+
+import org.openhealthtools.mdht.mdmi.*;
 
 /**
  * XSLT Utilities. By default is caching the last 0x4000 expressions parsed.
- *
+ * 
  * @author goancea
  */
 public class XslUtil {
    public static final XPathFactory XPATH_FACTORY = new org.apache.xpath.jaxp.XPathFactoryImpl();
-   public static final String DEFAULT_NS = "DEFAULT_NS";
-   private static XCache  s_cache        ;
-   private static boolean s_isInitialized;
+   public static final String       DEFAULT_NS    = "DEFAULT_NS";
+   private static XCache            s_cache;
+   private static boolean           s_isInitialized;
 
    /**
     * Initialize with a cache size. If negative or 0, caching is disabled.
-    *
+    * 
     * @param cacheSize Cache size. If negative or 0, caching is disabled.
     */
    public static void initialize( int cacheSize ) {
@@ -55,7 +54,7 @@ public class XslUtil {
 
    /**
     * Get the namespaces from a DOM document.
-    *
+    * 
     * @param doc The document.
     * @param defaultNsPrefix The string to use as default prefix.
     * @return The map of namspaces used.
@@ -92,14 +91,13 @@ public class XslUtil {
    }
 
    /**
-    * Get the DOM nodes that match the XPath passed in, relative to the element given.
-    * XPath must be relative.
-    *
+    * Get the DOM nodes that match the XPath passed in, relative to the element given. XPath must be relative.
+    * 
     * @param root The element to which the XPath is relative to.
     * @param xpath The actual XPath expression.
     * @return The list of nodes that match (if any). Will never be null.
     */
-   public static ArrayList<Node> getNodes( Element root, String xpath, NamespaceContext context) {
+   public static ArrayList<Node> getNodes( Element root, String xpath, NamespaceContext context ) {
       if( root == null )
          throw new IllegalArgumentException("The root element may not be null!");
       if( xpath == null || xpath.length() <= 0 )
@@ -115,7 +113,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The string result of the evaluation.
@@ -128,7 +126,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -142,7 +140,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The string result of the evaluation.
@@ -172,7 +170,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The Node result of the evaluation.
@@ -185,7 +183,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -199,7 +197,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The Node result of the evaluation.
@@ -220,7 +218,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -234,7 +232,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The NodeList result of the evaluation.
@@ -247,7 +245,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    *
+    * 
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The NodeList result of the evaluation.
@@ -266,8 +264,9 @@ public class XslUtil {
    }
 
    /**
-    * Create or get and existing node or hierarchy of nodes based on the given XPath.
-    * Supported expressions are most XPath constructs:
+    * Create or get and existing node or hierarchy of nodes based on the given XPath. Supported expressions are most
+    * XPath constructs:
+    * 
     * <pre>
     * elem
     * {@literal @}attr
@@ -279,9 +278,10 @@ public class XslUtil {
     * a/b/c[d[{@literal @}a='value']]
     * a[b/c/text()='value']
     * </pre>
-    * More than one node of the specified type may be created (for the nodes which support this)
-    * by using the ordinalIndex.
-    *
+    * 
+    * More than one node of the specified type may be created (for the nodes which support this) by using the
+    * ordinalIndex.
+    * 
     * @param parent Node relative to which the XPath expression will be evaluated.
     * @param path The XPath expression to evaluate
     * @param ordinalIndex The ordinal index if adding more than one node.
@@ -308,7 +308,8 @@ public class XslUtil {
          if( icat == 0 ) {
             // is of this form @attr
             if( 0 < islh )
-               throw new IllegalArgumentException("Invalid xpath expresion '" + path + "', cannot contain '/' after '@'");
+               throw new IllegalArgumentException("Invalid xpath expresion '" + path
+                     + "', cannot contain '/' after '@'");
             String name = path.substring(1);
             return getOrCreateAttribute(parent, name);
          }
@@ -336,7 +337,8 @@ public class XslUtil {
          else {
             // 0 < icat, that is elem@attr, or elem1/elem2/.../elemN@attr
             if( icat < path.lastIndexOf('/') )
-               throw new IllegalArgumentException("Invalid xpath expresion '" + path + "', cannot contain '/' after '@'");
+               throw new IllegalArgumentException("Invalid xpath expresion '" + path
+                     + "', cannot contain '/' after '@'");
             int i = islh;
             String spath = path;
             Element p = parent;
@@ -434,7 +436,7 @@ public class XslUtil {
       int n = ordinalIndex <= 0 ? 1 : ordinalIndex + 1;
       while( i++ < n ) {
          child = XmlUtil.addElement(p, name);
-         processPredicate( child, expr );
+         processPredicate(child, expr);
       }
       return child;
    }
@@ -490,7 +492,8 @@ public class XslUtil {
       try {
          return Integer.valueOf(expr);
       }
-      catch( Exception ignored ) {}
+      catch( Exception ignored ) {
+      }
       return -1;
    }
 
@@ -498,16 +501,17 @@ public class XslUtil {
       String[] a = new String[3];
       int i = indexOfNotInQuotes(s, '[');
       if( i <= 0 )
-         throw new IllegalArgumentException("Invalid xpath expresion '" + s + "', does not contain '[', or has it at index 0");
+         throw new IllegalArgumentException("Invalid xpath expresion '" + s
+               + "', does not contain '[', or has it at index 0");
       int j = i;
       int closeBindex = -1;
       int openBcount = 0;
       boolean insideQuotes = false;
       while( j < s.length() && closeBindex < 0 ) {
          char c = s.charAt(++j);
-         if( c == '\'') {
+         if( c == '\'' ) {
             if( insideQuotes ) {
-               if( s.charAt(j - 1) != '\\')
+               if( s.charAt(j - 1) != '\\' )
                   insideQuotes = false;
             }
             else
@@ -542,9 +546,9 @@ public class XslUtil {
       boolean insideQuotes = false;
       while( j < s.length() && i < 0 ) {
          char c = s.charAt(j);
-         if( c == '\'') {
+         if( c == '\'' ) {
             if( insideQuotes ) {
-               if( 0 <= j - 1 && s.charAt(j - 1) != '\\')
+               if( 0 <= j - 1 && s.charAt(j - 1) != '\\' )
                   insideQuotes = false;
             }
             else
@@ -589,43 +593,43 @@ public class XslUtil {
       return getRule(rule, null);
    }
 
-    private static void createNodeXPath(StringBuilder stringBuilder, String tag) {
+   private static void createNodeXPath( StringBuilder stringBuilder, String tag ) {
 
-        int icln = indexOfNotInQuotes(tag, ':');
-        int icat = indexOfNotInQuotes(tag, '@');
-        if (icln<0 && icat!= 0){
-            stringBuilder.append(DEFAULT_NS);
-            stringBuilder.append(":");
-        }
-        stringBuilder.append(tag);
+      int icln = indexOfNotInQuotes(tag, ':');
+      int icat = indexOfNotInQuotes(tag, '@');
+      if( icln < 0 && icat != 0 ) {
+         stringBuilder.append(DEFAULT_NS);
+         stringBuilder.append(":");
+      }
+      stringBuilder.append(tag);
 
-    }
-
-   private static String getValidXpath(String xPath, NamespaceContext context){
-       String namespaceURI = context.getNamespaceURI(DEFAULT_NS);
-       // check if there is any default namespace
-       if(namespaceURI != null && !namespaceURI.isEmpty()){
-           StringBuilder stringBuilder = new StringBuilder();
-           String[] tags = xPath.split("/");
-           int length = tags.length;
-           for (int i = 0; i < length -1; i++) {
-               createNodeXPath(stringBuilder, tags[i]);
-               stringBuilder.append("/");
-           }
-           createNodeXPath(stringBuilder, tags[length-1]);
-           return stringBuilder.toString();
-       }
-       return  xPath;
    }
 
-    private static XPathExpression getRule( String rule, NamespaceContext context ) {
+   private static String getValidXpath( String xPath, NamespaceContext context ) {
+      String namespaceURI = context.getNamespaceURI(DEFAULT_NS);
+      // check if there is any default namespace
+      if( namespaceURI != null && !namespaceURI.isEmpty() ) {
+         StringBuilder stringBuilder = new StringBuilder();
+         String[] tags = xPath.split("/");
+         int length = tags.length;
+         for( int i = 0; i < length - 1; i++ ) {
+            createNodeXPath(stringBuilder, tags[i]);
+            stringBuilder.append("/");
+         }
+         createNodeXPath(stringBuilder, tags[length - 1]);
+         return stringBuilder.toString();
+      }
+      return xPath;
+   }
+
+   private static XPathExpression getRule( String rule, NamespaceContext context ) {
       XPathExpression r = cache().getExpression(rule);
       if( r == null ) {
          XPath xpath = XPATH_FACTORY.newXPath();
          if( context != null )
             xpath.setNamespaceContext(context);
          try {
-             r = xpath.compile(getValidXpath(rule, context));
+            r = xpath.compile(getValidXpath(rule, context));
          }
          catch( Exception ex ) {
             String err = "XslUtil.getRule(): Error compiling xpath expression '" + rule + "'";

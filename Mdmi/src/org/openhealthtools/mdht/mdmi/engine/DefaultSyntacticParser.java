@@ -14,29 +14,22 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
-import org.openhealthtools.mdht.mdmi.ISyntacticParser;
-import org.openhealthtools.mdht.mdmi.ISyntaxNode;
-import org.openhealthtools.mdht.mdmi.MdmiException;
-import org.openhealthtools.mdht.mdmi.MdmiMessage;
-import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.XmlParser;
-import org.openhealthtools.mdht.mdmi.util.XmlUtil;
-import org.openhealthtools.mdht.mdmi.util.XmlWriter;
-import org.openhealthtools.mdht.mdmi.util.XslUtil;
+import java.io.*;
+import java.util.*;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import javax.xml.namespace.NamespaceContext;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+
+import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.util.*;
 
 public class DefaultSyntacticParser implements ISyntacticParser {
-   protected NamespaceContext    context;
+   protected NamespaceContext context;
 
    @Override
    public ISyntaxNode parse( MessageModel mdl, MdmiMessage msg ) {
@@ -393,8 +386,8 @@ public class DefaultSyntacticParser implements ISyntacticParser {
 
       org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
       if( xmlNode == null || xmlNode.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
-         throw new MdmiException("Invalid xpath expression {0} for element {1}, ybag {2}", xpath, root.getNodeName()
-               , ybag.toString());
+         throw new MdmiException("Invalid xpath expression {0} for element {1}, ybag {2}", xpath, root.getNodeName(),
+               ybag.toString());
       Element e = (Element)xmlNode;
       serializeBag(ybag, e);
    }
@@ -413,8 +406,8 @@ public class DefaultSyntacticParser implements ISyntacticParser {
 
       org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
       if( xmlNode == null || xmlNode.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
-         throw new MdmiException("Invalid xpath expression {0} for element {1}, ychoice {2}", xpath, root.getNodeName()
-               , ychoice.toString());
+         throw new MdmiException("Invalid xpath expression {0} for element {1}, ychoice {2}", xpath,
+               root.getNodeName(), ychoice.toString());
       Element e = (Element)xmlNode;
       serializeChoice(ychoice, e);
    }
@@ -433,7 +426,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
    private void setValue( Element root, String xpath, YLeaf yleaf, int yindex ) {
       String value = yleaf.getValue();
       org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
-      
+
       if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
          Attr o = (Attr)xmlNode;
          o.setTextContent(value);
@@ -447,8 +440,8 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          o.setTextContent(value);
       }
       else
-         throw new MdmiException("Invalid XML node type for xpath expression {0} for element {1}, yleaf {2}: {3}"
-               , xpath, root.getNodeName(), yleaf.toString(), xmlNode.getNodeType());
+         throw new MdmiException("Invalid XML node type for xpath expression {0} for element {1}, yleaf {2}: {3}",
+               xpath, root.getNodeName(), yleaf.toString(), xmlNode.getNodeType());
    }
 
    /**
