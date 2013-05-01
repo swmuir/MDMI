@@ -1,11 +1,11 @@
 package org.openhealthtools.mdht.mdmiplugins.parsers;
 
+import java.util.*;
+
 import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.engine.*;
 import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.util.*;
-
-import java.util.*;
 
 public class HL7Parser implements ISyntacticParser {
    static final String FIELD_DELIMITER    = "|";
