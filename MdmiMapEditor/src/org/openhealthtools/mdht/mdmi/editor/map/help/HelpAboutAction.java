@@ -33,7 +33,7 @@ public class HelpAboutAction extends AbstractHelpAboutAction {
 
 		// initialize menu to use product information in menu name ("Help About Configuration Editor"
 		String menuName = MessageFormat.format(getLocalText(Actions.HELP_ABOUT_ACTION),
-				MapEditor.getApplicationName());
+				MapEditor.getMapEditorName());
 		
 		this.putValue(Action.NAME, menuName);
 	}

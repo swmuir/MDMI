@@ -1,19 +1,19 @@
 package org.openhealthtools.mdht.mdmi.editor.map.editor;
 
 import java.awt.Color;
-import java.awt.event.KeyEvent;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
+import org.openhealthtools.mdht.mdmi.editor.common.components.CustomTextArea;
+
 /** A JTextPane, using a DefaultStyledDocument, that includes some parsing/decorating */
-public class RuleTextPane extends JTextPane {
+public class RuleTextPane extends CustomTextArea {
 
 	private static final SimpleAttributeSet s_normalAttr  = new SimpleAttributeSet();
 	private static final SimpleAttributeSet s_textAttr  = new SimpleAttributeSet();
@@ -117,22 +117,5 @@ public class RuleTextPane extends JTextPane {
 		
 		return doc;
 	}
-
-
-	/** ignore Tab key as text entry - use it to move focus to next field */
-	@Override
-	protected void processComponentKeyEvent( KeyEvent e ) {  
-		if (e.getID() == KeyEvent.KEY_PRESSED &&  e.getKeyCode() == KeyEvent.VK_TAB ) {
-			e.consume();
-			if (e.isShiftDown()) {
-				transferFocusBackward();
-			} else {
-				transferFocus();
-			}
-		}  
-		else {  
-			super.processComponentKeyEvent( e );  
-		}  
-	} 
 
 }

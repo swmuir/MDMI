@@ -69,7 +69,7 @@ public class MdmiDatatypeField extends AdvancedSelectionField {
 			if (!dataClass.isAssignableFrom(dataType.getClass())) {
 				continue;
 			}
-			// skip ones that don't have a typeName - they are a result of an unaccepted edit
+			// skip ones that don't have a typeName - they are a result of an un-accepted edit
 			if (dataType.getTypeName() == null) {
 				continue;
 			}

@@ -216,6 +216,8 @@ public class BERImporter extends JFrame {
 	private class ListCellRenderer extends DefaultListCellRenderer {
 
 
+		private static final String HTML_SPACE = "&nbsp;&nbsp;";
+
 		@Override
 		public Component getListCellRendererComponent(JList list,
 				Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -229,10 +231,10 @@ public class BERImporter extends JFrame {
 				// line number
 				int lineNo = index+1;
 				// insert spaces
-				if (lineNo < 1000) buf.append("&nbsp;&nbsp;");
-				if (lineNo < 100) buf.append("&nbsp;&nbsp;");
-				if (lineNo < 10) buf.append("&nbsp;&nbsp;");
-				buf.append(lineNo).append(".&nbsp;&nbsp;");
+				if (lineNo < 1000) buf.append(HTML_SPACE);
+				if (lineNo < 100) buf.append(HTML_SPACE);
+				if (lineNo < 10) buf.append(HTML_SPACE);
+				buf.append(lineNo).append(".").append(HTML_SPACE);
 				// name
 				buf.append(ber.getName());
 				

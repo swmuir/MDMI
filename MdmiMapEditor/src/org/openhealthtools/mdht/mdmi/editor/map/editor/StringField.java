@@ -16,7 +16,6 @@ package org.openhealthtools.mdht.mdmi.editor.map.editor;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 import javax.swing.JComponent;
@@ -28,6 +27,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
+import org.openhealthtools.mdht.mdmi.editor.common.components.CustomTextArea;
 
 /** An IEditorField that shows String values as a text area */
 public class StringField extends JPanel implements IEditorField, DocumentListener {
@@ -59,27 +59,6 @@ public class StringField extends JPanel implements IEditorField, DocumentListene
 		m_defaultValueDisplay.setVisible(false);
 	}
 	
-	private class CustomTextArea extends JTextArea {
-		public CustomTextArea(int rows, int columns) {
-			super(rows, columns);
-		}
-
-		/** ignore Tab key as text entry - use it to move focus to next field */
-		@Override
-		protected void processComponentKeyEvent( KeyEvent e ) {  
-			if (e.getID() == KeyEvent.KEY_PRESSED &&  e.getKeyCode() == KeyEvent.VK_TAB ) {
-				e.consume();
-				if (e.isShiftDown()) {
-					transferFocusBackward();
-				} else {
-					transferFocus();
-				}
-			}  
-			else {  
-				super.processComponentKeyEvent( e );  
-			}  
-		} 
-	}
 	
 	@Override
 	public JComponent getComponent() {
