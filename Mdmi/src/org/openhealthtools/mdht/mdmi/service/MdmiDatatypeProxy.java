@@ -156,6 +156,7 @@ public class MdmiDatatypeProxy {
             dt.setDescription(ndt.getDescription());
             dt.setRestriction(ndt.getRestriction());
             dt.setReadonly(true);
+            return dt;
          }
          case ENUMERATED: {
             DTSEnumerated dt = new DTSEnumerated();
@@ -170,6 +171,7 @@ public class MdmiDatatypeProxy {
                dt.addLiteral(el);
             }
             dt.setReadonly(true);
+            return dt;
          }
          case STRUCTURE: {
             DTCStructured dt = new DTCStructured();
@@ -185,6 +187,7 @@ public class MdmiDatatypeProxy {
                dt.getFields().add(f);
             }
             dt.setReadonly(true);
+            return dt;
          }
          case CHOICE: {
             DTCChoice dt = new DTCChoice();
@@ -200,6 +203,7 @@ public class MdmiDatatypeProxy {
                dt.getFields().add(f);
             }
             dt.setReadonly(true);
+            return dt;
          }
          default:
             throw new MdmiException("Invalid data type category returned from the service: NONE and PRIMITIVE not allowed!");
