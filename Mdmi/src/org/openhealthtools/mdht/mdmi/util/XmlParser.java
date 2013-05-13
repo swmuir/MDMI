@@ -40,7 +40,7 @@ public final class XmlParser {
     * Default constructor, uses default values for all attributes.
     */
    public XmlParser() {
-      this(true, false, false, false, false, true, false);
+      this(true, false, true, false, false, true, false);
    }
 
    /**
