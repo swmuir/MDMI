@@ -25,7 +25,7 @@ import org.openhealthtools.mdht.mdmi.*;
 
 /**
  * XSLT Utilities. By default is caching the last 0x4000 expressions parsed.
- * 
+ *
  * @author goancea
  */
 public class XslUtil {
@@ -36,7 +36,7 @@ public class XslUtil {
 
    /**
     * Initialize with a cache size. If negative or 0, caching is disabled.
-    * 
+    *
     * @param cacheSize Cache size. If negative or 0, caching is disabled.
     */
    public static void initialize( int cacheSize ) {
@@ -54,7 +54,7 @@ public class XslUtil {
 
    /**
     * Get the namespaces from a DOM document.
-    * 
+    *
     * @param doc The document.
     * @param defaultNsPrefix The string to use as default prefix.
     * @return The map of namspaces used.
@@ -92,7 +92,7 @@ public class XslUtil {
 
    /**
     * Get the DOM nodes that match the XPath passed in, relative to the element given. XPath must be relative.
-    * 
+    *
     * @param root The element to which the XPath is relative to.
     * @param xpath The actual XPath expression.
     * @return The list of nodes that match (if any). Will never be null.
@@ -113,7 +113,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The string result of the evaluation.
@@ -126,7 +126,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -140,7 +140,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as a string. Use to get the values of simple type
     * elements or attributes, like <code>node1/node2@attr</code>, or <code>node1/node2/text()</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The string result of the evaluation.
@@ -170,7 +170,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The Node result of the evaluation.
@@ -183,7 +183,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -197,7 +197,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML Node. Use to get the values of any single node,
     * like <code>node1/node2</code>, or <code>node1/node2@attr</code>
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The Node result of the evaluation.
@@ -218,7 +218,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @param context The namespace context, may be null.
@@ -232,7 +232,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The NodeList result of the evaluation.
@@ -245,7 +245,7 @@ public class XslUtil {
    /**
     * Evaluate the XPath rule and return the evaluation result as an XML NodeList. Use to get the values for multiple
     * nodes, like <code>node1/node2</code>.
-    * 
+    *
     * @param node The node relative to which the evaluation of the rule takes place.
     * @param rule The rule to evaluate.
     * @return The NodeList result of the evaluation.
@@ -266,7 +266,7 @@ public class XslUtil {
    /**
     * Create or get and existing node or hierarchy of nodes based on the given XPath. Supported expressions are most
     * XPath constructs:
-    * 
+    *
     * <pre>
     * elem
     * {@literal @}attr
@@ -278,10 +278,10 @@ public class XslUtil {
     * a/b/c[d[{@literal @}a='value']]
     * a[b/c/text()='value']
     * </pre>
-    * 
+    *
     * More than one node of the specified type may be created (for the nodes which support this) by using the
     * ordinalIndex.
-    * 
+    *
     * @param parent Node relative to which the XPath expression will be evaluated.
     * @param path The XPath expression to evaluate
     * @param ordinalIndex The ordinal index if adding more than one node.
@@ -606,6 +606,7 @@ public class XslUtil {
    }
 
    private static String getValidXpath( String xPath, NamespaceContext context ) {
+      if (context == null) return xPath;
       String namespaceURI = context.getNamespaceURI(DEFAULT_NS);
       // check if there is any default namespace
       if( namespaceURI != null && !namespaceURI.isEmpty() ) {
