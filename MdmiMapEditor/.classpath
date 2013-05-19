@@ -4,6 +4,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Mdmi"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/NRL/nrl.jar"/>
-	<classpathentry kind="lib" path="C:/OHT/ThirdParty/SERVICES/jsr311-api-1.1.1.jar"/>
+	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/jsr311-api-1.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
