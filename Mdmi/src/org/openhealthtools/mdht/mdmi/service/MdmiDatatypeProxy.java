@@ -77,6 +77,8 @@ public class MdmiDatatypeProxy {
          throw ex;
       }
       catch( Exception ex ) {
+         if( 0 < ex.getMessage().indexOf("404") )
+            return null;
          throw new MdmiException(ex, "Proxy get() failed!");
       }
    }
@@ -218,6 +220,7 @@ public class MdmiDatatypeProxy {
                DTSDerived dt = (DTSDerived)dataType;
                tn = ndt.getBaseType();
                dt.setBaseType((DTSimple)resolve(tn));
+               return;
             }
             catch( Exception ex ) {
                throw new MdmiException(ex, "Invalid base type {0} (must be DTSDerived) for data type {1}"
@@ -235,6 +238,7 @@ public class MdmiDatatypeProxy {
                   tn = field.getDataType();
                   f.setDatatype(resolve(tn));
                }
+               return;
             }
             catch( Exception ex ) {
                throw new MdmiException("Cannot find data type {0} for field {1} or data type {2}", tn
@@ -252,6 +256,7 @@ public class MdmiDatatypeProxy {
                   tn = field.getDataType();
                   f.setDatatype(resolve(tn));
                }
+               return;
             }
             catch( Exception ex ) {
                throw new MdmiException("Cannot find data type {0} for field {1} or data type {2}", tn
@@ -260,7 +265,7 @@ public class MdmiDatatypeProxy {
          }
          case EXTERNAL:
          case ENUMERATED:
-            break;
+            return;
          default:
             throw new MdmiException("Invalid data type category returned from the service: NONE and PRIMITIVE not allowed!");
       }

@@ -78,6 +78,8 @@ public class MdmiBusinessElementProxy {
          throw ex;
       }
       catch( Exception ex ) {
+         if( 0 < ex.getMessage().indexOf("404") )
+            return null;
          throw new MdmiException(ex, "Proxy get() failed!");
       }
    }

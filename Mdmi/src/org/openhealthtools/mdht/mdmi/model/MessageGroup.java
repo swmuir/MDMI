@@ -117,7 +117,7 @@ public class MessageGroup implements IPackage {
          if( dt.getName().equals(name) )
             return dt;
       }
-      return null;
+      return DTSPrimitive.getByName(name);
    }
 
    public MdmiDomainDictionaryReference getDomainDictionary() {

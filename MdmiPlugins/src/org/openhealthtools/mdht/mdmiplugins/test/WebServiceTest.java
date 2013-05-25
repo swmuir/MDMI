@@ -100,6 +100,37 @@ public class WebServiceTest {
             System.out.println(lstBE[i].toString());
          }
          System.out.println("--------------------------");
+
+         MdmiBusinessElementReference stringBE = new MdmiBusinessElementReference();
+         stringBE.setName("StringBer");
+         stringBE.setUniqueIdentifier("StringBer");
+         stringBE.setReference(new URI("http://dictionary.mdmi.org/bers/StringBer"));
+         stringBE.setReferenceDatatype(DTSPrimitive.STRING);
+         try {
+            pbe.delete(stringBE);
+         }
+         catch( Exception ignoreDeleteFails ) {}
+         
+         MdmiBusinessElementReference rsBE = pbe.add(stringBE);
+         System.out.println(rsBE);
+         System.out.println("--------------------------");
+         
+         nameBE = rsBE.getName();
+         rsBE = pbe.get(nameBE);
+         System.out.println(rsBE);
+         System.out.println("--------------------------");
+         
+         stringBE = new MdmiBusinessElementReference();
+         stringBE.setName("StringBer");
+         stringBE.setUniqueIdentifier("StringBer");
+         stringBE.setReference(new URI("http://dictionary.mdmi.org/bers/StringBerV2"));
+         stringBE.setReferenceDatatype(DTSPrimitive.STRING);
+         
+         rsBE = pbe.update(stringBE);
+         System.out.println(rsBE);
+         System.out.println("--------------------------");
+         
+         pbe.delete(stringBE);
       }
       catch( Exception ex ) {
          ex.printStackTrace();
@@ -107,7 +138,7 @@ public class WebServiceTest {
    }
 
    private static URI getBaseUri() {
-      return UriBuilder.fromUri("http://localhost:8080/MdmiSvc").build();
+      return UriBuilder.fromUri("http://localhost:8080/MdmiSvc").build(); // 107.22.213.68
    }
 
    private static String getToken() {
