@@ -166,7 +166,7 @@ public class EditComplexDatatypeDlg extends EditDatatypeDlg {
 		m_removeFieldButton.addActionListener(m_typeListener);
 		
 		// size it
-		pack();
+		pack(new Dimension(600,500));
 		
 		return mainPanel;
 		
@@ -174,7 +174,7 @@ public class EditComplexDatatypeDlg extends EditDatatypeDlg {
 	
 	// add a new DatabaseFieldPanel to the display
 	private void addNewFieldPanel() {
-		DatabaseFieldPanel fieldPanel = new DatabaseFieldPanel();
+		DatabaseFieldPanel fieldPanel = new DatabaseFieldPanel(m_datatypeModel);
 		m_fieldPanels.add(fieldPanel);
 
 
@@ -194,9 +194,7 @@ public class EditComplexDatatypeDlg extends EditDatatypeDlg {
 			return;
 		}
 
-
 		super.populateView();
-		
 		
 		if (m_datatypeModel instanceof DTCChoice) {
 			m_choiceBtn.setSelected(true);

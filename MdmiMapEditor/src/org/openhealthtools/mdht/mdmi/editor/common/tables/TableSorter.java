@@ -102,11 +102,11 @@ public class TableSorter extends TableMap {
    protected int compare(Object o1, Object o2) {
       int result;
       if (o1 instanceof Enum) {   
-         Enum e1 = (Enum)o1;
+         Enum<?> e1 = (Enum<?>)o1;
          o1 = e1.toString();
       }
       if (o2 instanceof Enum) {   
-         Enum e2 = (Enum)o2;
+         Enum<?> e2 = (Enum<?>)o2;
          o2 = e2.toString();
       }
 
@@ -131,7 +131,7 @@ public class TableSorter extends TableMap {
          
       } else if (o1 instanceof Comparable) {   
          try {
-            Comparable comp = (Comparable)o1;
+            Comparable<Object> comp = (Comparable<Object>)o1;
             result = comp.compareTo(o2);
          } catch (ClassCastException e) {
             String s1 = o1.toString();
@@ -171,7 +171,7 @@ public class TableSorter extends TableMap {
       m_indexes = new int[rowCount];
       m_revIndexes = new int[rowCount];
       
-      // Initialise with the identity mapping.
+      // Initialize with the identity mapping.
       for( int row = 0; row < rowCount; row++ ) {
          m_indexes[row] = row;
          m_revIndexes[row] = row;
@@ -205,9 +205,10 @@ public class TableSorter extends TableMap {
                indexList.add(new Integer(idx));
             }
             Collections.sort(indexList, new Comparator<Integer>() {
+               @Override
                public int compare(Integer row0, Integer row1) {
-                  int result = compareRows(row0.intValue(), row1.intValue());
-                  return result;
+            	   int result = compareRows(row0.intValue(), row1.intValue());
+            	   return result;
                }
             });
             for (int i=0; i<indexList.size(); i++) {
@@ -227,7 +228,11 @@ public class TableSorter extends TableMap {
    public Object getValueAt(int aRow, int aColumn)
    {
       checkModel();
-      return model.getValueAt(m_indexes[aRow], aColumn);
+      int rowIndex = aRow;
+      if (aRow < m_indexes.length) {
+    	  rowIndex = m_indexes[aRow];
+      }
+      return model.getValueAt(rowIndex, aColumn);
    }
    
    @Override

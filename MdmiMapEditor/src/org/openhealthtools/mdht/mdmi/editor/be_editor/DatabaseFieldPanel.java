@@ -39,14 +39,14 @@ public class DatabaseFieldPanel extends JPanel {
 	private JTextField m_max = new JTextField(6);
 	private JCheckBox  m_unbounded = new JCheckBox("Unbounded", true);
 	//private JTextField m_datatype = new JTextField(m_cols);
-	private DataTypeSelector m_datatype = new DataTypeSelector();
+	private DataTypeSelector m_datatype = new DataTypeSelector(MdmiDatatype.class);
 
 	private IntegerDocumentFilter m_integerFilter = new IntegerDocumentFilter();
 	private DocumentListener m_textListener = new TextFieldListener();
 	private ActionListener m_unboundedListener = new UnboundedListener();
 
 	/** Create the basic ui */
-	public  DatabaseFieldPanel() {
+	public  DatabaseFieldPanel(MdmiDatatype parent) {
 		// Name:        [______________________________]
 		// Description: [______________________________]
 		// Min:  [_____]     Max:  [_____] [] Unbounded
@@ -58,7 +58,7 @@ public class DatabaseFieldPanel extends JPanel {
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.weighty = 0;
-		gbc.anchor = GridBagConstraints.WEST;
+		gbc.anchor = GridBagConstraints.NORTHWEST;
 
 		// Name
 		gbc.weightx = 0;
@@ -77,9 +77,11 @@ public class DatabaseFieldPanel extends JPanel {
 		add(new JLabel("Description:"), gbc);
 		gbc.gridx++;
 		gbc.weightx = 1;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weighty = 1;
+		gbc.fill = GridBagConstraints.BOTH;
 		JScrollPane scroller = new JScrollPane(m_description);
 		add(scroller, gbc);
+		gbc.weighty = 0;
 		
 		gbc.gridx = 0;
 		gbc.gridy++;
@@ -104,13 +106,16 @@ public class DatabaseFieldPanel extends JPanel {
 		gbc.gridy++;
 		
 		// Data Type
+		if (parent != null) {
+			// don't allow self-selection
+			m_datatype.excludeDatatype(parent);
+		}
 		gbc.weightx = 0;
 		gbc.fill = GridBagConstraints.NONE;
 		add(new JLabel("Datatype:"), gbc);
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.weighty = 1;
 		add(m_datatype, gbc);
 
 		// Add a filter to min and max

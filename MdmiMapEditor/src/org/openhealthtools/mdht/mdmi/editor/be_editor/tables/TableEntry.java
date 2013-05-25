@@ -19,6 +19,9 @@ public class TableEntry {
 		return m_userObject;
 	}
 
+	public void setUserObject(Object obj) {
+		m_userObject = obj;
+	}
 
 
 	public boolean isDirty() {

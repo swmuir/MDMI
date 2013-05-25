@@ -42,7 +42,8 @@ public class ClassUtil {
 	public static String beautifyName(Class<?> clazz) {
 		// first look for a ClassUtil.<classpath>.display entry in the resource
 		try {
-			String displayName = s_res.getString("ClassUtil." + clazz.getName() + ".display");
+			String key = "ClassUtil." + clazz.getName() + ".display";
+			String displayName = s_res.getString(key);
 			return displayName;
 		} catch (MissingResourceException ex) {
 			// ignore

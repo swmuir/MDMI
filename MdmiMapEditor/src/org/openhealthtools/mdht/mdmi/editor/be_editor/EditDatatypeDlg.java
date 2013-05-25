@@ -2,9 +2,12 @@ package org.openhealthtools.mdht.mdmi.editor.be_editor;
 
 import java.awt.BorderLayout;
 import java.awt.Dialog;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -19,7 +22,6 @@ import javax.swing.event.DocumentListener;
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CustomTextArea;
-import org.openhealthtools.mdht.mdmi.model.DTComplex;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 
 
@@ -36,23 +38,24 @@ public class EditDatatypeDlg extends BaseDialog {
 	protected JTextField m_name = new JTextField(m_cols);
 	protected JTextArea  m_description = new CustomTextArea(4, m_cols);
 	
+	protected ActionListener m_actionListener = new DatatypeActionListener();
 	protected DocumentListener m_textListener = new TextFieldListener();
 	protected GridBagConstraints m_gbc = new GridBagConstraints();
 
-	public EditDatatypeDlg(Dialog owner) {
+	protected EditDatatypeDlg(Dialog owner) {
 		this(owner, null);	// new
 	}
-	public EditDatatypeDlg(Frame owner) {
+	protected EditDatatypeDlg(Frame owner) {
 		this(owner, null);	// new
 	}
 
-	public EditDatatypeDlg(Dialog owner, DTComplex datatype) {
+	protected EditDatatypeDlg(Dialog owner, MdmiDatatype datatype) {
 		super(owner, BaseDialog.OK_CANCEL_OPTION);
 
 		construct(datatype);
 	}
 	
-	public EditDatatypeDlg(Frame owner, DTComplex datatype) {
+	protected EditDatatypeDlg(Frame owner, MdmiDatatype datatype) {
 		super(owner, BaseDialog.OK_CANCEL_OPTION);
 
 		construct(datatype);
@@ -73,6 +76,8 @@ public class EditDatatypeDlg extends BaseDialog {
 			setTitle(MessageFormat.format(s_res.getString("EditDatatypeDlg.modifyTitleFmt"),
 					datatype.getName()));
 		}
+		
+		setMinimumSize(new Dimension(300,300));
 	}
 
 	/** Creates the basic ui */
@@ -88,7 +93,7 @@ public class EditDatatypeDlg extends BaseDialog {
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.weighty = 0;
-		gbc.anchor = GridBagConstraints.WEST;
+		gbc.anchor = GridBagConstraints.NORTHWEST;
 
 		// Name
 		gbc.weightx = 0;
@@ -107,10 +112,11 @@ public class EditDatatypeDlg extends BaseDialog {
 		mainPanel.add(new JLabel(s_res.getString("EditDatatypeDlg.description")), gbc);
 		gbc.gridx++;
 		gbc.weightx = 1;
-		gbc.weighty = 1;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weighty = 0.25;
+		gbc.fill = GridBagConstraints.BOTH;
 		JScrollPane scroller = new JScrollPane(m_description);
 		mainPanel.add(scroller, gbc);
+		gbc.weighty = 0;
 
 		
 		m_name.getDocument().addDocumentListener(m_textListener);
@@ -209,5 +215,12 @@ public class EditDatatypeDlg extends BaseDialog {
 		}
 		
 	}
+
 	
+	private class DatatypeActionListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			setDirty(true);
+		}
+	}
 }

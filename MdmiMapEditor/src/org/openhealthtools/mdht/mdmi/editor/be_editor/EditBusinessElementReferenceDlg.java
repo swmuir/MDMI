@@ -42,7 +42,7 @@ public class EditBusinessElementReferenceDlg extends BaseDialog {
 	private JTextField m_url = new JTextField(m_cols); 
 	private JTextField m_uid = new JTextField(m_cols);
 	//private JTextField m_datatype = new JTextField(m_cols);
-	private DataTypeSelector m_datatype = new DataTypeSelector();
+	private DataTypeSelector m_datatype = new DataTypeSelector(MdmiDatatype.class);	// all types
 
 	private ActionListener m_actionListener = new BEActionListener();
 	private DocumentListener m_textListener = new TextFieldListener();
@@ -201,18 +201,24 @@ public class EditBusinessElementReferenceDlg extends BaseDialog {
 	{
 		String name = m_name.getText().trim();
 		String description = m_description.getText().trim();
-		String url = m_url.getText().trim();
+		String uriString = m_url.getText().trim();
 		String uid = m_uid.getText().trim();
 		
 		// validate URL
+		
+		if ((uriString == null || uriString.length() == 0)) {
+			String message = "The URI must be filled in";
+			JOptionPane.showMessageDialog(this, message, "Invalid Data", JOptionPane.WARNING_MESSAGE);
+			return false;
+		}
+		
 		URI uriValue = null;
 		try {
-			uriValue = (url == null || url.length() == 0) ? null :
-				URI.create(url);
+			uriValue = URI.create(uriString);
 		} catch (IllegalArgumentException ex) {
 			m_url.selectAll();
 			m_url.requestFocus();
-			String message = "The text '" + url + "' is not a valid URI";
+			String message = "The text '" + uriString + "' is not a valid URI";
 			JOptionPane.showMessageDialog(this, message, "Invalid Data", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}

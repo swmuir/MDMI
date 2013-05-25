@@ -31,10 +31,13 @@ public class DataTypeSelector extends JPanel implements ActionListener {
 
 	private static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.be_editor.Local");
 
-	JComboBox m_comboBox = new JComboBox();
-	JButton   m_refreshBtn = new JButton("Refresh");
+	private JComboBox m_comboBox = new JComboBox();
+	private JButton   m_refreshBtn = new JButton("Refresh");
+	
+	private Class<? extends MdmiDatatype> m_allowedClass = null;
+	private List<MdmiDatatype> m_excludedItems = new ArrayList<MdmiDatatype>();
 
-	public DataTypeSelector() {
+	public DataTypeSelector(Class<? extends MdmiDatatype> dataClass) {
 		setLayout(new FlowLayout(FlowLayout.LEFT, Standards.LEFT_INSET, 0));
 
 		URL imageURL = getClass().getResource(s_res.getString("DataTypeSelector.refreshIcon"));
@@ -47,7 +50,7 @@ public class DataTypeSelector extends JPanel implements ActionListener {
 		add(m_comboBox);
 		add(m_refreshBtn);
 		
-		// add all available datatypes
+		m_allowedClass = dataClass;
 		fillSelector();
 	}
 
@@ -80,22 +83,40 @@ public class DataTypeSelector extends JPanel implements ActionListener {
 		m_comboBox.removeActionListener(listener);
 	}
 	
-	protected void fillSelector() {
+	// add a datatype to the list of ones to exclude from the list
+	public void excludeDatatype(MdmiDatatype datatype) {
+		m_excludedItems.add(datatype);
+	}
+	
+	// Fill with all datatypes that meet the provided class
+	public void fillSelector() {
 		BEEditor beEditor = (BEEditor)SystemContext.getApplicationFrame();
 		DataTypeDisplayPanel dataTypeDisplayPanel = beEditor.getDataTypeDisplayPanel();
 
 		ArrayList<MdmiDatatype> dataTypes = new ArrayList<MdmiDatatype>();
 		// add primitives
-		for (DTSPrimitive primitive : DTSPrimitive.ALL_PRIMITIVES) {
-			dataTypes.add(primitive);
+		if (m_allowedClass.isAssignableFrom(DTSPrimitive.class)) {
+			for (DTSPrimitive primitive : DTSPrimitive.ALL_PRIMITIVES) {
+				if (!m_excludedItems.contains(primitive)) {
+					dataTypes.add(primitive);
+				}
+			}
 		}
 		
 		// search locally
 		List <TableEntry> allDatatypes = dataTypeDisplayPanel.getTableModel().getAllEntries();
 		for (TableEntry entry : allDatatypes) {
 			Object userObject = entry.getUserObject();
-			if (userObject instanceof MdmiDatatype) {
-				dataTypes.add((MdmiDatatype) userObject);
+
+			// check type
+			if (m_allowedClass.isAssignableFrom(userObject.getClass())) {
+				// skip ones that don't have a typeName - they are a result of an un-accepted edit
+				if (((MdmiDatatype)userObject).getTypeName() == null) {
+					continue;
+				}
+				if (!m_excludedItems.contains(userObject)) {
+					dataTypes.add((MdmiDatatype) userObject);
+				}
 			}
 		}
 		
@@ -108,8 +129,8 @@ public class DataTypeSelector extends JPanel implements ActionListener {
 		// make first one blank
 		m_comboBox.addItem(BLANK_ENTRY);
 		
-		for (Object item : dataTypes) {
-			m_comboBox.addItem(item);
+		for (MdmiDatatype dataType : dataTypes) {
+			m_comboBox.addItem(dataType);
 		}
 	}
 	

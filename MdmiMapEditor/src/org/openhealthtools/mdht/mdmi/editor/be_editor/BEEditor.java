@@ -104,13 +104,18 @@ public class BEEditor extends AbstractApplicationFrame  {
 		return m_datatypePanel;
 	}
 	
+	// Set this panel active
+	public void setActive(AbstractDisplayPanel panel) {
+		m_mainPanel.setSelectedComponent(panel);
+	}
+	
 	
 	// find the datatype object with this name
 	public MdmiDatatype findMdmiDatatype(String name)
 	{
 		// is it a primitive type
 		for (DTSPrimitive primitive : DTSPrimitive.ALL_PRIMITIVES) {
-			if (primitive.getDescription().equalsIgnoreCase(name)) {
+			if (primitive.getTypeName().equalsIgnoreCase(name)) {
 				return primitive;
 			}
 		}
@@ -120,7 +125,7 @@ public class BEEditor extends AbstractApplicationFrame  {
 		for (TableEntry entry : allDatatypes) {
 			Object userObject = entry.getUserObject();
 			if (userObject instanceof MdmiDatatype &&
-					name.equalsIgnoreCase(((MdmiDatatype)userObject).getName())) {
+					name.equalsIgnoreCase(((MdmiDatatype)userObject).getTypeName())) {
 				return (MdmiDatatype)userObject;
 			}
 		}

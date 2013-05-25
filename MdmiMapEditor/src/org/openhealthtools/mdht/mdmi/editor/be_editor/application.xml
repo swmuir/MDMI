@@ -23,6 +23,7 @@
     <!-- Be sure to  changes to the action names in the Actions.java file -->
 		<!-- File Menu -->
 		<action name="file" class="org.openhealthtools.mdht.mdmi.editor.common.actions.FileMenuAction"/>
+		<action name="importBERs" class="org.openhealthtools.mdht.mdmi.editor.be_editor.actions.ImportBusinessElementsAction"/>
 		<action name="importDatatypes" class="org.openhealthtools.mdht.mdmi.editor.be_editor.actions.ImportDatatypesAction"/>
 		
 		
@@ -42,6 +43,7 @@
 	<!-- Menu Bar -->
 	<menubar>
 		<menu action="file">
+             <item action="importBERs"/>
              <item action="importDatatypes"/>
 		</menu>
       

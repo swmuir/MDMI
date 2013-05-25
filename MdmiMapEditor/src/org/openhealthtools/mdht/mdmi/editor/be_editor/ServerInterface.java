@@ -13,6 +13,8 @@ import org.openhealthtools.mdht.mdmi.service.MdmiDatatypeProxy;
 
 /* Interface to service */
 public class ServerInterface {
+	/* Maximum number of elements that will be returned from the getAll methods */
+	public static int MAX_SEARCH = 100;
 
 	private boolean m_connected;
 	
@@ -80,6 +82,8 @@ public class ServerInterface {
 			for (MdmiDatatype datatype : datatypes) {
 				String name = datatype.getName();
 				if (name != null && pattern.matcher(name).matches()) {
+					// set owner
+					datatype.setOwner(m_messageGroup);
 					matching.add(datatype);
 				}
 			}
@@ -97,8 +101,11 @@ public class ServerInterface {
 	
 	/** Get a single */
 	public MdmiDatatype  getDatatype(String value) {
-		MdmiDatatype datatype = m_datatypeProxy.get(value);
-		return datatype;
+		try {
+			MdmiDatatype datatype = m_datatypeProxy.get(value);
+			return datatype;
+		} catch( Exception ignoreDeleteFails ) {}
+		return null;
 	}
 	
 	/** add*/
@@ -135,6 +142,7 @@ public class ServerInterface {
 			for (MdmiBusinessElementReference ber : bers) {
 				String name = ber.getName();
 				if (name != null && pattern.matcher(name).matches()) {
+					ber.setDomainDictionaryReference(m_messageGroup.getDomainDictionary());
 					matching.add(ber);
 				}
 			}
@@ -151,8 +159,11 @@ public class ServerInterface {
 	
 	/** Get a single */
 	public MdmiBusinessElementReference  getBusinessElementReference(String value) {
-		MdmiBusinessElementReference ber = m_businessElementProxy.get(value);
-		return ber;
+		try {
+			MdmiBusinessElementReference ber = m_businessElementProxy.get(value);
+			return ber;
+		} catch( Exception ignoreDeleteFails ) {}
+		return null;
 	}
 	
 	/** add*/
@@ -201,7 +212,9 @@ public class ServerInterface {
 	// Used to manage retrieval
 	//
 	public static class RetrievePosition {
-		int currPos = -1;
+		int currPos = 0;
 		int nextPos = 0;
+		
+		int numFound() { return nextPos - currPos; }
 	}
 }
