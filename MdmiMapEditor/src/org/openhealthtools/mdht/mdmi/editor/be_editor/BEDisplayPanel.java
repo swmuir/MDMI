@@ -5,7 +5,9 @@ import java.awt.Frame;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 
 import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
@@ -109,17 +111,16 @@ public class BEDisplayPanel extends AbstractDisplayPanel {
 	protected boolean commitChanges() {
 		boolean status = true;
 
-		StringBuilder addErrors = new StringBuilder();
-		StringBuilder addDatatypeErrors = new StringBuilder();
-		StringBuilder updateErrors = new StringBuilder();
-		StringBuilder deleteErrors = new StringBuilder();
+		Map<String, Exception> addErrorMap = new TreeMap<String, Exception>();
+		Map<String, Exception> addDatatypeErrorMap = new TreeMap<String, Exception>();
+		Map<String, Exception> updateErrorMap = new TreeMap<String, Exception>();
+		Map<String, Exception> deleteErrorMap = new TreeMap<String, Exception>();
 		
 		ServerInterface service = ServerInterface.getInstance();
 		
 		String berName = null;
-		StringBuilder errors = null;
 		
-		// TODO - do we need to add the datatype first?
+		Map<String, Exception> currErrorMap = null;
 
 		// update each changed item (work backwards so delete doesn't affect order)
 		MdmiTableModel tableModel = getTableModel();
@@ -143,20 +144,20 @@ public class BEDisplayPanel extends AbstractDisplayPanel {
 					if (isDeleted) {
 						// delete it (if we need to)
 						if (!isNew) {
-							errors = deleteErrors;
+							currErrorMap = deleteErrorMap;
 							service.deleteBusinessElementReference(ber);
 						}
 						// remove it from table
 						tableModel.removeEntry(row);
 					} else {
 						// Add or Update
-						errors = addErrors;
+						currErrorMap = addErrorMap;
 						
 						// add referenced datatype first if needed
 						MdmiDatatype refDatatype = ber.getReferenceDatatype();
 						if (refDatatype == null) {
 							throw new MdmiException("Reference Datatype is not specified");
-						} else if (!addReferencedDatatype(refDatatype, addDatatypeErrors)) {
+						} else if (!addReferencedDatatype(refDatatype, addDatatypeErrorMap)) {
 							status = false;
 						}
 
@@ -179,7 +180,7 @@ public class BEDisplayPanel extends AbstractDisplayPanel {
 
 						if (!isNew) {
 							// update an existing one
-							errors = updateErrors;
+							currErrorMap = updateErrorMap;
 							service.updateBusinessElementReference(ber);
 						}
 					}
@@ -193,7 +194,7 @@ public class BEDisplayPanel extends AbstractDisplayPanel {
 						ber.setDomainDictionaryReference(null);
 					}
 
-					appendErrorText(errors, berName, ex);
+					currErrorMap.put(berName, ex);
 					
 					// keep going
 					status = false;
@@ -204,34 +205,39 @@ public class BEDisplayPanel extends AbstractDisplayPanel {
 		
 		// show errors
 		if (status == false) {
-			errors = new StringBuilder();
-			errors.append("<html><font size=\"-1\">");
-			if (addErrors.length() != 0) {
-				errors.append("<font color=red><b>Unable to add the following business elements:</b></font>").append(addErrors);
+			StringBuilder errorMessage = new StringBuilder();
+			errorMessage.append("<html><font size=\"-1\">");
+
+			if (addErrorMap.size() != 0) {
+				errorMessage.append("<font color=red><b>Unable to add the following business elements:</b></font><br>");
+				errorMessage.append(createErrorMessage(addErrorMap));
 			}
 
-			if (updateErrors.length() != 0) {
-				if (errors.length() > 0) errors.append("<br><br>");
-				errors.append("<font color=red><b>Unable to update the following business elements:</b></font>").append(updateErrors);
+			if (updateErrorMap.size() != 0) {
+				if (errorMessage.length() > 0) errorMessage.append("<br><br>");
+				errorMessage.append("<font color=red><b>Unable to update the following business elements:</b></font>");
+				errorMessage.append(createErrorMessage(updateErrorMap));
 			}
 
-			if (deleteErrors.length() != 0) {
-				if (errors.length() > 0) errors.append("<br><br>");
-				errors.append("<font color=red><b>Unable to delete the following business elements:</b></font>").append(deleteErrors);
-			}
-
-			if (addDatatypeErrors.length() != 0) {
-				if (errors.length() > 0) errors.append("<br><br>");
-				errors.append("<font color=red><b>Unable to add the following datatypes:</b></font>").append(deleteErrors);
+			if (deleteErrorMap.size() != 0) {
+				if (errorMessage.length() > 0) errorMessage.append("<br><br>");
+				errorMessage.append("<font color=red><b>Unable to delete the following business elements:</b></font>");
+				errorMessage.append(createErrorMessage(deleteErrorMap));
 			}
 			
-			
-			errors.append("</font></html>");
+
+			if (addDatatypeErrorMap.size() != 0) {
+				if (errorMessage.length() > 0) errorMessage.append("<br><br>");
+				errorMessage.append("<font color=red><b>Unable to add the following datatypes:</b></font>");
+				errorMessage.append(createErrorMessage(addDatatypeErrorMap));
+			}
+
+			errorMessage.append("</font></html>");
 
 			Frame top = SystemContext.getApplicationFrame();
 			JEditorPane display = new JEditorPane();
 			display.setContentType("text/html");
-			display.setText(errors.toString());
+			display.setText(errorMessage.toString());
 			JScrollPane scroller = new JScrollPane(display);
 			scroller.getViewport().setPreferredSize(new Dimension(500, 300));
 			JOptionPane.showMessageDialog(top, scroller, 

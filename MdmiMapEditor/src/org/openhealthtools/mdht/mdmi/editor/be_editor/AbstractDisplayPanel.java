@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import javax.swing.ImageIcon;
@@ -286,10 +287,11 @@ public abstract class AbstractDisplayPanel extends JPanel {
 	
 	// set the column widths
 	protected void setTableColumnWidths() {
-		// just set first column
-		setColumnWidth(0, 50);
+		// just set first column to show icon
+		int col0width = 20;
+		setColumnWidth(0, col0width);
 		TableColumn column = m_table.getColumnModel().getColumn(0);
-		column.setMaxWidth(50);
+		column.setMaxWidth(col0width);
 		column.setResizable(false);
 	}
 	
@@ -581,14 +583,23 @@ public abstract class AbstractDisplayPanel extends JPanel {
 	protected abstract boolean commitChanges();
 	
 	// commit error handling
-	protected void appendErrorText(StringBuilder errors, String itemName, Exception ex) {
-		errors.append("<br>&nbsp;&nbsp;&nbsp;&nbsp;");
-		errors.append("<b>").append(itemName).append("</b>");
-		errors.append(" - ").append(ex.getLocalizedMessage());
+	protected String createErrorMessage(Map<String, Exception> errors) {
+		StringBuilder buf = new StringBuilder();
+		for (String itemName : errors.keySet()) {
+			Exception ex = errors.get(itemName);
+			
+			// format with html
+			if (buf.length() > 0) buf.append("<br>");
+			buf.append("&nbsp;&nbsp;&nbsp;&nbsp;");				// indent
+			buf.append("<b>").append(itemName).append("</b>");	// name in bold
+			buf.append(" - ").append(ex.getLocalizedMessage()); // exception message
+		}
+		
+		return buf.toString();
 	}
 
 	// add a referenced data type if we need one
-	protected boolean addReferencedDatatype(MdmiDatatype refDatatype, StringBuilder errors)
+	protected boolean addReferencedDatatype(MdmiDatatype refDatatype, Map<String, Exception> errors)
 	{
 		ServerInterface service = ServerInterface.getInstance();
 		
@@ -604,7 +615,8 @@ public abstract class AbstractDisplayPanel extends JPanel {
 				try {
 					service.addDatatype(refDatatype);
 				} catch (Exception ex) {
-					appendErrorText(errors, refDatatype.getTypeName(), ex);
+					//appendErrorText(errors, refDatatype.getTypeName(), ex);
+					errors.put(refDatatype.getTypeName(), ex);
 					return false;
 				}
 			}

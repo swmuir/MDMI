@@ -4,7 +4,9 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 
 import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
@@ -75,7 +77,6 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 
 	@Override
 	protected Object createNewItem() {
-		// TODO: which type
 		// create a new DataType
 		MdmiDatatype datatype = null;
 		Frame top = SystemContext.getApplicationFrame();
@@ -93,12 +94,16 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 		
 		
 		if (sel.equals(datatypeTypes[0])) {
+			// Complex
 			dlg = new EditComplexDatatypeDlg(top, null);
 		} else if (sel.equals(datatypeTypes[1])) {
+			// External
 			dlg = new EditExternalDatatypeDlg(top, null);
 		} else if (sel.equals(datatypeTypes[2])) {
+			// Derived
 			dlg = new EditDerivedDatatypeDlg(top, null);
 		} else if (sel.equals(datatypeTypes[3])) {
+			// Enumerated
 			dlg = new EditEnumDatatypeDlg(top, null);
 		}
 		
@@ -149,14 +154,15 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 	protected boolean commitChanges() {
 		boolean status = true;
 		
-		StringBuilder addErrors = new StringBuilder();
-		StringBuilder updateErrors = new StringBuilder();
-		StringBuilder deleteErrors = new StringBuilder();
+		Map<String, Exception> addErrorMap = new TreeMap<String, Exception>();
+		Map<String, Exception> updateErrorMap = new TreeMap<String, Exception>();
+		Map<String, Exception> deleteErrorMap = new TreeMap<String, Exception>();
 		
 		ServerInterface service = ServerInterface.getInstance();
 		
 		String datatypeName = null;
-		StringBuilder errors = null;
+
+		Map<String, Exception> currErrorMap = null;
 
 		// update each changed item (work backwards so delete doesn't affect order)
 		MdmiTableModel tableModel = getTableModel();
@@ -175,7 +181,7 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 					if (isDeleted) {
 						// delete it (if we need to)
 						if (!isNew) {
-							errors = deleteErrors;
+							currErrorMap = deleteErrorMap;
 							service.deleteDatatype(datatype);
 						}
 						// remove it from table
@@ -183,7 +189,7 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 
 					} else {
 						// Add or Update
-						errors = addErrors;
+						currErrorMap = addErrorMap;
 						
 						// check referenced datatypes 
 						if (datatype instanceof DTSDerived) {
@@ -191,6 +197,8 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 
 							if (basetype == null) {
 								throw new MdmiException("Base Datatype is not specified");
+							} else if (!addReferencedDatatype(basetype, addErrorMap)) {
+								status = false;
 							}
 						} else if (datatype instanceof DTCStructured) {
 							for (Field field : ((DTCStructured)datatype).getFields()) {
@@ -198,6 +206,8 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 								if (fieldDatatype == null) {
 									throw new MdmiException("Field Datatype is not specified for " +
 											datatype.getTypeName() + "." + field.getName());
+								} else if (!addReferencedDatatype(fieldDatatype, addErrorMap)) {
+									status = false;
 								}
 							}
 						}
@@ -220,7 +230,7 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 
 						if (!isNew){
 							// update an existing one
-							errors = updateErrors;
+							currErrorMap = updateErrorMap;
 							service.updateDatatype(datatype);
 						}
 					}
@@ -234,7 +244,7 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 						datatype.setOwner(null);
 					}
 
-					appendErrorText(errors, datatypeName, ex);
+					currErrorMap.put(datatypeName, ex);
 					
 					// keep going
 					status = false;
@@ -245,27 +255,32 @@ public class DataTypeDisplayPanel extends AbstractDisplayPanel {
 		
 		// show errors
 		if (status == false) {
-			errors = new StringBuilder();
-			errors.append("<html><font size=\"-1\">");
-			if (addErrors.length() != 0) {
-				errors.append("<font color=red><b>Unable to add the following datatypes:</b></font>").append(addErrors);
+			StringBuilder errorMessage = new StringBuilder();
+			errorMessage.append("<html><font size=\"-1\">");
+
+			if (addErrorMap.size() != 0) {
+				errorMessage.append("<font color=red><b>Unable to add the following datatypes:</b></font><br>");
+				errorMessage.append(createErrorMessage(addErrorMap));
 			}
 
-			if (updateErrors.length() != 0) {
-				if (errors.length() > 0) errors.append("<br><br>");
-				errors.append("<font color=red><b>Unable to update the following datatypes:</b></font>").append(updateErrors);
+			if (updateErrorMap.size() != 0) {
+				if (errorMessage.length() > 0) errorMessage.append("<br><br>");
+				errorMessage.append("<font color=red><b>Unable to update the following datatypes:</b></font>");
+				errorMessage.append(createErrorMessage(updateErrorMap));
 			}
 
-			if (deleteErrors.length() != 0) {
-				if (errors.length() > 0) errors.append("<br><br>");
-				errors.append("<font color=red><b>Unable to delete the following datatypes:</b></font>").append(deleteErrors);
+			if (deleteErrorMap.size() != 0) {
+				if (errorMessage.length() > 0) errorMessage.append("<br><br>");
+				errorMessage.append("<font color=red><b>Unable to delete the following datatypes:</b></font>");
+				errorMessage.append(createErrorMessage(deleteErrorMap));
 			}
-			errors.append("</font></html>");
+
+			errorMessage.append("</font></html>");
 
 			Frame top = SystemContext.getApplicationFrame();
 			JEditorPane display = new JEditorPane();
 			display.setContentType("text/html");
-			display.setText(errors.toString());
+			display.setText(errorMessage.toString());
 			JScrollPane scroller = new JScrollPane(display);
 			scroller.getViewport().setPreferredSize(new Dimension(500, 300));
 			JOptionPane.showMessageDialog(top, scroller, 

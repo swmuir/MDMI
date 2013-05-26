@@ -28,7 +28,7 @@ public abstract class MdmiTableModel extends AbstractTableModel {
 	public MdmiTableModel(String [] addlColumns) {
 		m_columnNames = new String[1+addlColumns.length];
 
-		m_columnNames[0] = "Status";	// first column
+		m_columnNames[0] = "";	// first column
 		
 		// add additional columns
 		for (int i=0; i<addlColumns.length; i++) {
