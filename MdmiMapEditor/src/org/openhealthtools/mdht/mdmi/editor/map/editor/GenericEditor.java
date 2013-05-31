@@ -194,7 +194,8 @@ public class GenericEditor extends AbstractComponentEditor {
 	 */
 	protected void addStringFields(List<Method[]> methodPairList) {
 		// String fields will have StringField components
-		for (DataEntryFieldInfo fieldInfo : getFieldsForType(methodPairList, String.class)) {
+		List<DataEntryFieldInfo> fieldsForType = getFieldsForType(methodPairList, String.class);
+		for (DataEntryFieldInfo fieldInfo : fieldsForType) {
 			IEditorField editField = createEditorField(fieldInfo);
 			if (editField != null) {
 				double weightY = m_gbc.weighty;

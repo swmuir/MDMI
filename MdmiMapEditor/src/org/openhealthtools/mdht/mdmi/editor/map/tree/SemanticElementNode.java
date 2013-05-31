@@ -420,9 +420,16 @@ public class SemanticElementNode extends EditableObjectNode {
 			if (element == path) {
 				return true;
 			}
+			// recursion error
+			ArrayList<SemanticElement> elementsCovered = new ArrayList<SemanticElement>();
 			// check all elements on path
 			while (path.getParent() != null) {
 				path = path.getParent();
+				if (elementsCovered.contains(path)) {
+					// we're in trouble
+					return true;
+				}
+				elementsCovered.add(path);
 				if (element == path) {
 					return true;
 				}
