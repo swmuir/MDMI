@@ -31,6 +31,7 @@ import org.openhealthtools.mdht.mdmi.*;
 public class XslUtil {
    public static final XPathFactory XPATH_FACTORY = new org.apache.xpath.jaxp.XPathFactoryImpl();
    public static final String       DEFAULT_NS    = "DEFAULT_NS";
+   public static final String ANCESTOR = "ancestor";
    private static XCache            s_cache;
    private static boolean           s_isInitialized;
 
@@ -262,6 +263,14 @@ public class XslUtil {
       }
       return value;
    }
+    public static void main(String[] args) {
+        String a[] = splitForFirstAxes("something1/something2/AXES::tag/something3");
+        a = splitForFirstAxes("component/section[templateId[@root=\"2.16.840.1.113883.10.20.21.2.6.1\"]]/ancestor::DEFAULT_NS:component[1]");
+        System.out.println(a[0]+" "+a[1]+" "+a[2]);
+        a = splitForFirstAxes("something1/something2/AXES::test/something3");
+        System.out.println(a[0]+" "+a[1]+" "+a[2]);
+    }
+
 
    /**
     * Create or get and existing node or hierarchy of nodes based on the given XPath. Supported expressions are most
@@ -273,8 +282,10 @@ public class XslUtil {
     * e1/e2/../eN
     * e1/e2/../eN/text()
     * e1/e2/../eN{@literal @}attr
+    * e1/e2/../eN/{@literal @}attr
     * a[2]/b[3]
     * a/b[3]/c/d[2]{@literal @}attr
+    * a/b[3]/c/d[2]/{@literal @}attr
     * a/b/c[d[{@literal @}a='value']]
     * a[b/c/text()='value']
     * </pre>
@@ -288,6 +299,35 @@ public class XslUtil {
     * @return The existing or created end node, as identified in the path.
     */
    public static Node createNodeForPath( Element parent, String path, int ordinalIndex ) {
+
+       String axesPath[] = splitForFirstAxes(path);
+       if (axesPath == null){
+           return createNodeForPathNoAxes(parent, path, ordinalIndex);
+       }
+       String sPath = axesPath[0];
+       String sAxe = axesPath[1];
+       String sAxePath = axesPath[2];
+       Node nodeForPathNoAxes = createNodeForPathNoAxes(parent, sPath, ordinalIndex);
+       Node node = null;
+       if (ANCESTOR.equals(sAxe)){
+           String axesTag[] = splitForBrackets(sAxePath);
+           node = nodeForPathNoAxes;
+           String nodeNameInPath = axesTag[0];
+           int index = nodeNameInPath.indexOf(':');
+           nodeNameInPath = index == -1? nodeNameInPath: nodeNameInPath.substring(index+1);
+           while(node != null){
+               node = node.getParentNode();
+               if (node.getNodeName().equals(nodeNameInPath)){
+                   break;
+               }
+           }
+       } else {
+           throw new MdmiException("Not support axes expression : "+ sAxe);
+       }
+       return node;
+   }
+
+   private  static Node createNodeForPathNoAxes( Element parent, String path, int ordinalIndex ) {
       if( parent == null || path == null || path.length() <= 0 )
          throw new IllegalArgumentException("Null or empty arguments!");
 
@@ -434,8 +474,10 @@ public class XslUtil {
       Element child = null;
       int i = 0;
       int n = ordinalIndex <= 0 ? 1 : ordinalIndex + 1;
+
       while( i++ < n ) {
-         child = XmlUtil.addElement(p, name);
+          child =  getOrCreateElement(p,name);
+//         child = XmlUtil.addElement(p, name);
          processPredicate(child, expr);
       }
       return child;
@@ -497,7 +539,24 @@ public class XslUtil {
       return -1;
    }
 
-   private static String[] splitForBrackets( String s ) {
+
+
+    private static String[] splitForFirstAxes(String s){
+        String[] a = new String[4];
+        int i = s.indexOf("::", 0);
+        if (0 > i ) return null;
+        String part1 = s.substring(0, i);
+        String part2 = s.substring(i + 2);
+        int part1LastsSlash = part1.lastIndexOf('/');
+        int part2FirstSlash = part2.indexOf('/');
+
+        a[0] = part1.substring(0, part1LastsSlash); //
+        a[1] = part1.substring(part1LastsSlash + 1);//axe
+        a[2] = part2FirstSlash == -1? part2: part2.substring(0, part2FirstSlash);//axe path
+        return a;
+    }
+
+    private static String[] splitForBrackets( String s ) {
       String[] a = new String[3];
       int i = indexOfNotInQuotes(s, '[');
       if( i <= 0 )
@@ -601,6 +660,8 @@ public class XslUtil {
          stringBuilder.append(DEFAULT_NS);
          stringBuilder.append(":");
       }
+      // todo rewrite, only for test
+      tag = tag.replace("[templateId","["+DEFAULT_NS+":"+"templateId");
       stringBuilder.append(tag);
 
    }
