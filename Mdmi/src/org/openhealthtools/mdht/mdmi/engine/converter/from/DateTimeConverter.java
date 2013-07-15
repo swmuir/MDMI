@@ -24,13 +24,18 @@ public class DateTimeConverter implements IConvertFromString {
    @Override
    public Object convertFromString( String value, String format ) {
       if( format != null && 0 < format.length() ) {
-         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(format);
-            return sdf.parse(value);
+         String[] formatStrings = format.split(";");
+         for (String formatString : formatStrings) {
+             try {
+                 SimpleDateFormat sdf = new SimpleDateFormat(formatString);
+                 return sdf.parse(value);
+             }
+             catch (ParseException ignored) {}
+             catch( Exception ex ) {
+                 throw new MdmiException(ex, "DateTimeConverter.convertFromString({0}, {1}) failed.", value, formatString);
+             }
          }
-         catch( Exception ex ) {
-            throw new MdmiException(ex, "DateTimeConverter.convertFromString({0}, {1}) failed.", value, format);
-         }
+         throw new MdmiException("DateTimeConverter.convertFromString({0}, {1}) failed.", value, format);
       }
 
       try {
