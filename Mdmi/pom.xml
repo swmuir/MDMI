@@ -22,7 +22,7 @@
   </repositories>
   
   <properties>
-		<jersey.version>1.8</jersey.version>
+		<jersey.version>1.9.1</jersey.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<org.jackson.version>1.9.1</org.jackson.version>
 		<!--  The two versions are the result of some inconsistency of versioning within mdht between offical releases -->
@@ -51,7 +51,7 @@
     </dependency>
     
 	<dependency>
-			<groupId>com.sun.jersey</groupId>
+ <groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-server</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
@@ -76,6 +76,7 @@
 			<artifactId>servlet-api</artifactId>
 			<version>2.5</version>
 		</dependency>
+	
 		
 		<dependency>
 	<groupId>commons-codec</groupId>
