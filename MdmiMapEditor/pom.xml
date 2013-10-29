@@ -84,7 +84,7 @@
 		<dependency>
 			<groupId>org.openhealthtools.mdht</groupId>
 			<artifactId>mdmi</artifactId>
-			<version>0.0.1-20131029.135115-1</version>
+			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
 	</dependencies>
