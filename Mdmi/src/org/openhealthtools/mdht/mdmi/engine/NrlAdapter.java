@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,14 +24,9 @@ import org.openhealthtools.mdht.mdmi.IElementValue;
 import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
 import org.openhealthtools.mdht.mdmi.MdmiException;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
-import org.openhealthtools.mdht.mdmi.util.JarClassLoader;
 
 public class NrlAdapter implements IExpressionInterpreter {
 	IExpressionInterpreter m_adapter = null;
-
-	private static boolean loadedJars = false;
-
-	private static JarClassLoader jl;
 
 	public NrlAdapter() {
 		tryInitAdapter();
@@ -47,41 +41,18 @@ public class NrlAdapter implements IExpressionInterpreter {
 	}
 
 	private void tryInitAdapter() {
-
-		if (!loadedJars) {
-			try {
-				File i = new File("./NRL/nrl-interpreter.jar");
-				File f = new File("./nrl-adapter.jar");
-				if (!i.exists() || !f.exists()) {
-					i = new File("./bin/NRL/nrl-interpreter.jar");
-					f = new File("./bin/nrl-adapter.jar");
-				}
-				if (!i.exists() || !f.exists()) {
-					i = new File("../bin/NRL/nrl-interpreter.jar");
-					f = new File("../bin/nrl-adapter.jar");
-				}
-				if (!i.exists() || !f.exists())
-					return;
-
-				jl = new JarClassLoader(i);
-				jl.addJarFile(f);
-				loadedJars = true;
-			} catch (Exception ex) {
-				System.out.println(ex.getMessage());
-			}
-		}
-
 		try {
-			Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");
+			Class<?> c = Class.forName("com.whitestar.mdmi.NrlAdapter");
 			Object o;
 			o = c.newInstance();
 			m_adapter = (IExpressionInterpreter) o;
+
+		} catch (ClassNotFoundException e) {
+			throw new MdmiException(e.getMessage());
 		} catch (InstantiationException e) {
-
-			e.printStackTrace();
+			throw new MdmiException(e.getMessage());
 		} catch (IllegalAccessException e) {
-
-			e.printStackTrace();
+			throw new MdmiException(e.getMessage());
 		}
 	}
 
