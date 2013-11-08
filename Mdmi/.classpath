@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/NRL/antlr-runtime-3.2.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/NRL/nrl.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/resolver.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/serializer.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/xalan.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/xercesImpl.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/XML/xml-apis.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/asm-3.1.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/jersey-bundle-1.12.jar"/>
-	<classpathentry kind="var" path="BRIGHTSTAR_HOME/ThirdParty/jsr311-api-1.1.1.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="APACHE"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry including="**/*.java" kind="src" output="target/classes" path="src">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>
