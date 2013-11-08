@@ -14,13 +14,18 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
+import java.io.*;
 import java.util.*;
 
 import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.util.*;
 
 public class NrlAdapter implements IExpressionInterpreter {
-   IExpressionInterpreter m_adapter = null;
+   private static boolean        loadedJars = false;
+   private static JarClassLoader jl;
+
+   IExpressionInterpreter        m_adapter  = null;
 
    public NrlAdapter() {
       tryInitAdapter();
@@ -30,25 +35,51 @@ public class NrlAdapter implements IExpressionInterpreter {
       tryInitAdapter();
       try {
          initialize(eset, context, name, value);
-		} catch (Exception ex) {
       }
+      catch( Exception ex ) {
       }
+   }
 
    private void tryInitAdapter() {
-      try {
-			Class<?> c = Class.forName("com.whitestar.mdmi.NrlAdapter");
-			Object o;
-			o = c.newInstance();
-         m_adapter = (IExpressionInterpreter)o;
+      if( !loadedJars ) {
+         try {
+            File i = new File("./NRL/nrl-interpreter.jar");
+            File f = new File("./nrl-adapter.jar");
+            if( !i.exists() || !f.exists() ) {
+               i = new File("./bin/NRL/nrl-interpreter.jar");
+               f = new File("./bin/nrl-adapter.jar");
+            }
+            if( !i.exists() || !f.exists() ) {
+               i = new File("../bin/NRL/nrl-interpreter.jar");
+               f = new File("../bin/nrl-adapter.jar");
+            }
+            if( !i.exists() || !f.exists() )
+               return;
 
-		} catch (ClassNotFoundException e) {
-			throw new MdmiException(e.getMessage());
-		} catch (InstantiationException e) {
-			throw new MdmiException(e.getMessage());
-		} catch (IllegalAccessException e) {
-			throw new MdmiException(e.getMessage());
+            jl = new JarClassLoader(i);
+            jl.addJarFile(f);
+            loadedJars = true;
+         }
+         catch( Exception ex ) {
+            System.out.println(ex.getMessage());
+         }
       }
+
+      try {
+         Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");
+         Object o;
+         o = c.newInstance();
+         m_adapter = (IExpressionInterpreter)o;
       }
+      catch( InstantiationException e ) {
+
+         e.printStackTrace();
+      }
+      catch( IllegalAccessException e ) {
+
+         e.printStackTrace();
+      }
+   }
 
    public void initialize( ElementValueSet eset, XElementValue context, String name, XValue value ) {
       if( m_adapter != null )
