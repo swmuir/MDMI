@@ -66,6 +66,13 @@ public final class XValue implements IValue {
       intializeStructs();
    }
    
+   public XValue( Field field, Object value ) {
+      if( field  == null )
+         throw new IllegalArgumentException( "Null argument!" );
+      initialize(field.getName(), field.getDatatype());
+      setValue(value);
+   }
+   
    /**
     * Initialize the value with a name and a type.
     * 
@@ -83,11 +90,11 @@ public final class XValue implements IValue {
     */
    void intializeStructs() {
       if( m_datatype.isStruct() ) {
-         XDataStruct t = new XDataStruct( this, (DTCStructured)m_datatype, true );
+         XDataStruct t = new XDataStruct( this, true );
          m_values.add( t );
       }
       else if( m_datatype.isChoice() ) {
-         XDataChoice t = new XDataChoice( this, (DTCChoice)m_datatype );
+         XDataChoice t = new XDataChoice( this );
          m_values.add( t );
       }
    }

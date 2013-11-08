@@ -31,8 +31,8 @@ public class XDataChoice extends XData {
     * @param owner The owner value.
     * @param datatype The data type.
     */
-   public XDataChoice( XValue owner, DTCChoice datatype ) {
-      super( owner, datatype );
+   public XDataChoice( XValue owner ) {
+      super( owner, (DTCChoice)owner.getDatatype() );
    }
 
    /**
@@ -52,7 +52,7 @@ public class XDataChoice extends XData {
     * 
     * @return The chosen field value.
     */
-   public XValue getValue() {
+   public XValue getXValue() {
       return m_value;
    }
    
@@ -84,7 +84,7 @@ public class XDataChoice extends XData {
     * @param fieldName The field name, must be one of the data type fields.
     * @return The set value reference.
     */
-   public XValue setValue( String fieldName ) {
+   public XValue setXValue( String fieldName ) {
       if( fieldName == null )
          throw new IllegalArgumentException( "Null field!" );
       DTCChoice cdt = (DTCChoice)m_datatype;
@@ -100,7 +100,7 @@ public class XDataChoice extends XData {
     *  
     * @param value The new value.
     */
-   public void setValue( XValue value ) {
+   public void setXValue( XValue value ) {
       DTCChoice cdt = (DTCChoice)m_datatype;
       Field field = cdt.getField( value.getName() );
       if( field == null )
@@ -108,6 +108,32 @@ public class XDataChoice extends XData {
       m_value = value;
    }
 
+   /**
+    * Set the choice value to the given field, and set its value to the given value.
+    *  
+    * @param fieldName The name of the field to set as choosen.
+    * @param value The value to set it to.
+    */
+   public void setValue( String fieldName, Object value ) {
+      if( fieldName == null )
+         throw new IllegalArgumentException( "Null field!" );
+      DTCChoice cdt = (DTCChoice)m_datatype;
+      Field field = cdt.getField( fieldName );
+      if( field == null )
+         throw new MdmiException( "Invalid field " + fieldName + " in choice " + cdt.getName() );
+      m_value = new XValue( field, value );
+   }
+
+   /**
+    * Get the value of the selected field.
+    * @return The value of the field.
+    */
+   public Object getValue() {
+      if( m_value == null )
+         return null; // not set
+      return m_value.getValue();
+   }
+   
    /**
     * Clear the chosen value.
     */

@@ -135,7 +135,12 @@ public class XElementValue implements IElementValue {
    }
 
    @Override
-   public XValue getValue() {
+   public Object value() {
+      return m_xvalue.getValue();
+   }
+
+   @Override
+   public XValue getXValue() {
       return m_xvalue;
    }
 

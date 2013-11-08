@@ -81,11 +81,18 @@ public interface IElementValue {
    public ArrayList<IElementValue> getRelations();
 
    /**
-    * Get the actual value of this element value. May be a simple or complex type.
+    * Get the actual value of this element value. May be a simple type (string) or complex type (XData).
     * 
     * @return The actual value of this element value.
     */
-   public IValue getValue();
+   public Object value();
+
+   /**
+    * Get the XValue wrapper of this element value. May be a simple or complex type.
+    * 
+    * @return The actual value of this element value.
+    */
+   public IValue getXValue();
 
    /**
     * Return true if this element value is of a simple type.

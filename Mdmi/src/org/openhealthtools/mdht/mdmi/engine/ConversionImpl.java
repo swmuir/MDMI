@@ -34,7 +34,7 @@ class ConversionImpl {
       System.out.println( "    converting: " + src.toStringShort() + " to " + trg.getName() );
       XValue v = new XValue( "v", toBE.getBusinessElement().getReferenceDatatype() );
       if( !c.hasTrgRule(toSE) ) {
-         c.cloneValue( trg.getValue(), v, false );
+         c.cloneValue( trg.getXValue(), v, false );
          System.out.println( "    target cloned: " + v.toString() );
       }
       c.execSrcRule( src, ci, trg, toBE, v );
@@ -53,40 +53,40 @@ class ConversionImpl {
    
    void execSrcRule( XElementValue src, ConversionInfo ci, XElementValue trg, ToBusinessElement toBE, XValue v ) {
       if( !hasSrcRule(toBE) ) {
-         cloneValue( src.getValue(), v, true );
+         cloneValue( src.getXValue(), v, true );
       }
       else {
-         IExpressionInterpreter m_adapter = new NrlAdapter( src.getOwner(), src, toBE.getName(), v );
-         m_adapter.evalAction( src, toBE.getRule() );
+         IExpressionInterpreter adapter = Mdmi.getInterpreter(toBE, src, toBE.getName(), v );
+         adapter.evalAction( src, toBE.getRule() );
       }
    }
 
    void execTrgRule( XValue v, ConversionInfo ci, XElementValue trg, ToMessageElement toSE ) {
       if( !hasTrgRule(toSE) ) {
-         cloneValue( v, trg.getValue(), false );
+         cloneValue( v, trg.getXValue(), false );
       }
       else {
-         IExpressionInterpreter m_adapter = new NrlAdapter( trg.getOwner(), trg, toSE.getName(), v );
-         m_adapter.evalAction( trg, toSE.getRule() );
+         IExpressionInterpreter adapter = Mdmi.getInterpreter(toSE, trg, toSE.getName(), v );
+         adapter.evalAction( trg, toSE.getRule() );
       }
    }
 
    private void cloneStruct( XDataStruct src, XDataStruct trg, boolean fromSrc ) {
       if( src == null || trg == null )
          throw new IllegalArgumentException( "Null argument!" );
-      ArrayList<XValue> values = trg.getValues();
+      ArrayList<XValue> values = trg.getXValues();
       for( int i = 0; i < values.size(); i++ ) {
          XValue t = values.get( i );
-         XValue s = src.getValue( t.getName() );
+         XValue s = src.getXValue( t.getName() );
          if( s != null )
             cloneValue( s, t, fromSrc );
       }
    }
 
    private void cloneChoice( XDataChoice src, XDataChoice trg, boolean fromSrc ) {
-      XValue s = src.getValue();
+      XValue s = src.getXValue();
       String fieldName = s.getName();
-      XValue t = trg.setValue( fieldName );
+      XValue t = trg.setXValue( fieldName );
       cloneValue( s, t, fromSrc );
    }
 
@@ -97,7 +97,7 @@ class ConversionImpl {
       if( src.getDatatype().isStruct() ) {
          for( int i = 0; i < values.size(); i++ ) {
             XDataStruct srcXD = (XDataStruct)values.get( i );
-            XDataStruct trgXD = new XDataStruct( trg, (DTCStructured)trg.getDatatype() );
+            XDataStruct trgXD = new XDataStruct( trg );
             trg.setValue( trgXD );
             cloneStruct( srcXD, trgXD, fromSrc );
          }
@@ -105,7 +105,7 @@ class ConversionImpl {
       else if( src.getDatatype().isChoice() ) {
          for( int i = 0; i < values.size(); i++ ) {
             XDataChoice srcXD = (XDataChoice)values.get( i );
-            XDataChoice trgXD = new XDataChoice( trg, (DTCChoice)trg.getDatatype() );
+            XDataChoice trgXD = new XDataChoice( trg );
             trg.setValue( trgXD );
             cloneChoice( srcXD, trgXD, fromSrc );
          }

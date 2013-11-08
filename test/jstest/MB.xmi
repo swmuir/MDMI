@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmlns:mdmi="http://schema.omg.org/spec/MDMI/1.0">
+  <xmi:Documentation xmi:exporter="Firestar MDMI Tool" xmi:exporterVersion="1.0"></xmi:Documentation>
+  <mdmi:MessageGroup xmi:id="104c4a82-4509-4843-b4c1-00b604fed9c5" name="MGB" defaultConstraintExprLang="NRL" defaultLocationExprLang="XPath" defaultRuleExprLang="NRL" description="">
+    <datatypes xmi:id="55ab017b-713f-4bb3-91d7-0c61bdf1dc32" xmi:type="mdmi:DTSPrimitive" typeName="Binary" description="Binary" reference="http://www.w3.org/2001/XMLSchema#hexBinary"></datatypes>
+    <datatypes xmi:id="63cfe8e3-df04-451c-b30d-b0e3f143ebca" xmi:type="mdmi:DTSPrimitive" typeName="Boolean" description="Boolean" reference="http://www.w3.org/2001/XMLSchema#boolean"></datatypes>
+    <datatypes xmi:id="32125898-9de3-4f87-8ae8-bb3ef901990b" xmi:type="mdmi:DTSPrimitive" typeName="DateTime" description="DateTime" reference="http://www.w3.org/2001/XMLSchema#dateTime"></datatypes>
+    <datatypes xmi:id="009fc772-c07a-4bf8-b7d9-e634be8767f7" xmi:type="mdmi:DTSPrimitive" typeName="Decimal" description="Decimal" reference="http://www.w3.org/2001/XMLSchema#decimal"></datatypes>
+    <datatypes xmi:id="84d1a1a9-f1bf-4be3-97dc-c362effe059c" xmi:type="mdmi:DTSPrimitive" typeName="Integer" description="Integer" reference="http://www.w3.org/2001/XMLSchema#integer"></datatypes>
+    <datatypes xmi:id="d5e21619-18dd-4ee9-b679-ce29d9926ba6" xmi:type="mdmi:DTSPrimitive" typeName="String" description="String" reference="http://www.w3.org/2001/XMLSchema#string"></datatypes>
+    <datatypes xmi:id="5842d043-89a1-4a47-93e3-ac5d540b9c42" xmi:type="mdmi:DTCStructured" typeName="CreditTransfer" description="">
+      <fields xmi:id="7e0853aa-25b6-4e3d-a88f-0374375579d7" name="creditor" description="" minOccurs="1" maxOccurs="1">
+        <datatype xmi:idref="d5e21619-18dd-4ee9-b679-ce29d9926ba6"></datatype>
+      </fields>
+      <fields xmi:id="2c7cd6db-5970-4ba0-89a0-5f33011b757a" name="debtor" description="" minOccurs="1" maxOccurs="1">
+        <datatype xmi:idref="d5e21619-18dd-4ee9-b679-ce29d9926ba6"></datatype>
+      </fields>
+      <fields xmi:id="87f717bc-5739-4b01-a016-0336db652961" name="amount" description="" minOccurs="1" maxOccurs="1">
+        <datatype xmi:idref="009fc772-c07a-4bf8-b7d9-e634be8767f7"></datatype>
+      </fields>
+      <fields xmi:id="c7f54fcf-c89b-4bdc-b904-ca2830abe737" name="timestamp" description="" minOccurs="1" maxOccurs="1">
+        <datatype xmi:idref="32125898-9de3-4f87-8ae8-bb3ef901990b"></datatype>
+      </fields>
+      <fields xmi:id="238b1d70-782e-4aaa-be89-6af6ff843f0f" name="currencyCode" description="" minOccurs="0" maxOccurs="1">
+        <datatype xmi:idref="01bdaf7c-4aea-4d2e-9ccc-09c28a89bb58"></datatype>
+      </fields>
+      <fields xmi:id="d41da475-d41b-4ee4-b516-e32c60f0a6bc" name="externalTest" description="" minOccurs="0" maxOccurs="1">
+        <datatype xmi:idref="d5e21619-18dd-4ee9-b679-ce29d9926ba6"></datatype>
+      </fields>
+    </datatypes>
+    <datatypes xmi:id="01bdaf7c-4aea-4d2e-9ccc-09c28a89bb58" xmi:type="mdmi:DTSEnumerated" typeName="CurrencyCode" description="">
+      <literals xmi:id="e16ce0df-266a-4c5f-8ac7-e7c5941998af" name="USD" code="USD" description=""></literals>
+      <literals xmi:id="def02143-0695-4337-9124-162e567cd72d" name="EUR" code="EUR" description=""></literals>
+    </datatypes>
+    <domainDictionary xmi:id="3e8df989-0865-4d73-a80d-9795e31f7f39">
+      <businessElements xmi:id="a6a9cf3a-4bd9-4060-b533-17f57b2caf0f" name="CreditTransfer" description="" reference="http://example.com/CreditTransfer" uniqueIdentifier="CreditTransfer">
+        <referenceDatatype xmi:idref="5842d043-89a1-4a47-93e3-ac5d540b9c42"></referenceDatatype>
+      </businessElements>
+    </domainDictionary>
+    <models xmi:id="f72a0679-67cd-4909-8c53-35c59d1ee3f1" messageModelName="B" description="">
+      <syntaxModel xmi:id="8610d71c-c165-47e9-aae8-ee540f05807e">
+        <root xmi:id="8a2ab723-2451-4bc3-b1a7-7b072ea01c89" xmi:type="mdmi:Bag" name="message" location="message" description="" minOccurs="1" maxOccurs="1" locationExpressionLanguage="" fieldName="" isUnique="true" isOrdered="false">
+          <semanticElement xmi:idref="47f101de-d7a1-4d9e-a110-3bcacf07aad6"></semanticElement>
+          <nodes xmi:id="c7698b15-6349-4c96-af8e-156376c0209a" xmi:type="mdmi:LeafSyntaxTranslator" name="dbtr" location="dbtr" description="" minOccurs="1" maxOccurs="1" locationExpressionLanguage="" fieldName="debtor" format="" formatExpressionLanguage=""></nodes>
+          <nodes xmi:id="a50d860c-99aa-4b3f-8a18-03385984047f" xmi:type="mdmi:LeafSyntaxTranslator" name="cdtr" location="cdtr" description="" minOccurs="1" maxOccurs="1" locationExpressionLanguage="" fieldName="creditor" format="" formatExpressionLanguage=""></nodes>
+          <nodes xmi:id="dac518c6-187c-4a12-9015-2ecdb0516bc0" xmi:type="mdmi:LeafSyntaxTranslator" name="dt" location="dt" description="" minOccurs="1" maxOccurs="1" locationExpressionLanguage="" fieldName="timestamp" format="DATETIME" formatExpressionLanguage=""></nodes>
+          <nodes xmi:id="076a277d-0773-45e5-b980-440ff18d7993" xmi:type="mdmi:LeafSyntaxTranslator" name="amnt" location="amnt" description="" minOccurs="1" maxOccurs="1" locationExpressionLanguage="" fieldName="amount" format="" formatExpressionLanguage=""></nodes>
+          <nodes xmi:id="308bb333-0ea1-434d-ace5-9a6b3f2bf6f1" xmi:type="mdmi:LeafSyntaxTranslator" name="ccy" location="ccy" description="" minOccurs="0" maxOccurs="1" locationExpressionLanguage="" fieldName="currencyCode" format="" formatExpressionLanguage=""></nodes>
+          <nodes xmi:id="114c9fd7-2a98-4792-a959-1037ff3eabea" xmi:type="mdmi:LeafSyntaxTranslator" name="externalTest" location="externalTest" description="" minOccurs="0" maxOccurs="1" locationExpressionLanguage="" fieldName="externalTest" format="string" formatExpressionLanguage="XMLSchema"></nodes>
+        </root>
+      </syntaxModel>
+      <elementSet xmi:id="25a239cf-4496-4204-9523-6ab3af8c565a">
+        <semanticElements xmi:id="47f101de-d7a1-4d9e-a110-3bcacf07aad6" name="CreditTransfer" description="" elementType="NORMAL" multipleInstances="false" ordering="" orderingLanguage="">
+          <datatype xmi:idref="5842d043-89a1-4a47-93e3-ac5d540b9c42"></datatype>
+          <syntaxNode xmi:idref="8a2ab723-2451-4bc3-b1a7-7b072ea01c89"></syntaxNode>
+          <fromMdmi xmi:id="ac84417b-e9e3-4dac-8121-181d97566048" name="from" description="" ruleExpressionLanguage="">
+            <rule xmi:id="42fd69e3-2290-40a2-9e8f-67ba0f831ec5"></rule>
+            <businessElement xmi:idref="a6a9cf3a-4bd9-4060-b533-17f57b2caf0f"></businessElement>
+          </fromMdmi>
+          <toMdmi xmi:id="b75fa8a7-334e-4b96-91d9-5c61c202fa4c" name="to" description="" ruleExpressionLanguage="">
+            <rule xmi:id="42fd69e3-2290-40a2-9e8f-67ba0f831ec5"></rule>
+            <businessElement xmi:idref="a6a9cf3a-4bd9-4060-b533-17f57b2caf0f"></businessElement>
+          </toMdmi>
+        </semanticElements>
+      </elementSet>
+    </models>
+  </mdmi:MessageGroup>
+</xmi:XMI>

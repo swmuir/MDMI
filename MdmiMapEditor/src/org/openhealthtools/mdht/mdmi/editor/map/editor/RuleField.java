@@ -36,12 +36,9 @@ import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import net.sourceforge.nrl.parser.NRLError;
-
-import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
-import org.openhealthtools.mdht.mdmi.engine.NrlAdapter;
-import org.openhealthtools.mdht.mdmi.model.SemanticElement;
-import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
+import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.model.*;
+import org.openhealthtools.mdht.mdmi.model.validate.*;
 
 /** An IEditorField that shows String values as a text area */
 public class RuleField extends JPanel implements IEditorField, DocumentListener, FocusListener {
@@ -196,7 +193,7 @@ public class RuleField extends JPanel implements IEditorField, DocumentListener,
 		return buf.toString();
 	}
 
-	private List<ModelInfo> validateRule(SemanticElement semanticElement, boolean actionRule) {	
+	private List<ModelInfo> validateRule(String lang, SemanticElement semanticElement, boolean actionRule) {	
 		List<ModelInfo> errors = new ArrayList<ModelInfo>();
 		
 		String ruleText = m_textPane.getText();
@@ -211,23 +208,23 @@ public class RuleField extends JPanel implements IEditorField, DocumentListener,
 		m_searcher = new TextSearcher(m_textPane, 
 				new TextHighlighter.UnderlineHighlightPainter(Color.red));
 
-		List<NRLError> nrlErrors;
-        IExpressionInterpreter m_adapter = new NrlAdapter();
+		List<String> compileErrors;
+		IExpressionInterpreter adapter = Mdmi.getInterpreter(lang, null, null, null);
 		if (actionRule)
-			nrlErrors = m_adapter.compileAction(semanticElement,ruleText);
+		   compileErrors = adapter.compileAction(semanticElement,ruleText);
 		else
-			nrlErrors = m_adapter.compileAction(semanticElement,ruleText);
+		   compileErrors = adapter.compileAction(semanticElement,ruleText);
 
 		/** convert a RuleFactoryException into a list of ModelInfo errors. HIghlight errors */
-		for (NRLError nrlError : nrlErrors) {
-			int lineNo = nrlError.getLine();
-			int col = nrlError.getColumn();
-			int length = nrlError.getLength();
-			String message = nrlError.getMessage();
+		for (String message : compileErrors) {
+//			int lineNo = nrlError.getLine();
+//			int col = nrlError.getColumn();
+//			int length = nrlError.getLength();
+//			String message = nrlError.getMessage();
 
 			// convert line and column to offset
-			int offset = getOffsetFromNRL(ruleText, lineNo, col);
-			m_searcher.highlightText(offset, length < 1 ? 1 : length);
+			//int offset = getOffsetFromNRL(ruleText, lineNo, col);
+			//m_searcher.highlightText(offset, length < 1 ? 1 : length);
 			
 			ModelInfo error = new ModelInfo(m_parentEditor.getEditObject(), "rule", message);
 			errors.add(error);
@@ -236,12 +233,12 @@ public class RuleField extends JPanel implements IEditorField, DocumentListener,
 		return errors;
 	}
 
-	public List<ModelInfo> validateConstraintRule(SemanticElement semanticElement) {
-		return validateRule(semanticElement, false);
+	public List<ModelInfo> validateConstraintRule(String lang, SemanticElement semanticElement) {
+		return validateRule(lang, semanticElement, false);
 	}
 
-	public List<ModelInfo> validateActionRule(SemanticElement semanticElement) {
-		return validateRule(semanticElement, true);
+	public List<ModelInfo> validateActionRule(String lang, SemanticElement semanticElement) {
+		return validateRule(lang, semanticElement, true);
 	}
 
 	/**

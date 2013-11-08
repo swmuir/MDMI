@@ -61,6 +61,17 @@ public abstract class ConversionRule implements IAttribute {
       m_ruleExpressionLanguage = ruleExpressionLanguage;
    }
 
+   public String getActualRuleExpressionLanguage() {
+      if( null != m_ruleExpressionLanguage && 0 < m_ruleExpressionLanguage.length() )
+         return m_ruleExpressionLanguage;
+      try {
+         return m_owner.getElementSet().getModel().getGroup().getDefaultRuleExprLang();
+      }
+      catch( Exception ex ) {
+         return null;
+      }
+   }
+
    public SemanticElement getOwner() {
       return m_owner;
    }

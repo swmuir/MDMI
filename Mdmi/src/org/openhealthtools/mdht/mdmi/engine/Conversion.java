@@ -248,7 +248,7 @@ class Conversion {
       else {
          IElementValue parentTargetValue = new XElementValue(targetValue.getSemanticElement().getParent(),
                m_owner.trgSemanticModel);
-         ((XValue)parentTargetValue.getValue()).intializeStructs();
+         ((XValue)parentTargetValue.getXValue()).intializeStructs();
          parentTargetValue.addChild(targetValue);
 
          generateRequiredSEValues(parentTargetValue.getSemanticElement(), parentTargetValue);
@@ -261,7 +261,7 @@ class Conversion {
       for( SemanticElement childSE : sourceSE.getChildren() ) {
          if( !hasChildElementValue(sourceEV, childSE) && childSE.getSyntaxNode().isRequired() ) {
             XElementValue childTargetValue = new XElementValue(childSE, m_owner.trgSemanticModel);
-            childTargetValue.getValue().intializeStructs();
+            childTargetValue.getXValue().intializeStructs();
             sourceEV.addChild(childTargetValue);
             childTargetValue.setParent(sourceEV);
          }

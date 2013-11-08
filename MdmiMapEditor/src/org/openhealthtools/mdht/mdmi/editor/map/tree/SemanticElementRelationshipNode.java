@@ -117,7 +117,7 @@ public class SemanticElementRelationshipNode extends EditableObjectNode {
 			SemanticElementRelationship relationship = (SemanticElementRelationship)getEditObject();
 			SemanticElement semanticElement = relationship.getRelatedSemanticElement();
 			if (semanticElement != null) {
-				errors = ruleField.validateConstraintRule(semanticElement);
+				errors = ruleField.validateConstraintRule(relationship.getActualRuleExpressionLanguage(), semanticElement);
 			}
 			return errors;
 		}

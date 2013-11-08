@@ -56,6 +56,17 @@ public class SemanticElementBusinessRule {
       m_ruleExpressionLanguage = ruleExpressionLanguage;
    }
 
+   public String getActualRuleExpressionLanguage() {
+      if( null != m_ruleExpressionLanguage && 0 < m_ruleExpressionLanguage.length() )
+         return m_ruleExpressionLanguage;
+      try {
+         return m_semanticElement.getElementSet().getModel().getGroup().getDefaultRuleExprLang();
+      }
+      catch( Exception ex ) {
+         return null;
+      }
+   }
+
    public SemanticElement getSemanticElement() {
       return m_semanticElement;
    }

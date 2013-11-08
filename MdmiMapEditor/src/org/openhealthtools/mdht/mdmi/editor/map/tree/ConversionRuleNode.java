@@ -32,7 +32,9 @@ import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
+import org.openhealthtools.mdht.mdmi.model.MessageModel;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
@@ -229,7 +231,8 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 			List<ModelInfo> errors = new ArrayList<ModelInfo>();
 			SemanticElement semanticElement = getSemanticElement();
 			if (semanticElement != null) {
-				errors = ruleField.validateActionRule(semanticElement);
+			   ConversionRule cr = (ConversionRule)userObject;
+				errors = ruleField.validateActionRule(cr.getActualRuleExpressionLanguage(), semanticElement);
 			}
 			return errors;
 		}

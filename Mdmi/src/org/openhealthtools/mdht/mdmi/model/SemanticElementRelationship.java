@@ -50,6 +50,17 @@ public class SemanticElementRelationship implements IAttribute {
       m_ruleExpressionLanguage = ruleExpressionLanguage;
    }
 
+   public String getActualRuleExpressionLanguage() {
+      if( null != m_ruleExpressionLanguage && 0 < m_ruleExpressionLanguage.length() )
+         return m_ruleExpressionLanguage;
+      try {
+         return m_context.getElementSet().getModel().getGroup().getDefaultRuleExprLang();
+      }
+      catch( Exception ex ) {
+         return null;
+      }
+   }
+
    public boolean isSourceIsInstance() {
       return m_sourceIsInstance;
    }

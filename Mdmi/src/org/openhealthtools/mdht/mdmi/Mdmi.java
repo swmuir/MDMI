@@ -17,6 +17,7 @@ package org.openhealthtools.mdht.mdmi;
 import java.io.*;
 
 import org.openhealthtools.mdht.mdmi.engine.*;
+import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.util.*;
 
 /**
@@ -199,6 +200,72 @@ public final class Mdmi {
       exec( transferInfo, true );
    }
 
+   public static IExpressionInterpreter getInterpreter( ConversionRule cr, XElementValue context, String name, XValue value ) {
+      String lang = cr.getRuleExpressionLanguage();
+      SemanticElement se = cr.getOwner();
+      if( null == lang || lang.length() <= 0 ) {
+         SemanticElementSet ses = se.getElementSet();
+         MessageModel mm = ses.getModel();
+         MessageGroup mg = mm.getGroup();
+         lang = mg.getDefaultRuleExprLang();
+         if( lang == null || lang.length() <= 0 )
+            throw new MdmiException("Language not set for conversion in semantic element {0} and no default set in model group {1}", se.getName(), mg.getName());
+      }
+      return getInterpreter(lang, context, name, value);
+   }
+
+   public static IExpressionInterpreter getInterpreter( DataRule dr, XElementValue context, String name, XValue value ) {
+      String lang = dr.getRuleExpressionLanguage();
+      SemanticElement se = dr.getSemanticElement();
+      if( null == lang || lang.length() <= 0 ) {
+         SemanticElementSet ses = se.getElementSet();
+         MessageModel mm = ses.getModel();
+         MessageGroup mg = mm.getGroup();
+         lang = mg.getDefaultRuleExprLang();
+         if( lang == null || lang.length() <= 0 )
+            throw new MdmiException("Language not set for data rule in semantic element {0} and no default set in model group {1}", se.getName(), mg.getName());
+      }
+      return getInterpreter(lang, context, name, value);
+   }
+
+   public static IExpressionInterpreter getInterpreter( SemanticElementBusinessRule sebr, XElementValue context, String name, XValue value ) {
+      String lang = sebr.getRuleExpressionLanguage();
+      SemanticElement se = sebr.getSemanticElement();
+      if( null == lang || lang.length() <= 0 ) {
+         SemanticElementSet ses = se.getElementSet();
+         MessageModel mm = ses.getModel();
+         MessageGroup mg = mm.getGroup();
+         lang = mg.getDefaultRuleExprLang();
+         if( lang == null || lang.length() <= 0 )
+            throw new MdmiException("Language not set for business rule in semantic element {0} and no default set in model group {1}", se.getName(), mg.getName());
+      }
+      return getInterpreter(lang, context, name, value);
+   }
+
+   public static IExpressionInterpreter getInterpreter( SemanticElementRelationship ser, XElementValue context, String name, XValue value ) {
+      String lang = ser.getRuleExpressionLanguage();
+      SemanticElement se = ser.getContext();
+      if( null == lang || lang.length() <= 0 ) {
+         SemanticElementSet ses = se.getElementSet();
+         MessageModel mm = ses.getModel();
+         MessageGroup mg = mm.getGroup();
+         lang = mg.getDefaultRuleExprLang();
+         if( lang == null || lang.length() <= 0 )
+            throw new MdmiException("Language not set for business rule in semantic element {0} and no default set in model group {1}", se.getName(), mg.getName());
+      }
+      return getInterpreter(lang, context, name, value);
+   }
+
+   public static IExpressionInterpreter getInterpreter( String lang, XElementValue context, String name, XValue value ) { 
+      if( lang == null || lang.length() <= 0 )
+         throw new MdmiException("Language not set!");
+      if( lang.equalsIgnoreCase("nrl") )
+         return new NrlAdapter(context == null ? null: context.getOwner(), context, name, value);
+      if( lang.equalsIgnoreCase("js") || lang.equalsIgnoreCase("javascript") || lang.equalsIgnoreCase("ecmascript") )
+         return new JsAdapter(context == null ? null: context.getOwner(), name, value);
+      throw new MdmiException("Language {0} not supported!", lang);
+   }
+   
    // call the engine to execute
    private void exec( MdmiTransferInfo transferInfo, boolean async ) {
       try {

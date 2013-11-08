@@ -16,6 +16,7 @@ package org.openhealthtools.mdht.mdmi.engine;
 
 import java.util.*;
 
+import org.openhealthtools.mdht.mdmi.*;
 import org.openhealthtools.mdht.mdmi.model.*;
 
 /**
@@ -30,11 +31,10 @@ public class XDataStruct extends XData {
     * Construct one from its owner value and its data type.
     * 
     * @param owner The owner value.
-    * @param datatype The data type, must be not null.
     */
-   public XDataStruct( XValue owner, DTCStructured datatype ) {
-      super( owner, datatype );
-      ArrayList<Field> fields = datatype.getFields();
+   public XDataStruct( XValue owner ) {
+      super( owner, (DTCStructured)owner.getDatatype() );
+      ArrayList<Field> fields = ((DTCStructured)owner.getDatatype()).getFields();
       m_values = new ArrayList<XValue>( fields.size() );
       for( int i = 0; i < fields.size(); i++ ) {
          XValue v = new XValue( this, fields.get(i) );
@@ -47,11 +47,11 @@ public class XDataStruct extends XData {
     * Used only from the XValue when constructing a stand alone value. 
     * 
     * @param owner The owner value.
-    * @param datatype The data type, must be not null.
+    * @param recursive If true recursively create nested structs.
     */
-   XDataStruct( XValue owner, DTCStructured datatype, boolean recursive ) {
-      super( owner, datatype );
-      ArrayList<Field> fields = datatype.getFields();
+   XDataStruct( XValue owner, boolean recursive ) {
+      super( owner, (DTCStructured)owner.getDatatype() );
+      ArrayList<Field> fields = ((DTCStructured)owner.getDatatype()).getFields();
       m_values = new ArrayList<XValue>( fields.size() );
       for( int i = 0; i < fields.size(); i++ ) {
          XValue v = new XValue( this, fields.get(i) );
@@ -80,7 +80,7 @@ public class XDataStruct extends XData {
     * 
     * @return The list of field values, one for each field.
     */
-   public ArrayList<XValue> getValues() {
+   public ArrayList<XValue> getXValues() {
       return m_values;
    }
 
@@ -90,8 +90,8 @@ public class XDataStruct extends XData {
     * @param fieldName The field.
     * @return The value, if found, null otherwise.
     */
-   public XValue getValue( Field field ) {
-      return getValue(field.getName());
+   public XValue getXValue( Field field ) {
+      return getXValue(field.getName());
    }
    
    /**
@@ -100,7 +100,7 @@ public class XDataStruct extends XData {
     * @param fieldName The field name.
     * @return The value, if found, null otherwise.
     */
-   public XValue getValue( String fieldName ) {
+   public XValue getXValue( String fieldName ) {
       if( fieldName == null )
          throw new IllegalArgumentException( "Null 'fieldName'" );
       for( int i = 0; i < m_values.size(); i++ ) {
@@ -117,7 +117,7 @@ public class XDataStruct extends XData {
     * @param value The new value.
     * @return The index of the field being updated.
     */
-   public int setValue( XValue value ) {
+   public int setXValue( XValue value ) {
       if( value == null )
          throw new IllegalArgumentException( "Null 'value'" );
       for( int i = 0; i < m_values.size(); i++ ) {
@@ -130,7 +130,33 @@ public class XDataStruct extends XData {
       }
       return -1;
    }
+   
+   /**
+    * Set the value of the given field to the given value.
+    *  
+    * @param fieldName The name of the field to set.
+    * @param value The value to set it to.
+    */
+   public void setValue( String fieldName, Object value ) {
+      XValue xv = getXValue(fieldName);
+      if( xv == null )
+         throw new MdmiException( "Invalid fieldName: " + fieldName );
+      xv.setValue(value);
+   }
 
+   /**
+    * Get the value of the given field.
+    * 
+    * @param fieldName The name of the field to get.
+    * @return The value of the field.
+    */
+   public Object getValue( String fieldName ) {
+      XValue xv = getXValue(fieldName);
+      if( xv == null )
+         throw new MdmiException( "Invalid fieldName: " + fieldName );
+      return xv.getValue();
+   }
+   
    /**
     * Clear the specified value, setting it to null in effect.
     * 

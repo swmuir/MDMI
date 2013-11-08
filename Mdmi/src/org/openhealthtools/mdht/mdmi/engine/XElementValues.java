@@ -109,7 +109,7 @@ final class XElementValues {
          StringBuffer sb = new StringBuffer(256);
          sb.append("{XE: '").append(elementValue.getName()).append("'");
          if( children.size() <= 0 ) {
-            sb.append(", value: ").append(elementValue.getValue().toString(indent + " "));
+            sb.append(", value: ").append(elementValue.getXValue().toString(indent + " "));
             sb.append("}");
             return sb.toString();
          }

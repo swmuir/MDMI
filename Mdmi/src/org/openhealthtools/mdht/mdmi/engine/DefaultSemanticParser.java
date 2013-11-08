@@ -165,7 +165,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          if( xdt == null )
             xdt = XDT.fromPDT(pdt);
          Object o = XDT.convertFromString(xdt, value, format, pdt);
-         xe.getValue().addValue(o);
+         xe.getXValue().addValue(o);
       }
       else if( dt.isDerived() ) {
          DTSDerived ddt = (DTSDerived)dt;
@@ -173,27 +173,27 @@ public class DefaultSemanticParser implements ISemanticParser {
          if( xdt == null )
             xdt = XDT.fromPDT(pdt);
          Object o = XDT.convertFromString(xdt, value, format, pdt);
-         xe.getValue().addValue(o);
+         xe.getXValue().addValue(o);
       }
       else if( dt.isExternal() ) {
          DTExternal dte = (DTExternal)dt;
          URI uri = dte.getTypeSpec();
          if( uri != null ) {
             Object o = Mdmi.INSTANCE.getExternalResolvers().getDictionaryValue(dte, value);
-            xe.getValue().addValue(o);
+            xe.getXValue().addValue(o);
          }
          else {
             DTSPrimitive pdt = DTSPrimitive.STRING;
             if( xdt == null )
                xdt = XDT.fromPDT(pdt);
             Object o = XDT.convertFromString(xdt, value, format, pdt);
-            xe.getValue().addValue(o);
+            xe.getXValue().addValue(o);
          }
       }
       else {
          DTSEnumerated edt = (DTSEnumerated)dt;
          EnumerationLiteral el = edt.getLiteralByCode(value);
-         xe.getValue().addValue(el);
+         xe.getXValue().addValue(el);
       }
    }
 
@@ -212,9 +212,8 @@ public class DefaultSemanticParser implements ISemanticParser {
       if( !dt.isChoice() )
          throw new MdmiException("Invalid mapping for node {0}, expected datatype choice, found {1}.",
                DefaultSyntacticParser.getNodePath(ychoice.getNode()), dt.toString());
-      DTCChoice cdt = (DTCChoice)dt;
-      XDataChoice xc = new XDataChoice(xe.getValue(), cdt);
-      xe.getValue().addValue(xc);
+      XDataChoice xc = new XDataChoice(xe.getXValue());
+      xe.getXValue().addValue(xc);
 
       ArrayList<YNode> yns = ychoice.getYNodes();
       if( yns.size() > 0 ) { // otherwise its an empty choice
@@ -229,7 +228,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          else {
             // the choice has only fields
             String fieldName = n.getFieldName();
-            XValue xv = xc.setValue(fieldName);
+            XValue xv = xc.setXValue(fieldName);
             for( YNode yn : yns ) {
                getValue(yn, xv, xe);
             }
@@ -251,9 +250,8 @@ public class DefaultSemanticParser implements ISemanticParser {
       MdmiDatatype dt = me.getDatatype();
       if( dt == null || !dt.isStruct() )
          throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
-      DTCStructured sdt = (DTCStructured)dt;
-      XDataStruct xs = new XDataStruct(xe.getValue(), sdt);
-      xe.getValue().addValue(xs);
+      XDataStruct xs = new XDataStruct(xe.getXValue());
+      xe.getXValue().addValue(xs);
 
       ArrayList<YNode> yns = ybag.getYNodes();
       for( YNode yn : yns ) {
@@ -265,7 +263,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          else {
             // field
             String fieldName = n.getFieldName();
-            XValue xv = xs.getValue(fieldName);
+            XValue xv = xs.getXValue(fieldName);
             if( xv == null )
                throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
             getValue(yn, xv, xe);
@@ -338,8 +336,7 @@ public class DefaultSemanticParser implements ISemanticParser {
       MdmiDatatype dt = xv.getDatatype();
       if( !dt.isChoice() )
          throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ychoice.getNode()));
-      DTCChoice cdt = (DTCChoice)dt;
-      XDataChoice xc = new XDataChoice(xv, cdt);
+      XDataChoice xc = new XDataChoice(xv);
       xv.addValue(xc);
 
       ArrayList<YNode> yns = ychoice.getYNodes();
@@ -355,7 +352,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          else {
             // the choice has only fields
             String fieldName = n.getFieldName();
-            XValue xvalue = xc.setValue(fieldName);
+            XValue xvalue = xc.setXValue(fieldName);
             for( YNode yn : yns ) {
                getValue(yn, xvalue, owner);
             }
@@ -367,8 +364,7 @@ public class DefaultSemanticParser implements ISemanticParser {
       MdmiDatatype dt = xv.getDatatype();
       if( !dt.isStruct() )
          throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
-      DTCStructured sdt = (DTCStructured)dt;
-      XDataStruct xs = new XDataStruct(xv, sdt);
+      XDataStruct xs = new XDataStruct(xv);
       xv.addValue(xs);
 
       ArrayList<YNode> yns = ybag.getYNodes();
@@ -381,7 +377,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          else {
             // field
             String fieldName = n.getFieldName();
-            XValue xvalue = xs.getValue(fieldName);
+            XValue xvalue = xs.getXValue(fieldName);
             if( xvalue == null )
                throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
             getValue(yn, xvalue, owner);
@@ -430,7 +426,7 @@ public class DefaultSemanticParser implements ISemanticParser {
     */
    private void setYNodeValuesAndChildren( YNode ynode, XElementValues.XE xe ) {
       // 1. set the value of the ynode first
-      Object value = xe.elementValue.getValue().getValue();
+      Object value = xe.elementValue.getXValue().getValue();
       setYNodeValues(ynode, value);
 
       // 2. recursively go through its child nodes and set the values
@@ -472,7 +468,7 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    private void setYNodeValuesForBag( YBag ybag, XDataStruct xds ) {
-      if( xds.getValues().size() <= 0 )
+      if( xds.getXValues().size() <= 0 )
          return; // nothing to set
 
       Node node = ybag.getNode();
@@ -483,7 +479,7 @@ public class DefaultSemanticParser implements ISemanticParser {
          String fieldName = n.getFieldName();
          if( fieldName == null )
             continue;
-         XValue xvalue = xds.getValue(fieldName);
+         XValue xvalue = xds.getXValue(fieldName);
          if( xvalue == null || xvalue.size() <= 0 )
             continue;
          for( int i = 0; i < xvalue.size(); i++ ) {
@@ -495,9 +491,9 @@ public class DefaultSemanticParser implements ISemanticParser {
    }
 
    private void setYNodeValuesForChoice( YChoice ychoice, XDataChoice xdc ) {
-      if( xdc.getValue() == null )
+      if( xdc.getXValue() == null )
          return;
-      XValue xvalue = xdc.getValue();
+      XValue xvalue = xdc.getXValue();
       if( xvalue != null && xvalue.size() > 0 ) {
          Node n = ychoice.getChosenNode();
          for( int i = 0; i < xvalue.size(); i++ ) {

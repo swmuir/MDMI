@@ -117,7 +117,7 @@ public class SemanticElementBusinessRuleNode extends EditableObjectNode {
 			SemanticElementBusinessRule rule = (SemanticElementBusinessRule)getEditObject();
 			SemanticElement semanticElement = rule.getSemanticElement();
 			if (semanticElement != null) {
-				errors = ruleField.validateConstraintRule(semanticElement);
+				errors = ruleField.validateConstraintRule(rule.getActualRuleExpressionLanguage(), semanticElement);
 			}
 			return errors;
 		}
