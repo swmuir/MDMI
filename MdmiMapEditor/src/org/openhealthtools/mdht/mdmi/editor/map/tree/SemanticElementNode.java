@@ -407,7 +407,9 @@ public class SemanticElementNode extends EditableObjectNode {
 			for (Iterator<? extends Object> iter = data.iterator(); iter.hasNext();) {
 				Object item = iter.next();
 				if (item instanceof SemanticElement) {
-					if (isInPath(thisElement, (SemanticElement)item)) {
+					if (SemanticElementField.hasParentLoop((SemanticElement)item, true)) {
+						iter.remove();
+					} else if (isInPath(thisElement, (SemanticElement)item)) {
 						iter.remove();
 					}
 				}
@@ -416,21 +418,22 @@ public class SemanticElementNode extends EditableObjectNode {
 		}
 		
 		/** Check if the provided semantic element is in the path of the path element */
-		private boolean isInPath(SemanticElement element, SemanticElement path) {
-			if (element == path) {
+		public boolean isInPath(SemanticElement element, SemanticElement pathElement) {
+			if (element == pathElement) {
 				return true;
 			}
+			
 			// recursion error
 			ArrayList<SemanticElement> elementsCovered = new ArrayList<SemanticElement>();
 			// check all elements on path
-			while (path.getParent() != null) {
-				path = path.getParent();
-				if (elementsCovered.contains(path)) {
+			while (pathElement.getParent() != null) {
+				pathElement = pathElement.getParent();
+				if (elementsCovered.contains(pathElement)) {
 					// we're in trouble
 					return true;
 				}
-				elementsCovered.add(path);
-				if (element == path) {
+				elementsCovered.add(pathElement);
+				if (element == pathElement) {
 					return true;
 				}
 			}

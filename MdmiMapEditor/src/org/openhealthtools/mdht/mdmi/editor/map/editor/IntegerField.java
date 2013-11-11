@@ -45,6 +45,8 @@ public class IntegerField extends JPanel implements IEditorField, DocumentListen
 	private JTextField m_editField = null;
 	private JCheckBox  m_unboundedBox;
 	
+	public static final int UNBOUNDED_VALUE = Integer.MAX_VALUE;
+	
 	public IntegerField(GenericEditor parentEditor, int rows) {
 		setLayout(new FlowLayout(FlowLayout.LEADING, Standards.LEFT_INSET, 0));
 		
@@ -74,7 +76,7 @@ public class IntegerField extends JPanel implements IEditorField, DocumentListen
 	public Object getValue() throws DataFormatException {
 
 		if (m_unboundedBox.isSelected()) {
-			return Integer.MAX_VALUE;
+			return UNBOUNDED_VALUE;
 		}
 		
 		String textValue = m_editField.getText().trim();
@@ -93,7 +95,7 @@ public class IntegerField extends JPanel implements IEditorField, DocumentListen
 	public void setDisplayValue(Object value) throws DataFormatException {
 		// select Unbounded box if the value is MAX_VALUE, and the box is showing
 		if (value instanceof Integer && m_unboundedBox.isVisible() &&
-				Integer.MAX_VALUE == ((Integer)value).intValue()) {
+				UNBOUNDED_VALUE == ((Integer)value).intValue()) {
 			m_editField.setText("");
 			m_editField.setEditable(false);
 			m_unboundedBox.setSelected(true);

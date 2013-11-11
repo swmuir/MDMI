@@ -589,16 +589,16 @@ public class SemanticElementBERLinkDialog extends BaseDialog {
 		String seFieldName = m_SeToBerInfo.fieldNameSelector.getSelectedItem().toString().trim();
 
 		if (m_SeToBerInfo.convRule != null) {
-			String newRule = GenerateToFromElementsDialog.generateRuleText(true, 
-					m_SeToBerInfo.convRule.getName(), seFieldName, beFieldName);
+			String newRule = GenerateToFromElementsDialog.generateRuleText(m_SeToBerInfo.convRule,
+					seFieldName, beFieldName);
 
 			// append new rule to existing rule
 			appendRuleText(m_SeToBerInfo.ruleTextPane, newRule);
 
 		}
 		if (m_BerToSeInfo.convRule != null) {
-			String newRule = GenerateToFromElementsDialog.generateRuleText(false, 
-					m_BerToSeInfo.convRule.getName(), seFieldName, beFieldName);
+			String newRule = GenerateToFromElementsDialog.generateRuleText(m_BerToSeInfo.convRule,
+					seFieldName, beFieldName);
 
 			// append new rule to existing rule
 			appendRuleText(m_BerToSeInfo.ruleTextPane, newRule);

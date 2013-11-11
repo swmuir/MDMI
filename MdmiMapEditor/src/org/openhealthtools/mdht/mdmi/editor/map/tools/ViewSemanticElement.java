@@ -22,11 +22,11 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashMap;
 
-import org.openhealthtools.mdht.mdmi.editor.common.layout.RelationshipView;
-import org.openhealthtools.mdht.mdmi.editor.common.layout.Shape;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.ArrowShape;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.Connection;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.ConnectionPoint;
+import org.openhealthtools.mdht.mdmi.editor.common.layout.RelationshipView;
+import org.openhealthtools.mdht.mdmi.editor.common.layout.Shape;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Shapes.Label;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;

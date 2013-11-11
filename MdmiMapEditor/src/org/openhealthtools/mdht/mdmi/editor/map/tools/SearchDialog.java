@@ -497,6 +497,12 @@ public class SearchDialog extends BaseDialog {
 			if (getMethod != null) {
 				Object descr = getMethod.invoke(userObject);
 				value = (descr == null ? null : descr.toString());
+				
+				// special handling
+				if (value != null) {
+					value = value.replaceAll("\\r", "");
+					value = value.replaceAll("\\n", "");
+				}
 			}
 		} catch (Exception e) {
 			SelectionManager.getInstance().getStatusPanel().writeException(e);

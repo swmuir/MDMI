@@ -23,6 +23,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
@@ -68,6 +70,9 @@ import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
  *
  */
 public class GenerateToFromElementsDialog extends BaseDialog {
+	public static final String CR_LF = "\r\n";
+	public static final String SPACES = "    ";
+
 	private static final String UNDEFINED_TYPE = " - ";
 
 	/** Resource for localization */
@@ -277,18 +282,31 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private void populateBusinessElements() {
 		m_businessElementSelector.removeAllItems();
 		
-		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		// Find all the BusinessElementReferences
+		ArrayList<MdmiBusinessElementReference> elements = new ArrayList<MdmiBusinessElementReference>();
+		
 		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
-		for (MdmiBusinessElementReference bizElem : group.getDomainDictionary().getBusinessElements()) {
-			
-			if (m_filterByDatatypeButton.isSelected()) {
-				// only add BERs with same datatype as SE
-				if (bizElem.getReferenceDatatype() == m_semanticElement.getDatatype()) {
-					m_businessElementSelector.addItem(bizElem);
+		for (MdmiBusinessElementReference element : group.getDomainDictionary().getBusinessElements()) {
+			if (element.getName() != null && element.getName().length() > 0) {
+
+				if (m_filterByDatatypeButton.isSelected()) {
+					// only add BERs with same datatype as SE
+					if (element.getReferenceDatatype() == m_semanticElement.getDatatype()) {
+						elements.add(element);
+					}
+				} else {
+					elements.add(element);
 				}
-			} else {
-				m_businessElementSelector.addItem(bizElem);
 			}
+		}
+
+		// sort by name
+		Collections.sort(elements, new Comparators.BusinessElementReferenceComparator());
+		
+		// add to combo box
+		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
+		for (MdmiBusinessElementReference bizElem : elements) {
+			m_businessElementSelector.addItem(bizElem);
 		}
 		
 		// we can pre-fill the datatype
@@ -515,14 +533,15 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 		// if Isomorphic, the rule should be left blank
 		if (!m_isoButton.isSelected()) {
+		
 			// Rule will be of the form: Set <target> to <source>
-			String newRule =  generateRuleText(toBER, ruleName, seFieldName, beFieldName);
+			String newRule = generateRuleText(conversionRule, seFieldName, beFieldName);
 
 			// append new rule to existing rule
 			String rule = conversionRule.getRule();
 			if (rule != null && rule.length() > 0) {
 				StringBuilder buf = new StringBuilder(rule);
-				buf.append("\r\n").append(newRule);
+				buf.append(CR_LF).append(newRule);
 				newRule = buf.toString();
 			}
 			conversionRule.setRule(newRule);
@@ -546,13 +565,33 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		return true;
 	}
 	
-	public static String generateRuleText(boolean toBER, String ruleName, String seFieldName, String beFieldName) {
-		// Rule will be of the form: Set <target> to <source>
+	public static String generateRuleText(ConversionRule theRule, String seFieldName, String beFieldName) {
+		String language = "JS";
+		if (theRule.getOwner() != null) {
+			language = theRule.getOwner().getElementSet().getModel().getGroup().getDefaultRuleExprLang();
+		}
+		
+		String ruleText = null;
+		if ("NRL".equals(language)) {
+			ruleText = generateNRLRuleText(theRule, seFieldName, beFieldName);
+		} else {
+			// default is JS
+			ruleText = generateJSRuleText(theRule, seFieldName, beFieldName);
+		}
+		
+		return ruleText;
+	}
+
+	// NRL Rule will be of the form: Set <target> to <source>
+	public static String generateNRLRuleText(ConversionRule theRule, String seFieldName, String beFieldName) {
+		
+		String ruleName = theRule.getName();
+		
 		StringBuilder newRule = new StringBuilder();
 		String target = "value";
 		String source = "value";
 		
-		if (toBER) {
+		if (theRule instanceof ToBusinessElement) {
 			//  Set <ruleName>[.BEfieldName] to value
 			// or
 			//  Set <ruleName>[.BEfieldName] to <seFieldName>
@@ -585,7 +624,215 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		
 		return newRule.toString();
 	}
+	
+	// Get indentation (4 spaces per level)
+	public static String getIndent(int level) {
+		StringBuilder buf = new StringBuilder();
+		for (int l=0; l<level; l++) {
+			buf.append(SPACES);
+		}
+		return buf.toString();
+	}
 
+	// JSP Rule will be of the form: target.setValue('<targetAttr>', source.getValue('<srcAttribute>'))
+	//  Assign source: s1.s2.s3 to target t1.t2.t3.t4:		
+	//		var s1 = source.getXValue(‘s1’).getValue();
+	//		
+	//		if (null != s1) {
+	//			// work our way down
+	//			var s2 = s1.getXValue(‘s2’).getValue();
+	//			if (null != s2) {
+	//				
+	//				// target(s) 
+	//				var t1 = target.getXValue(‘t1’).getValue();
+	//				if (null == t1) {
+	//					// create T1
+	//				}
+	//				
+	//				var t2 = t1.getXValue(‘t2’).getValue();
+	//				if (null == t2) {
+	//					// create T2
+	//				}
+	//				
+	//				var t3 = t2.getXValue(‘t3’).getValue();
+	//				if (null == t3) {
+	//					// create T3
+	//				}
+	//				
+	//				// finally
+	//				t3.setValue(‘t4’, s2.getValue(‘s3’));
+	//			} 
+	//
+	//		}
+	public static String generateJSRuleText(ConversionRule theRule, String seFieldName, String beFieldName) {
+		
+		String ruleName = theRule.getName();
+		
+		StringBuilder newRule = new StringBuilder();
+		
+		String srcVar;
+		String targetVar;
+		
+		String srcFieldPath;
+		String targetFieldPath;
+		
+		// create variables and fields
+		//   To BE                                 To ME
+		//   var source = value.value();           var source = ruleName.getValue();
+		//   var target = ruleName.getValue();     var target = value.value();
+		if (theRule instanceof ToBusinessElement) {
+			srcVar = "var source = value.value();";
+			targetVar = "var target = " + ruleName + ".getValue();";
+			
+			srcFieldPath = seFieldName;
+			targetFieldPath = beFieldName;
+
+		} else {
+			srcVar = "var source = " + ruleName + ".getValue();";
+			targetVar = "var target = value.value();";
+			
+			srcFieldPath = beFieldName;
+			targetFieldPath = seFieldName;
+		}
+
+		// 1. Create source and target variables (if they don't already exist)
+		String existingRule = theRule.getRule();
+		if (existingRule == null) {
+			newRule.append(srcVar).append(CR_LF).append(targetVar).append(CR_LF).append(CR_LF);
+		} else {
+			if (!existingRule.contains(srcVar)) {
+				newRule.append(srcVar).append(CR_LF);
+			}
+			if (!existingRule.contains(targetVar)) {
+				newRule.append(targetVar).append(CR_LF);
+			}
+		}
+		
+		// parse field names on "." separator
+		String[] srcFieldNames = srcFieldPath.split("\\.");
+		String[] targetFieldNames = targetFieldPath.split("\\.");
+
+		int depth = 0;
+
+		String prevSrcVarName = "source";
+		if (srcFieldNames.length == 0) {
+			// no source
+			//		target.setValue(source.getValue());
+			newRule.append( buildTargetJSInfo(depth, prevSrcVarName, "", targetFieldNames) );
+
+		} else {
+			// make own scope, so we don't duplicate variables
+			if (srcFieldNames.length > 1 || targetFieldNames.length > 1) {
+				newRule.append("{").append(CR_LF);
+				depth++;
+			}
+			String indent = getIndent(depth);
+			for (int s=0; s<srcFieldNames.length; s++) {
+
+				String srcFieldName = srcFieldNames[s];
+				String srcVarName = "from_" + srcFieldName;
+
+				// we need to walk intermediate fields
+				if (s < srcFieldNames.length-1) {
+					//		var s2 = s1.getXValue(‘s2’).getValue();
+					//	    if (null != s2) {
+					if (s > 0) newRule.append(CR_LF);
+					newRule.append(indent).append("var ").append(srcVarName).append(" = ")
+						.append(prevSrcVarName).append(".getXValue('").append(srcFieldName).append("').getValue();")
+						.append(CR_LF);
+					newRule.append(indent).append("if (").append(srcVarName).append(" != null) {").append(CR_LF);
+
+				} else {
+					newRule.append( buildTargetJSInfo(depth, prevSrcVarName, srcFieldName, targetFieldNames) );
+				}
+
+
+				depth++;
+				prevSrcVarName = srcVarName;
+			}
+
+			// close parentheses
+			for (int l=depth-1; l>0; l--) {
+				newRule.append(getIndent(l-1)).append("}").append(CR_LF);
+			}
+		}
+		
+		// trim CR/LF at end of line
+		String newRuleString = newRule.toString();
+		if (newRule.toString().endsWith(CR_LF)) {
+			newRule.setLength(newRule.length() - CR_LF.length());
+			newRuleString = newRule.toString();
+		}
+		return newRuleString;
+	}
+	
+	// JavaScript rule target assignment
+	private static String buildTargetJSInfo(int indentLevel, String prevSrcVarName, String srcFieldName, 
+			String[] targetFieldNames) {
+		String indent = getIndent(indentLevel);
+		StringBuilder targetRule = new StringBuilder();
+		
+		String prevTargetVarName = "target";
+		// last field - do targets 
+		if (targetFieldNames.length == 0 || (targetFieldNames.length == 1 && targetFieldNames[0].length() == 0)) {
+			// no target fields
+			//		target.setValue(s2.getValue(‘s3’));
+			targetRule.append(indent).append(prevTargetVarName).append(".setValue(").append(prevSrcVarName);
+			if (srcFieldName.isEmpty()) {
+				targetRule.append(".getValue()");
+			} else {
+				targetRule.append(".getValue('").append(srcFieldName).append("')");
+			}
+			targetRule.append(");").append(CR_LF);
+
+		} else {
+			for (int t=0; t<targetFieldNames.length; t++) {
+				String targetFieldName = targetFieldNames[t];
+				String targetVarName = "to_" + targetFieldName;
+
+				if (t < targetFieldNames.length-1) {
+					// create intermediate variables
+					//	var t2 = t1.getXValue(‘t2’).getValue();
+					//  if (t2 == null) {
+					//     var t2x = t1.getXValue('t2');
+					//     t2 = new XDataStruct(t2x);
+					//     t2x.setValue(t2);
+					//  }
+					if (t > 0) targetRule.append(CR_LF);
+					targetRule.append(indent).append("var ").append(targetVarName).append(" = ").append(prevTargetVarName)
+								.append(".getXValue('").append(targetFieldName).append("').getValue();").append(CR_LF);
+					targetRule.append(indent).append("if (").append(targetVarName).append(" == null) {").append(CR_LF);
+
+					// code to create variable
+					String indent2 = indent + SPACES;
+					targetRule.append(indent2).append("var xValue = ").append(prevTargetVarName)
+							  .append(".getXValue('").append(targetFieldName).append("');").append(CR_LF);
+					targetRule.append(indent2).append(targetVarName).append(" = new XDataStruct(xValue);").append(CR_LF);
+					targetRule.append(indent2).append("xValue.setValue(").append(targetVarName).append(");").append(CR_LF);
+
+					targetRule.append(indent).append("}").append(CR_LF);
+
+
+				} else {
+					// finally - do the assignment
+					//		t3.setValue(‘t4’, s2.getValue(‘s3’));
+					targetRule.append(indent).append(prevTargetVarName).append(".setValue('")
+						.append(targetFieldName).append("', ").append(prevSrcVarName);
+
+					if (srcFieldName.isEmpty()) {
+						targetRule.append(".getValue()");
+					} else {
+						targetRule.append(".getValue('").append(srcFieldName).append("')");
+					}
+					targetRule.append(");").append(CR_LF);
+				}
+
+				prevTargetVarName = targetVarName;
+			}
+		}
+		
+		return targetRule.toString();
+	}
 	
 	// auto-fill the name
 	private void fillInName() {

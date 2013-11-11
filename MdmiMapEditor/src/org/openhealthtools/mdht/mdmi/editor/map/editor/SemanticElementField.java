@@ -30,6 +30,8 @@ import javax.swing.JList;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
+import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
+import org.openhealthtools.mdht.mdmi.editor.map.console.ReferenceLink;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SemanticElementNode;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 
@@ -125,6 +127,43 @@ public class SemanticElementField extends AdvancedSelectionField {
 	public Class<?> getDataClass() {
 		return SemanticElement.class;
 	}
+	
+	/** Check for parent loop A->B->C->D->E->C->D->E.... */
+	public static boolean hasParentLoop(SemanticElement element, boolean showError)
+	{
+		ArrayList <SemanticElement> heirarchy = new ArrayList<SemanticElement>();
+		heirarchy.add(element);
+		
+		// check parent
+		SemanticElement parent = element.getParent();
+		while (parent != null) {
+			if (heirarchy.contains(parent)) {
+				// found a loop
+				if (showError) {
+					// Semantic Element Loop: Semantic Element <LINK> has a parent that references back to <this>'
+					ReferenceLink link = new ReferenceLink(element, element.getName());
+					link.addReferredToObject(parent);
+					StatusPanel statusPanel = SelectionManager.getInstance().getStatusPanel();
+					String preMsg = "Semantic Element Loop: Semantic Element";
+					StringBuilder postMsg = new StringBuilder("has a loop in its parent hierarchy -");
+					for (SemanticElement elem : heirarchy) {
+						postMsg.append(elem.getName());
+						postMsg.append("->");
+					}
+					postMsg.append(parent.getName());
+
+					statusPanel.writeErrorLink(preMsg, link, postMsg.toString());
+				}
+				
+				return true;
+			}
+			heirarchy.add(0, parent);
+			
+			parent = parent.getParent();
+		}
+		return false;
+	}
+	
 	/** Create a string from the SE's name */
 	public static String makeString(SemanticElement element) {
 		return makeString(element, false);

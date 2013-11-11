@@ -113,7 +113,9 @@ public class RuleTextPane extends CustomTextArea {
 		
 		// replace document
 		setDocument(doc);
-		setCaretPosition(dot);
+		if (dot >= 0 && dot < doc.getLength() ) {
+			setCaretPosition(dot);
+		}
 		
 		return doc;
 	}
