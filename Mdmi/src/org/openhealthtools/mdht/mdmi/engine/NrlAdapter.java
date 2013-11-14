@@ -65,20 +65,20 @@ public class NrlAdapter implements IExpressionInterpreter {
          }
       }
 
-      try {
-         Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");
-         Object o;
-         o = c.newInstance();
-         m_adapter = (IExpressionInterpreter)o;
-      }
-      catch( InstantiationException e ) {
-
-         e.printStackTrace();
-      }
-      catch( IllegalAccessException e ) {
-
-         e.printStackTrace();
-      }
+//      try {
+//         Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");
+//         Object o;
+//         o = c.newInstance();
+         m_adapter = new com.whitestar.mdmi.NrlAdapter();
+//      }
+//      catch( InstantiationException e ) {
+//
+//         e.printStackTrace();
+//      }
+//      catch( IllegalAccessException e ) {
+//
+//         e.printStackTrace();
+//      }
    }
 
    public void initialize( ElementValueSet eset, XElementValue context, String name, XValue value ) {
