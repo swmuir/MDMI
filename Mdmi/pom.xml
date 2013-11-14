@@ -8,10 +8,16 @@
 	<description>MDMI Maven Project</description>
 
 
-
+<distributionManagement>
+   
+</distributionManagement>
 
 	<repositories>
-
+ <repository>
+        <id>JKMSoftware-desktop</id>
+        <name>JKMSoftware-desktop-releases</name>
+        <url>http://localhost:8081/artifactory/ext-release-local</url>
+    </repository>
 	</repositories>
 
 	<properties>
@@ -65,6 +71,26 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.2</version>
 		</dependency>
+		
+		<dependency>
+	<groupId>org.codehaus.jackson</groupId>
+	<artifactId>jackson-mapper-asl</artifactId>
+	<version>1.9.13</version>
+</dependency>
+
+ <dependency>
+    <groupId>nrl</groupId>
+    <artifactId>nrl</artifactId>
+    <version>nrl</version>
+</dependency>
+
+<dependency>
+    <groupId>nrl-interpreter</groupId>
+    <artifactId>nrl-interpreter</artifactId>
+    <version>nrl-interpreter</version>
+</dependency>
+
+
 	</dependencies>
 
 	<build>
