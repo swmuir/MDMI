@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,65 +22,19 @@ import org.openhealthtools.mdht.mdmi.IElementValue;
 import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
 import org.openhealthtools.mdht.mdmi.MdmiException;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
-import org.openhealthtools.mdht.mdmi.util.JarClassLoader;
 
 public class NrlAdapter implements IExpressionInterpreter {
-	private static boolean loadedJars = false;
 
-	private static JarClassLoader jl;
-
-	IExpressionInterpreter m_adapter = null;
+	IExpressionInterpreter m_adapter = new com.whitestar.mdmi.NrlAdapter();
 
 	public NrlAdapter() {
-		tryInitAdapter();
 	}
 
 	public NrlAdapter(ElementValueSet eset, XElementValue context, String name, XValue value) {
-		tryInitAdapter();
 		try {
 			initialize(eset, context, name, value);
 		} catch (Exception ex) {
 		}
-	}
-
-	private void tryInitAdapter() {
-		if (!loadedJars) {
-			try {
-				File i = new File("./NRL/nrl-interpreter.jar");
-
-				if (!i.exists()) {
-					i = new File("./bin/NRL/nrl-interpreter.jar");
-
-				}
-				if (!i.exists()) {
-					i = new File("../bin/NRL/nrl-interpreter.jar");
-
-				}
-				if (!i.exists())
-					return;
-
-				jl = new JarClassLoader(i);
-
-				loadedJars = true;
-			} catch (Exception ex) {
-				System.out.println(ex.getMessage());
-			}
-		}
-
-		// try {
-		// Class<?> c = jl.findClass("com.whitestar.mdmi.NrlAdapter");
-		// Object o;
-		// o = c.newInstance();
-		m_adapter = new com.whitestar.mdmi.NrlAdapter();
-		// }
-		// catch( InstantiationException e ) {
-		//
-		// e.printStackTrace();
-		// }
-		// catch( IllegalAccessException e ) {
-		//
-		// e.printStackTrace();
-		// }
 	}
 
 	public void initialize(ElementValueSet eset, XElementValue context, String name, XValue value) {
