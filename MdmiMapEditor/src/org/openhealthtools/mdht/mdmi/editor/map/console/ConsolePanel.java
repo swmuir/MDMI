@@ -30,6 +30,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Element;
 import javax.swing.text.SimpleAttributeSet;
@@ -149,6 +150,11 @@ public class ConsolePanel extends JPanel {
 		m_display = new JTextPane(m_document);
 		m_display.setPreferredSize( new Dimension(420, 120) );
 		m_display.setEditable( false );
+
+        // this will scroll to the bottom everytim new data is added
+		DefaultCaret caret = (DefaultCaret)m_display.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        
 		JScrollPane scroller = new JScrollPane( m_display );
 
 		setLayout( new BorderLayout() );

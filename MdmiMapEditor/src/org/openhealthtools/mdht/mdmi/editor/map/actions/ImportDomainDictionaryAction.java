@@ -19,12 +19,19 @@ import java.awt.event.ActionEvent;
 import org.openhealthtools.mdht.mdmi.editor.common.actions.AbstractMenuAction;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities;
 
-public class ImportDomainDictionaryAction extends AbstractMenuAction {
+public class ImportDomainDictionaryAction extends AbstractMenuAction implements Runnable {
 	private static final long serialVersionUID = -1;
 
 	@Override
 	public void execute(ActionEvent actionEvent) {
+		// run in a different thread (the cursor manager will prevent any user input)
+		new Thread(this).start();
+	}
+
+	@Override
+	public void run() {
 		ModelIOUtilities.importDataDictionaryFromFile();
 	}
+
 	
 }
