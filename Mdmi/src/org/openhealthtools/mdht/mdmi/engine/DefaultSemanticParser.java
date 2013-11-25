@@ -263,6 +263,8 @@ public class DefaultSemanticParser implements ISemanticParser {
          else {
             // field
             String fieldName = n.getFieldName();
+            if( fieldName == null )
+                throw new MdmiException("Field Name is Null " + DefaultSyntacticParser.getNodePath(n));
             XValue xv = xs.getXValue(fieldName);
             if( xv == null )
                throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
