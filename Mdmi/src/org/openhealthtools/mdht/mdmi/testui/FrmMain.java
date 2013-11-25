@@ -386,6 +386,8 @@ public class FrmMain extends JFrame {
       });
 
       lstElements.setListData(v);
+      lstElements.setSelectionInterval(0, v.size()-1);
+      
    }
 
    private boolean hasBer( ArrayList<MdmiBusinessElementReference> bers, MdmiBusinessElementReference ber ) {
@@ -627,9 +629,10 @@ public class FrmMain extends JFrame {
       lstElements = new JList();
       lstElements.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
       lstElements.setCellRenderer(new ElementsRenderer());
+    
       JScrollPane scrElements = new JScrollPane(lstElements);
-
-      lblElements = new JLabel("Elements to transfer");
+      
+        lblElements = new JLabel("Elements to transfer");
 
       btnTransfer = new JButton("Execute transfer");
       btnTransfer.setToolTipText("Execute the transfer now.");
