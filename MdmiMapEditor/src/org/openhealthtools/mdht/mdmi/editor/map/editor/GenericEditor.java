@@ -61,6 +61,7 @@ public class GenericEditor extends AbstractComponentEditor {
 	
 	private Class<?> m_objectClass = null;
 	private Object   m_object = null;
+
 	
 	private JPanel  m_mainPanel;
 	private GridBagConstraints m_gbc;
@@ -74,6 +75,8 @@ public class GenericEditor extends AbstractComponentEditor {
 	private JScrollPane m_methodsScroller = new JScrollPane(m_methodsDisplayArea);
 	private JCheckBox m_showMethodsCheckBox = new JCheckBox("Show Other Methods", false); 
 	private ActionListener m_showHideMethodListener = null;
+	
+	private boolean m_ignoreModification = false;
 
 	public GenericEditor(MessageGroup group, Class<?> objectClass) {
 		this(group, objectClass, false);	// debugging off
@@ -95,6 +98,11 @@ public class GenericEditor extends AbstractComponentEditor {
 		
 		m_debugging = debugging;
 		layoutUI();
+	}
+	
+	@Override
+	public String toString() {
+		return m_objectClass.getSimpleName();
 	}
 	
 	@Override
@@ -585,11 +593,12 @@ public class GenericEditor extends AbstractComponentEditor {
 		
 		//  accept updated model values
 		if (acceptChanges) {
+			m_ignoreModification = true;
 			for (DataEntryFieldInfo fieldInfo : m_dataEntryFieldList) {
 				try {
 					Object value = fieldInfo.saveModelValue(m_object);
 					
-					// re-set the value in the UI
+					// re-set the value in the UI 
 					fieldInfo.getEditComponent().setDisplayValue(value);
 					
 				} catch (Exception e) {
@@ -599,11 +608,12 @@ public class GenericEditor extends AbstractComponentEditor {
 					SelectionManager.getInstance().getStatusPanel().writeException(msg, e);
 				}
 			}
+			m_ignoreModification = false;
 
 		} else {
 			return null;
 		}
-		
+
 		setModified(false);
 		return m_object;
 	}
@@ -730,11 +740,21 @@ public class GenericEditor extends AbstractComponentEditor {
 			fieldInfo.getEditComponent().setReadOnly();
 		}
 	}
+	
+	
+
+	@Override
+	public void setModified(boolean modified) {
+		if (!m_ignoreModification) {
+			super.setModified(modified);
+		}
+	}
 
 	/** populate the UI from the model */
 	@Override
 	public void populateUI(Object entity) {
 		m_object = entity;
+		m_ignoreModification = true;
 		
 		// accept the original value from the model, and use it to populate the UI
 		for (DataEntryFieldInfo fieldInfo : m_dataEntryFieldList) {
@@ -759,7 +779,8 @@ public class GenericEditor extends AbstractComponentEditor {
 				SelectionManager.getInstance().getStatusPanel().writeException(msg, e);
 			}
 		}
-		
+
+		m_ignoreModification = false;
 	}
 
 	/** Get fields of a particular type by checking for getThing()/setThing(class) pairs */

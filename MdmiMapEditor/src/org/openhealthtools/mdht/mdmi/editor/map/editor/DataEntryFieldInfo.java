@@ -49,6 +49,13 @@ public class DataEntryFieldInfo {
 		this.m_returnType = returnType;
 	}
 	
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append(m_fieldName).append(" (").append(m_returnType.getSimpleName()).append(")");
+		return buf.toString();
+	}
+	
 	////////////////////////////////////////////////
 	//  Get and Set Methods                       //
 	////////////////////////////////////////////////
