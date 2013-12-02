@@ -540,7 +540,8 @@ public abstract class EditableObjectNode extends DefaultMutableTreeNode {
 				targetChildUserObj = targetChild.getUserObject();
 				if (sourceChildUserObj == targetChildUserObj) {
 					// shallow copy side effect - discard this node
-					targetNode.remove(i);
+					targetNode.deleteChild(targetChild);
+					
 					targetChild = null;
 				}
 			
