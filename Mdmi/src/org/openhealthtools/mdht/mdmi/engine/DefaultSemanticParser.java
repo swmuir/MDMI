@@ -511,12 +511,12 @@ public class DefaultSemanticParser implements ISemanticParser {
 		Node node = ynode.getNode();
 		if (node instanceof Bag) {
 			if (!(value instanceof XDataStruct)) {
-				throw new IllegalArgumentException("Invalid map: expected XDataStruct for node " + ynode.getNode().getName());
+				throw new IllegalArgumentException("Invalid map: expected XDataStruct for node " + ynode.getNode().getName() + " : " + DefaultSyntacticParser.getNodePath(ynode.getNode()) );
 			}
 			setYNodeValuesForBag((YBag) ynode, (XDataStruct) value);
 		} else if (node instanceof Choice) {
 			if (!(value instanceof XDataChoice)) {
-				throw new IllegalArgumentException("Invalid map: expected XDataChoice for node " + ynode.getNode().getName());
+				throw new IllegalArgumentException("Invalid map: expected XDataChoice for node " + ynode.getNode().getName()  + " : " + DefaultSyntacticParser.getNodePath(ynode.getNode()) );
 			}
 			setYNodeValuesForChoice((YChoice) ynode, (XDataChoice) value);
 		} else { // Leaf
