@@ -28,15 +28,25 @@ public class ToDateTimeConverter implements IConvertToString {
          throw new IllegalArgumentException("Object is not a java.util.Date type.");
 
       if( format != null && 0 < format.length() && !format.equals("DATETIME") ) {
-         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(format);
-            return sdf.format((Date)obj);
-         }
-         catch( Exception ex ) {
-            throw new MdmiException(ex, "ToDateTimeConverter.convertToString({0}, {1}) failed.", obj, format);
-         }
+          String[] formatStrings = format.split(";");
+          for (String formatString : formatStrings) {
+              try {
+                  SimpleDateFormat sdf = new SimpleDateFormat(formatString);
+                  return sdf.format((Date)obj);
+              }
+              catch (IllegalArgumentException ignored) {}
+              catch( Exception ex ) {
+                  throw new MdmiException(ex, "ToDateTimeConverter.convertToString({0}, {1}) failed.", obj, format);
+              }
+          }
+
       }
 
       return XmlUtil.formatDateYMDHMSMZ((Date)obj);
    }
+
+
+    public static void main(String[] args) {
+        SimpleDateFormat sdf = new SimpleDateFormat("zseeee");
+    }
 }
