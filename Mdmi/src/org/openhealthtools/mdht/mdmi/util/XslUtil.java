@@ -292,11 +292,9 @@ public class XslUtil {
     * @return The existing or created end node, as identified in the path.
     */
    public static Node createNodeForPath( Element parent, String path, int ordinalIndex ) {
-
       String axesPath[] = splitForFirstAxes(path);
-      if( axesPath == null ) {
+      if( null == axesPath )
          return createNodeForPathNoAxes(parent, path, ordinalIndex);
-      }
       String sPath = axesPath[0];
       String sAxe = axesPath[1];
       String sAxePath = axesPath[2];
@@ -359,14 +357,14 @@ public class XslUtil {
                spath = spath.substring(i + 1);
                i = indexOfNotInQuotes(spath, '/');
                if( spath.equals("text()") )
-                  p = addElement(p, name, ordinalIndex);
+                  p = getOrCreateElement(p, name, ordinalIndex);
                else
                   p = getOrCreateElement(p, name);
             }
             if( spath.equals("text()") )
                return p;
             else
-               return addElement(p, spath, ordinalIndex);
+               return getOrCreateElement(p, spath, ordinalIndex);
          }
          else {
             // 0 < icat, that is elem@attr, or elem1/elem2/.../elemN@attr
@@ -424,17 +422,18 @@ public class XslUtil {
                   String pred = name + '[' + expr + ']';
                   boolean isFinal = spath.length() <= 0;
                   NodeList nl = XslUtil.getNodeList(p, pred);
+                  int count = nl.getLength();
                   Node on = null;
                   if( isFinal ) {
                      int oi = ordinalIndex < 0 ? 0 : ordinalIndex;
-                     if( nl == null || nl.getLength() < oi + 1 )
-                        on = addNodeBasedOnPredicate(p, name, expr, ordinalIndex);
+                     if( nl == null || count < oi + 1 )
+                        on = addNodeBasedOnPredicate(p, nl, name, expr, oi);
                      else
                         on = nl.item(oi);
                   }
                   else {
-                     if( nl == null || nl.getLength() <= 0 )
-                        on = addNodeBasedOnPredicate(p, name, expr, 0);
+                     if( nl == null || count <= 0 )
+                        on = addNodeBasedOnPredicate(p, nl, name, expr, 0);
                      else
                         on = nl.item(0);
                   }
@@ -456,22 +455,20 @@ public class XslUtil {
             y = indexOfNotInQuotes(spath, '/');
          }
          if( 0 < spath.length() )
-            return addElement(p, spath, ordinalIndex);
+            return getOrCreateElement(p, spath, ordinalIndex);
          return p;
       }
    }
 
-   private static Node addNodeBasedOnPredicate( Element p, String name, String expr, int ordinalIndex ) {
-      if( p == null || name == null || expr == null || name.length() <= 0 || expr.length() <= 0 )
+   private static Node addNodeBasedOnPredicate( Element parent, NodeList nl, String name, String expr, int index ) {
+      if( parent == null || name == null || expr == null || name.length() <= 0 || expr.length() <= 0 )
          throw new IllegalArgumentException("Invalid null or empty argument!");
-      // no match, so we always create new element(s)
+      int count = nl.getLength();
+      if( index < count )
+         return (Element)nl.item(index);
       Element child = null;
-      int i = 0;
-      int n = ordinalIndex <= 0 ? 1 : ordinalIndex + 1;
-
-      while( i++ < n ) {
-         child = getOrCreateElement(p, name);
-         // child = XmlUtil.addElement(p, name);
+      for( int i = count; i < index + 1; i++ ) {
+         child = XmlUtil.addElement(parent, name);
          processPredicate(child, expr);
       }
       return child;
@@ -630,8 +627,8 @@ public class XslUtil {
       return child;
    }
 
-   private static Element addElement( Element parent, String name, int index ) {
-      if( index < 0 )
+   private static Element getOrCreateElement( Element parent, String name, int index ) {
+      if( index <= 0 )
          return getOrCreateElement(parent, name);
       ArrayList<Element> elems = XmlUtil.getElements(parent, name);
       while( elems.size() < index + 1 ) {

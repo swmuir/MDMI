@@ -1029,11 +1029,11 @@ public class DefaultSemanticParser implements ISemanticParser {
 
       if( valueSet.getElementValuesByType(se).size() > 0 ) {
          for( int i = 0; i < valueSet.getElementValuesByType(se).size(); i++ ) {
-            evalNrl(lang, rule, (XElementValue)valueSet.getElementValuesByType(se).get(i));
+            evalRule(lang, rule, (XElementValue)valueSet.getElementValuesByType(se).get(i));
          }
       }
       else {
-         evalNrl(lang, rule, new XElementValue(se, valueSet));
+         evalRule(lang, rule, new XElementValue(se, valueSet));
       }
    }
 
@@ -1052,7 +1052,7 @@ public class DefaultSemanticParser implements ISemanticParser {
       return result;
    }
 
-   private void evalNrl( String lang, String rule, XElementValue xe ) {
+   private void evalRule( String lang, String rule, XElementValue xe ) {
       IExpressionInterpreter adapter = Mdmi.getInterpreter(lang, xe, "", null);
       adapter.evalAction(xe, rule);
    }
