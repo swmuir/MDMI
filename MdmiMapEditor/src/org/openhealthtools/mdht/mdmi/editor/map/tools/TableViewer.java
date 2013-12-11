@@ -104,13 +104,18 @@ public class TableViewer extends PrintableView  {
 	private static final String MAPPED_SEMANTIC_ELEMENTS    = s_res.getString("TableViewer.MappedSemanticElements");
 	private static final String UN_MAPPED_SEMANTIC_ELEMENTS = s_res.getString("TableViewer.UnMappedSemanticElements");
 	
+	// Leaf Node Filtering
+
+	private static final String SHOW_ALL_LEAF_NODES    = s_res.getString("TableViewer.showAllLeafNodes");
+	private static final String SHOW_SE_LEAF_NODES     = s_res.getString("TableViewer.showSELeafNodes");
+	private static final String DO_NOT_SHOW_LEAF_NODES = s_res.getString("TableViewer.showNoLeafNodes");
 	
 	// Size information
 	private UserPreferences 	 m_preferences;
 	
 	// Filters
 	private JComboBox m_filters;
-	private JCheckBox m_showLeafNodes;
+	private JComboBox m_showLeafNodes;
 	
 	// extra buttons
 	private JButton m_refreshButton;
@@ -352,15 +357,19 @@ public class TableViewer extends PrintableView  {
 		
 		rightPanel.add(m_refreshButton);
 		rightPanel.add(m_mainWindowButton);
-		
+
+		leftPanel.add(new JLabel("Leaf Node Filter:"));
 		// Filters
-		m_showLeafNodes = new JCheckBox(s_res.getString("TableViewer.showLeafNodes"));
-		m_showLeafNodes.setSelected(true);
+		m_showLeafNodes = new JComboBox<String>();
+		m_showLeafNodes.addItem(SHOW_ALL_LEAF_NODES );
+		m_showLeafNodes.addItem(SHOW_SE_LEAF_NODES);
+		m_showLeafNodes.addItem(DO_NOT_SHOW_LEAF_NODES);
+		m_showLeafNodes.setSelectedItem(SHOW_ALL_LEAF_NODES);
 		leftPanel.add(m_showLeafNodes);
 		
 		m_showLeafNodes.addActionListener(m_buttonAction);
 		
-		centerPanel.add(new JLabel("Show:"));
+		centerPanel.add(new JLabel("Semantic Element Filter:"));
 		
 		m_filters = new JComboBox();
 		m_filters.addItem(ALL_SEMANTIC_ELEMENTS);
@@ -413,7 +422,8 @@ public class TableViewer extends PrintableView  {
 	}
 	
 	public boolean isShowLeafNodes() {
-		return m_showLeafNodes.isSelected();
+		Object sel = m_showLeafNodes.getSelectedItem();
+		return (SHOW_ALL_LEAF_NODES.equals(sel) || SHOW_SE_LEAF_NODES.equals(sel));
 	}
 	
 	/** check whether we should show this row */
@@ -1255,11 +1265,16 @@ public class TableViewer extends PrintableView  {
 		 * @return	index of next node
 		 */
 		public int addNode(Node node, int index) {
+			Object sel = m_showLeafNodes.getSelectedItem();
+			//return (SHOW_ALL_LEAF_NODES.equals(sel) || SHOW_SE_LEAF_NODES.equals(sel));
+			
 			if (index == -1) {
 				index = m_rowData.size();
 			}
+			
 			if (node instanceof LeafSyntaxTranslator) {
-				// add to list
+				// add to list 
+				
 				RowData rowData = new RowData();
 				
 				// set data fields
@@ -1285,6 +1300,11 @@ public class TableViewer extends PrintableView  {
 							rowData.nodeSELink = new LeafNodeSELink();
 						}
 					}
+				}
+				
+				if (SHOW_SE_LEAF_NODES.equals(sel) && rowData.semanticElement == null) {
+					// skip if there's no SE
+					return index;
 				}
 				
 				// fill in Business Elements - (There can be multiples)

@@ -68,10 +68,11 @@ public class AbstractModelChangeEditor extends GenericEditor implements ModelCha
 					if (editorField != null) {
 						// Call getFieldName on edit object
 						Object newValue = fieldInfo.getValueFromModel(model);
+						// treat "" the same as null
+						if (newValue == null) newValue = "";
 						Object oldValue = editorField.getValue();
-						// treat oldValue = "" the same as null
-						if ((newValue == null && oldValue != null && !"".equals(oldValue)) ||
-								(newValue != null && !oldValue.equals(newValue))) {
+						if (oldValue == null) oldValue = "";
+						if (!oldValue.equals(newValue)) {
 							SelectionManager.getInstance().getEntityEditor().showEditPanel(model);
 							//The FieldName field of the ITEM you are editing has been changed
 							// from 'oldValue' to 'newValue'.

@@ -42,6 +42,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.DefaultTextField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IntegerField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.Comparators;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSyntaxNode;
 import org.openhealthtools.mdht.mdmi.model.Bag;
@@ -437,7 +438,17 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 		@Override
 		public boolean isReadOnlyFields(String fieldName) {
 			// ParentNode is read-only
-			return "ParentNode".equalsIgnoreCase(fieldName);
+			if ("ParentNode".equalsIgnoreCase(fieldName)) {
+				return true;
+			}
+			if ( FIELD_NAME.equalsIgnoreCase(fieldName)) {
+				// fieldName is read-only for Bag
+				Class<?> clazz = getObjectClass();
+				if (clazz == Bag.class) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		@Override
@@ -487,7 +498,16 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 					((IntegerField)field).addUnboundedBox();
 				}
 				return field;
+				
+			} else if ("SemanticElement".equalsIgnoreCase(fieldInfo.getFieldName())) {
+				// This seField will allow us to create a new one
+				SemanticElementField seField = new SemanticElementField(this);
+				// set model context
+				Node node = (Node)getUserObject();
+				seField.setNode(node);
+				return seField;
 			}
+			
 			return super.createEditorField(fieldInfo);
 		}
 

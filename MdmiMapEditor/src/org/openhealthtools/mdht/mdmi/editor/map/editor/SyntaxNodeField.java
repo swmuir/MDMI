@@ -355,6 +355,8 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 		}
 		
 	}	
+	
+	
 	private class NewSyntaxNodeDialog extends BaseDialog implements TreeSelectionListener {
 		private  final String BagType = ClassUtil.beautifyName(Bag.class);
 		private  final String ChoiceType = ClassUtil.beautifyName(Choice.class);

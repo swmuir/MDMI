@@ -252,6 +252,7 @@ public abstract class AdvancedSelectionField extends JPanel implements IEditorFi
 	public void setReadOnly() {
 		m_comboBox.setEnabled(false);
 		m_refreshButton.setEnabled(false);
+		m_createButton.setEnabled(false);
 	}
 
 	@Override
