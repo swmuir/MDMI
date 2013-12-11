@@ -541,6 +541,11 @@ public class DefaultSemanticParser implements ISemanticParser {
 
    // set the node value(s) for all fields
    private void setYNodeValues( YNode ynode, Object value ) {
+	   
+	   if( value == null ) {
+	         return;
+	     }
+	   
       Node node = ynode.getNode();
       if( node instanceof Bag ) {
          if( !(value instanceof XDataStruct) ) {
