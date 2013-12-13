@@ -187,7 +187,6 @@ public class MapEditor extends AbstractApplicationFrame {
 	/**
 	 * Create the main display
 	 * 
-	 * @throws ETIServiceException
 	 */
 	@Override
 	protected void createMainDisplay() {

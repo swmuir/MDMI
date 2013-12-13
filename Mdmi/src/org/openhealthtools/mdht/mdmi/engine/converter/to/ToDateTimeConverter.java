@@ -45,8 +45,4 @@ public class ToDateTimeConverter implements IConvertToString {
       return XmlUtil.formatDateYMDHMSMZ((Date)obj);
    }
 
-
-    public static void main(String[] args) {
-        SimpleDateFormat sdf = new SimpleDateFormat("zseeee");
-    }
 }
