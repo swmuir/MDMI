@@ -43,8 +43,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
+import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField.ComboBoxItem;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.ConversionRuleNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
@@ -96,7 +98,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
 	private JTextField  m_name = new JTextField();
 
-	private ModelRenderers.BusinessElementRenderer m_businessElementRenderer = new ModelRenderers.BusinessElementRenderer();
+//	private ModelRenderers.BusinessElementRenderer m_businessElementRenderer = new ModelRenderers.BusinessElementRenderer();
 
 	private FieldNameComboBoxItemRenderer m_fieldNameRenderer = new FieldNameComboBoxItemRenderer();
 	
@@ -269,7 +271,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_BEfieldNameSelector.addActionListener(m_fieldNameListener);
 		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
 		
-		m_businessElementSelector.setRenderer(m_businessElementRenderer);
+//		m_businessElementSelector.setRenderer(m_businessElementRenderer);
 		m_businessElementSelector.addActionListener(m_businessElementListener);
 		
 		
@@ -303,10 +305,10 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		// sort by name
 		Collections.sort(elements, new Comparators.BusinessElementReferenceComparator());
 		
-		// add to combo box
+		// wrap, and add to combo box
 		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
 		for (MdmiBusinessElementReference bizElem : elements) {
-			m_businessElementSelector.addItem(bizElem);
+			m_businessElementSelector.addItem(new BusinessElementReferenceWrapper(bizElem));
 		}
 		
 		// we can pre-fill the datatype
@@ -314,7 +316,34 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			selectDataType(m_semanticElement.getDatatype());
 		}
 	}
-	
+
+	/** Wrapper for items in the combo box */
+	public class BusinessElementReferenceWrapper {
+		public MdmiBusinessElementReference m_ber;
+		
+		public BusinessElementReferenceWrapper(MdmiBusinessElementReference object) {
+			m_ber = object;
+		}
+		
+		@Override
+		public String toString() {
+			if (m_ber.getName() == null || "".equals(m_ber.getName())) {
+				return ClassUtil.s_unNamedItem;
+			}
+			return m_ber.getName();
+		}
+		
+		@Override
+		public boolean equals(Object otherObject) {
+			if (otherObject instanceof BusinessElementReferenceWrapper) {
+				return equals(((BusinessElementReferenceWrapper)otherObject).m_ber);
+			}
+			
+			// compare objects
+			return m_ber.equals(otherObject);
+		}
+		
+	}
 	
 	
 	private JPanel createDataTypePanel(String label, JLabel datatypeLabel, JComboBox fieldSelector) {
@@ -373,7 +402,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		m_BEfieldNameSelector.removeActionListener(m_fieldNameListener);
 		m_SEfieldNameSelector.removeActionListener(m_fieldNameListener);
 		
-		m_businessElementSelector.setRenderer(null);
+//		m_businessElementSelector.setRenderer(null);
 		m_BEfieldNameSelector.setRenderer(null);
 		m_SEfieldNameSelector.setRenderer(null);
 		super.dispose();
@@ -397,8 +426,8 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	// get the selected business element
 	public MdmiBusinessElementReference getMdmiBusinessElementReference() {
 		Object item = m_businessElementSelector.getSelectedItem();
-		if (item instanceof MdmiBusinessElementReference) {
-			return (MdmiBusinessElementReference)item;
+		if (item instanceof BusinessElementReferenceWrapper) {
+			return ((BusinessElementReferenceWrapper)item).m_ber;
 		}
 		return null;
 	}
@@ -633,8 +662,27 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		}
 		return buf.toString();
 	}
-
-	// JSP Rule will be of the form: target.setValue('<targetAttr>', source.getValue('<srcAttribute>'))
+	// From Jeffrey Klann
+	//	Generating a BE to SE rule:
+	//
+	//		- Same datatypes: No code needed.
+	//		- Both complex datatypes: Existing wizard works.
+	//		- BE is a complex data type and SE is a simple type (e.g., String):
+	//		var source = From_PatientID.getValue();
+	//		var target = value.getXValue();
+	//		target.setValue(source.getValue(’name-of-field’));
+	//
+	//
+	//		Generating SE to BE rule:
+	//		- Same datatypes: No code needed.
+	//		- Both complex datatypes: Existing wizard works.
+	//		- BE is a complex type and SE is a simple type (e.g., String):
+	//		var source = value.value();
+	//		var target = To_ProblemCode.getValue();
+	//		target.setValue('code', source);
+	//
+	// JSP Rule will be of the form: 
+	//          target.setValue('<targetAttr>', source.getValue('<srcAttribute>'))
 	//  Assign source: s1.s2.s3 to target t1.t2.t3.t4:		
 	//		var s1 = source.getXValue(‘s1’).getValue();
 	//		
@@ -670,6 +718,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		
 		StringBuilder newRule = new StringBuilder();
 		
+		MdmiDatatype seDatatype = theRule.getOwner().getDatatype();
+		MdmiDatatype beDatatype = null;
+		
 		String srcVar;
 		String targetVar;
 		
@@ -680,7 +731,12 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		//   To BE                                 To ME
 		//   var source = value.value();           var source = ruleName.getValue();
 		//   var target = ruleName.getValue();     var target = value.value();
+		//                                            or if BE is a complex data type and SE is a simple type
+		//		                                   var target = value.getXValue();
+	
 		if (theRule instanceof ToBusinessElement) {
+			beDatatype = ((ToBusinessElement)theRule).getBusinessElement().getReferenceDatatype();
+			
 			srcVar = "var source = value.value();";
 			targetVar = "var target = " + ruleName + ".getValue();";
 			
@@ -688,11 +744,24 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 			targetFieldPath = beFieldName;
 
 		} else {
+			beDatatype = ((ToMessageElement)theRule).getBusinessElement().getReferenceDatatype();
+			
 			srcVar = "var source = " + ruleName + ".getValue();";
-			targetVar = "var target = value.value();";
+			// if BE is a complex data type and SE is a simple type, use "getXValue"
+			if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
+				targetVar = "var target = value.getXValue();";
+			} else {
+				targetVar = "var target = value.value();";
+			}
+			
 			
 			srcFieldPath = beFieldName;
 			targetFieldPath = seFieldName;
+		}
+		// easy case - 
+		// Same datatypes: No code needed.
+		if (beDatatype == seDatatype) {
+			return newRule.toString();
 		}
 
 		// 1. Create source and target variables (if they don't already exist)
@@ -709,52 +778,49 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		}
 		
 		// parse field names on "." separator
+		// (an empty string will result in an array of length 1, with one empty value)
 		String[] srcFieldNames = srcFieldPath.split("\\.");
 		String[] targetFieldNames = targetFieldPath.split("\\.");
 
 		int depth = 0;
 
 		String prevSrcVarName = "source";
-		if (srcFieldNames.length == 0) {
-			// no source
-			//		target.setValue(source.getValue());
-			newRule.append( buildTargetJSInfo(depth, prevSrcVarName, "", targetFieldNames) );
 
-		} else {
-			// make own scope, so we don't duplicate variables
-			if (srcFieldNames.length > 1 || targetFieldNames.length > 1) {
-				newRule.append("{").append(CR_LF);
-				depth++;
-			}
-			String indent = getIndent(depth);
-			for (int s=0; s<srcFieldNames.length; s++) {
+		// make a new scope, so we don't duplicate variables
+		if (srcFieldNames.length > 1 || targetFieldNames.length > 1) {
+			newRule.append("{").append(CR_LF);
+			depth++;
+		}
+		
+		String indent = getIndent(depth);
+		for (int s=0; s<srcFieldNames.length; s++) {
 
-				String srcFieldName = srcFieldNames[s];
-				String srcVarName = "from_" + srcFieldName;
+			String srcFieldName = srcFieldNames[s];
+			String srcVarName = "from_" + srcFieldName;
 
-				// we need to walk intermediate fields
-				if (s < srcFieldNames.length-1) {
-					//		var s2 = s1.getXValue(‘s2’).getValue();
-					//	    if (null != s2) {
-					if (s > 0) newRule.append(CR_LF);
-					newRule.append(indent).append("var ").append(srcVarName).append(" = ")
-						.append(prevSrcVarName).append(".getXValue('").append(srcFieldName).append("').getValue();")
-						.append(CR_LF);
-					newRule.append(indent).append("if (").append(srcVarName).append(" != null) {").append(CR_LF);
+			// we need to walk intermediate fields
+			if (s < srcFieldNames.length-1) {
+				//		var s2 = s1.getXValue(‘s2’).getValue();
+				//	    if (null != s2) {
+				if (s > 0) newRule.append(CR_LF);
+				newRule.append(indent).append("var ").append(srcVarName).append(" = ")
+				.append(prevSrcVarName).append(".getXValue('").append(srcFieldName).append("').getValue();")
+				.append(CR_LF);
+				newRule.append(indent).append("if (").append(srcVarName).append(" != null) {").append(CR_LF);
 
-				} else {
-					newRule.append( buildTargetJSInfo(depth, prevSrcVarName, srcFieldName, targetFieldNames) );
-				}
-
-
-				depth++;
-				prevSrcVarName = srcVarName;
+			} else {
+				newRule.append( buildTargetJSInfo(depth, seDatatype, beDatatype, 
+						prevSrcVarName, srcFieldName, targetFieldNames) );
 			}
 
-			// close parentheses
-			for (int l=depth-1; l>0; l--) {
-				newRule.append(getIndent(l-1)).append("}").append(CR_LF);
-			}
+
+			depth++;
+			prevSrcVarName = srcVarName;
+		}
+
+		// close parentheses
+		for (int l=depth-1; l>0; l--) {
+			newRule.append(getIndent(l-1)).append("}").append(CR_LF);
 		}
 		
 		// trim CR/LF at end of line
@@ -767,8 +833,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 	
 	// JavaScript rule target assignment
-	private static String buildTargetJSInfo(int indentLevel, String prevSrcVarName, String srcFieldName, 
-			String[] targetFieldNames) {
+	private static String buildTargetJSInfo(int indentLevel, MdmiDatatype seDatatype, MdmiDatatype beDatatype,
+			String prevSrcVarName, String srcFieldName, String[] targetFieldNames) {
+		
 		String indent = getIndent(indentLevel);
 		StringBuilder targetRule = new StringBuilder();
 		
@@ -815,11 +882,16 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 				} else {
 					// finally - do the assignment
+					//      t3.setValue('t4', s2); or
+					//		t3.setValue(‘t4’, s2.getValue()); or
 					//		t3.setValue(‘t4’, s2.getValue(‘s3’));
 					targetRule.append(indent).append(prevTargetVarName).append(".setValue('")
 						.append(targetFieldName).append("', ").append(prevSrcVarName);
-
-					if (srcFieldName.isEmpty()) {
+					
+					// if BE is a complex data type and SE is a simple type, just use source
+					if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
+						// do nothing
+					} else if (srcFieldName.isEmpty()) {
 						targetRule.append(".getValue()");
 					} else {
 						targetRule.append(".getValue('").append(srcFieldName).append("')");

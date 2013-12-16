@@ -14,6 +14,9 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
+import java.text.MessageFormat;
+import java.util.List;
+
 import org.openhealthtools.mdht.mdmi.editor.map.ModelChangeEvent;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
@@ -21,6 +24,8 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.DefaultTextField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.model.LeafSyntaxTranslator;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
+import org.openhealthtools.mdht.mdmi.model.Node;
+import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 
 public class SyntaxLeafNode extends SyntaxNodeNode {
 
@@ -91,5 +96,24 @@ public class SyntaxLeafNode extends SyntaxNodeNode {
 			
 			super.modelChanged(e);
 		}
+
+		@Override
+		public List<ModelInfo> validateModel() {
+			// TODO formatExpressionLanguageField cannot be empty
+			List<ModelInfo> errors = super.validateModel();
+			
+			// check min and max
+			LeafSyntaxTranslator leaf = (LeafSyntaxTranslator)getEditObject();
+			if (leaf.getFormatExpressionLanguage() == null || leaf.getFormatExpressionLanguage().isEmpty()) {
+				errors.add( new ModelInfo(leaf, "Format Expression Language", 
+						// A FormatExpressionLanguage must be specified
+						MessageFormat.format(EditableObjectNode.s_res.getString("EditableObjectNode.requiredFieldError"),
+								"A Format Expression Language")
+						) );
+			}
+			
+			return errors;
+		}
+		
 	}
 }

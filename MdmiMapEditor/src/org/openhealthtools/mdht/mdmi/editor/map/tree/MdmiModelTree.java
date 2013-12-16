@@ -65,7 +65,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.console.LinkedObject;
 import org.openhealthtools.mdht.mdmi.editor.map.console.ReferenceLink;
-import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities.DataDictionaryTransferHandler;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.DataDictionaryTransferHandler;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 
 /** Component presenting a tree of MessageGroup components */

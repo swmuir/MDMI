@@ -15,9 +15,6 @@
 package org.openhealthtools.mdht.mdmi.editor.map.tools;
 
 import java.awt.Frame;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.MessageFormat;
@@ -27,10 +24,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.TransferHandler;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.stream.XMLStreamException;
@@ -39,7 +34,6 @@ import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
-import org.openhealthtools.mdht.mdmi.editor.common.components.ExceptionDetailsDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.MapEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
@@ -692,60 +686,6 @@ public class ModelIOUtilities {
         return null;
     }
     
-    public static class DataDictionaryTransferHandler extends TransferHandler {
-
-		@Override
-		public boolean canImport(TransferHandler.TransferSupport info) {
-			// we only import Strings
-			if (!info.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-				return false;
-			}
-			return true;
-		}
-
-		@Override
-		public boolean importData(TransferHandler.TransferSupport info) {
-			if (!info.isDrop()) {
-				return false;
-			}
-
-			// Check for String flavor
-			if (!info.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-				return false;
-			}
-
-			// read it
-		    Transferable t = info.getTransferable();
-		    String data;
-		    try {
-				data = (String) t.getTransferData(DataFlavor.stringFlavor);
-				
-				// try to import it
-				ByteArrayInputStream is = new ByteArrayInputStream(data.getBytes());
-				ModelValidationResults results = new ModelValidationResults();
-
-	            List<MessageGroup> newGroups = MapBuilderXMIDirect.build(is, results);
-	            if (newGroups != null) {
-	                // update tree - overwrite and warn if reference exists
-	                addImportedBusinessElementRefToTree(newGroups, true, true);
-	            }
-				
-				
-			} catch (Exception e) {
-				ExceptionDetailsDialog.showException(SystemContext.getApplicationFrame(), e);
-			}
-
-
-			return true;
-		}
-
-		@Override
-		public int getSourceActions(JComponent c) {
-			return COPY;
-		}
-
-    }
-
     /**
      * Return a file filter that allows directories and supported files
      */

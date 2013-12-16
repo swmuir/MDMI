@@ -65,7 +65,6 @@ import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField;
-import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities.DataDictionaryTransferHandler;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.BusinessElementReferenceNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
