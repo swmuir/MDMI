@@ -37,9 +37,9 @@ public class XMIReaderUtil {
    }
 
    public static boolean atEndOfThisElement( XMLStreamReader reader, String nodeNameToCompare, String namespaceToCompare ) {
-      return namespacesMatch(reader, namespaceToCompare) && reader.getEventType() == XMLStreamConstants.END_ELEMENT
+      return reader.getEventType() == XMLStreamConstants.END_ELEMENT && namespacesMatch(reader, namespaceToCompare)
             && nodeNameToCompare.equals(reader.getLocalName());
-   }
+   } // JGK: Changed order of short-circuit
 
    public static boolean namespacesMatch( XMLStreamReader reader, String namespaceToCompare ) {
       String readerNamespaceURI = reader.getNamespaceURI();
