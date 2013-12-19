@@ -24,7 +24,11 @@ import org.openhealthtools.mdht.mdmi.model.*;
 public final class ElementValueSet {
    private HashMap<String, SEVS> m_xelements = new HashMap<String, SEVS>();
 
-   /**
+   public HashMap<String, SEVS> getM_xelements() {
+	return m_xelements;
+}
+
+/**
     * Get all the element values in this element values set.
     * 
     * @return All the element values in this element values set.
@@ -183,9 +187,9 @@ public final class ElementValueSet {
    /**
     * All values for one semantic element in a message.
     */
-   private static final class SEVS {
-      SemanticElement          semanticElement;
-      ArrayList<IElementValue> xelements;
+   public static final class SEVS {
+      public SemanticElement          semanticElement;
+      public ArrayList<IElementValue> xelements;
 
       SEVS( SemanticElement me ) {
          semanticElement = me;

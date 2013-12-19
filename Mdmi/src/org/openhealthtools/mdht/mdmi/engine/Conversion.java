@@ -36,7 +36,7 @@ import org.openhealthtools.mdht.mdmi.util.ICloneable;
  * 
  * @author goancea
  */
-class Conversion {
+public class Conversion {
 	MdmiUow m_owner;
 	MdmiTransferInfo m_transferInfo;
 	ArrayList<ConversionInfo> m_conversionInfos = new ArrayList<ConversionInfo>();
@@ -170,98 +170,123 @@ class Conversion {
 	 * Execute all the conversions for this unit of work.
 	 */
 	void execute() {
-		ArrayList<ConversionInfo> cis = getTopLevelCis();
-		for (int i = 0; i < cis.size(); i++) {
-			ConversionInfo ci = cis.get(i);
-			System.out.println("Conversion[" + i + "]: " + ci.toString());
-			for (int j = 0; j < ci.source.size(); j++) {
-				SemanticElement source = ci.source.get(j);
-				ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
-				System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
-				ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getElementValuesByType(ci.target);
-				System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
-				if (ci.target.isMultipleInstances()) {
-					for (int k = 0; k < srcs.size(); k++) {
-						XElementValue src = (XElementValue) srcs.get(k);
-						XElementValue trg = null;
-						if (k < trgs.size()) {
-							trg = (XElementValue) trgs.get(k);
-						} else {
-							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-							if (trgs.size() > 0) {
-								IElementValue parentContainer = trgs.get(0).getParent();
-								generateTargetValue(trg, parentContainer);
+
+		try {
+
+			ConversionImpl impl = ConversionImpl.Instance;
+
+			impl.start();
+			
+			ArrayList<ConversionInfo> cis = getTopLevelCis();
+			for (int i = 0; i < cis.size(); i++) {
+				ConversionInfo ci = cis.get(i);
+				System.out.println("Conversion[" + i + "]: " + ci.toString());
+				for (int j = 0; j < ci.source.size(); j++) {
+					SemanticElement source = ci.source.get(j);
+					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
+					System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
+					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getElementValuesByType(ci.target);
+					System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
+					if (ci.target.isMultipleInstances()) {
+						for (int k = 0; k < srcs.size(); k++) {
+							XElementValue src = (XElementValue) srcs.get(k);
+							XElementValue trg = null;
+							if (k < trgs.size()) {
+								trg = (XElementValue) trgs.get(k);
+							} else {
+								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+								if (trgs.size() > 0) {
+									IElementValue parentContainer = trgs.get(0).getParent();
+									generateTargetValue(trg, parentContainer);
+								}
 							}
+							impl.convert(src, ci, trg);
+							execute(src, ci, trg);
 						}
-						ConversionImpl.convert(src, ci, trg);
-						execute(src, ci, trg);
-					}
-				} else {
-					XElementValue trg = null;
-					if (trgs.size() <= 0) {
-						trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
 					} else {
-						trg = (XElementValue) trgs.get(0);
-					}
-					for (int k = 0; k < srcs.size(); k++) {
-						XElementValue src = (XElementValue) srcs.get(k);
-						ConversionImpl.convert(src, ci, trg);
-						execute(src, ci, trg);
+						XElementValue trg = null;
+						if (trgs.size() <= 0) {
+							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+						} else {
+							trg = (XElementValue) trgs.get(0);
+						}
+						for (int k = 0; k < srcs.size(); k++) {
+							XElementValue src = (XElementValue) srcs.get(k);
+							impl.convert(src, ci, trg);
+							execute(src, ci, trg);
+						}
 					}
 				}
 			}
+			
+			
+			impl.end();
+
+		} catch (Exception e) {
+			throw new MdmiException(e.getMessage());
 		}
 	}
 
 	private void execute(XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner) {
-		ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
-		for (int i = 0; i < cis.size(); i++) {
-			ConversionInfo ci = cis.get(i);
-			System.out.println("Conversion: " + ci.toString());
-			for (int j = 0; j < ci.source.size(); j++) {
-				SemanticElement source = ci.source.get(j);
-				SemanticElement seParent = source.getParent();
-				SemanticElement seParentOwner = srcOwner.getSemanticElement();
-				ArrayList<IElementValue> srcs = null;
-				// if the owner SE is not the same as the source parent SE, use
-				// all elements, otherwise get only children
-				if (seParent != seParentOwner) {
-					srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
-				} else {
-					srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
-				}
-				System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
-				ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
-				System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
-				if (ci.target.isMultipleInstances()) {
-					for (int k = 0; k < srcs.size(); k++) {
-						XElementValue src = (XElementValue) srcs.get(k);
+
+		try {
+
+			ConversionImpl impl = ConversionImpl.Instance;
+
+			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
+			for (int i = 0; i < cis.size(); i++) {
+				ConversionInfo ci = cis.get(i);
+				System.out.println("Conversion: " + ci.toString());
+				for (int j = 0; j < ci.source.size(); j++) {
+					SemanticElement source = ci.source.get(j);
+					SemanticElement seParent = source.getParent();
+					SemanticElement seParentOwner = srcOwner.getSemanticElement();
+					ArrayList<IElementValue> srcs = null;
+					// if the owner SE is not the same as the source parent SE,
+					// use
+					// all elements, otherwise get only children
+					if (seParent != seParentOwner) {
+						srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
+					} else {
+						srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
+					}
+					System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
+					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
+					System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
+					if (ci.target.isMultipleInstances()) {
+						for (int k = 0; k < srcs.size(); k++) {
+							XElementValue src = (XElementValue) srcs.get(k);
+							XElementValue trg = null;
+							if (k < trgs.size()) {
+								trg = (XElementValue) trgs.get(k);
+							} else {
+								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+								trgOwner.addChild(trg);
+							}
+							impl.convert(src, ci, trg);
+							execute(src, ci, trg);
+						}
+					} else {
 						XElementValue trg = null;
-						if (k < trgs.size()) {
-							trg = (XElementValue) trgs.get(k);
-						} else {
+						if (trgs.size() <= 0) {
 							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
 							trgOwner.addChild(trg);
+						} else {
+							trg = (XElementValue) trgs.get(0);
 						}
-						ConversionImpl.convert(src, ci, trg);
-						execute(src, ci, trg);
-					}
-				} else {
-					XElementValue trg = null;
-					if (trgs.size() <= 0) {
-						trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-						trgOwner.addChild(trg);
-					} else {
-						trg = (XElementValue) trgs.get(0);
-					}
-					for (int k = 0; k < srcs.size(); k++) {
-						XElementValue src = (XElementValue) srcs.get(k);
-						ConversionImpl.convert(src, ci, trg);
-						execute(src, ci, trg);
+						for (int k = 0; k < srcs.size(); k++) {
+							XElementValue src = (XElementValue) srcs.get(k);
+							impl.convert(src, ci, trg);
+							execute(src, ci, trg);
+						}
 					}
 				}
 			}
+
+		} catch (Exception e) {
+			throw new MdmiException(e.getMessage());
 		}
+
 	}
 
 	// generates target ElementValue tree
@@ -458,11 +483,11 @@ class Conversion {
 	 * 
 	 * @author goancea
 	 */
-	static class ConversionInfo implements ICloneable<ConversionInfo> {
-		SemanticElement target; // target message element
-		MdmiBusinessElementReference trgBER; // target business element
+	static public class ConversionInfo implements ICloneable<ConversionInfo> {
+		public SemanticElement target; // target message element
+		public MdmiBusinessElementReference trgBER; // target business element
 												// reference
-		MdmiBusinessElementReference srcBER; // source business element
+		public MdmiBusinessElementReference srcBER; // source business element
 												// reference (same unique ID as
 												// target)
 		ArrayList<SemanticElement> source; // source message elements

@@ -14,7 +14,18 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.Version;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.module.SimpleModule;
 import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.engine.json.ElementValueSetSerializer;
+import org.openhealthtools.mdht.mdmi.engine.json.XDataStructSerializer;
+import org.openhealthtools.mdht.mdmi.engine.json.XElementValueSerializer;
 import org.openhealthtools.mdht.mdmi.model.*;
 
 /**
@@ -67,6 +78,55 @@ public class MdmiUow implements Runnable {
       System.out.println("---------- PRE-PROCESSORS END ----------");
    }
    
+   private void serializeSemanticModel(String name, ElementValueSet  semanticModel)
+   {
+
+		try {
+			
+			ObjectMapper mapper = new ObjectMapper();
+			
+			
+			SimpleModule dateTimeSerializerModule = new SimpleModule("DateTimeSerializerModule", new Version(1, 0, 0, null));
+			dateTimeSerializerModule.addSerializer(ElementValueSet.class, new ElementValueSetSerializer());
+			mapper.registerModule(dateTimeSerializerModule);
+
+			SimpleModule xElementValueSerializerModule = new SimpleModule("XElementValueSerializer", new Version(1, 0, 0, null));
+			xElementValueSerializerModule.addSerializer(XElementValue.class, new XElementValueSerializer());
+			mapper.registerModule(xElementValueSerializerModule);
+			
+			SimpleModule semanticElementSerializerModule = new SimpleModule("SemanticElementSerializer", new Version(1, 0, 0, null));
+			xElementValueSerializerModule.addSerializer(SemanticElement.class, new SemanticElementSerializer());
+			mapper.registerModule(semanticElementSerializerModule);
+
+			
+			SimpleModule xDataStructSerializerrModule = new SimpleModule("XDataStructSerializer", new Version(1, 0, 0, null));
+			xDataStructSerializerrModule.addSerializer(XDataStruct.class, new XDataStructSerializer());
+			mapper.registerModule(xDataStructSerializerrModule);
+
+			
+			
+			
+			
+		
+			File jsonFile = new File(String.format("./logs/%s.json", name));
+
+			mapper.writeValue(jsonFile, semanticModel);
+
+		} catch (JsonGenerationException ex) {
+
+			ex.printStackTrace();
+
+		} catch (JsonMappingException ex) {
+
+			ex.printStackTrace();
+
+		} catch (IOException ex) {
+
+			ex.printStackTrace();
+
+		}
+   }
+   
    // 1. Build the source syntax tree and semantic model
    void processInboundSourceMessage() {
       System.out.println("");
@@ -74,12 +134,16 @@ public class MdmiUow implements Runnable {
       ISyntacticParser srcSynProv = getSynProv(transferInfo.getSourceMessageGroup());
       ISemanticParser srcSemProv = getSemProv(transferInfo.getSourceMessageGroup());
       srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
-      System.out.println(srcSyntaxModel.toString());
+//      System.out.println(srcSyntaxModel.toString());
       System.out.println("");
       srcSemanticModel = new ElementValueSet();
       srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel);
-      System.out.println(srcSemanticModel.toString());
-      System.out.println("---------- SOURCE MESSAGE END ----------");
+      
+      serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
+      
+	
+
+
    }
 
    // 2. Build the target syntax tree and semantic model (if any)
@@ -93,11 +157,13 @@ public class MdmiUow implements Runnable {
       System.out.println("");
       System.out.println("---------- TARGET MESSAGE START ----------");
       trgSyntaxModel = (YNode)trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
-      System.out.println(trgSyntaxModel.toString());
+//      System.out.println(trgSyntaxModel.toString());
       System.out.println("");
       trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel);
-      System.out.println(trgSemanticModel.toString());
+//      System.out.println(trgSemanticModel.toString());
       System.out.println("---------- TARGET MESSAGE END ----------");
+      
+      
    }
 
    // 3. execute the data conversions
@@ -109,7 +175,8 @@ public class MdmiUow implements Runnable {
       System.out.println("---------- CONVERSION END ----------");
       System.out.println("");
       System.out.println("---------- TARGET MESSAGE START ----------");
-      System.out.println(trgSemanticModel.toString());
+      serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
+//      System.out.println(trgSemanticModel.toString());
       System.out.println("---------- TARGET MESSAGE END ----------");
    }
 
@@ -117,13 +184,16 @@ public class MdmiUow implements Runnable {
    void processOutboundTargetMessage() {
       ISemanticParser trgSemProv = getSemProv(transferInfo.getTargetMessageGroup());
       ISyntacticParser trgSynProv = getSynProv(transferInfo.getTargetMessageGroup());
-      if( trgSyntaxModel != null )
+      if( trgSyntaxModel != null ) {
+    	 
          trgSemProv.updateSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel, trgSyntaxModel);
-      else
+      }
+      else {
          trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
+      }
       System.out.println("");
       System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
-      System.out.println(trgSyntaxModel.toString());
+//      System.out.println(trgSyntaxModel.toString());
       trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
       System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");
    }
