@@ -256,6 +256,11 @@ public abstract class EditableObjectNode extends DefaultMutableTreeNode {
 		return false;
 	}
 	
+	/** Can this node be dragged from its current position and dropped into another node */
+	public boolean canDrag() {
+		return false;
+	}
+	
 	/** Can a node be dragged from its current position and dropped into this node */
 	public boolean canDrop(EditableObjectNode newChild) {
 		return false;

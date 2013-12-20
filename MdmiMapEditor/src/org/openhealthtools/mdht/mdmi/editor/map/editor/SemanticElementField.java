@@ -15,6 +15,7 @@
 package org.openhealthtools.mdht.mdmi.editor.map.editor;
 
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -37,7 +38,6 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
@@ -178,8 +178,25 @@ public class SemanticElementField extends AdvancedSelectionField {
 		CursorManager cm = CursorManager.getInstance(this);
 		cm.setWaitCursor();
 		try {
-			
+			// look for a "Name" field
+			String defaultName = null;
+			Container parent = getParent();
+			while (parent != null) {
+				if (parent instanceof GenericEditor) {
+					IEditorField editorField = ((GenericEditor)parent).getEditorField("Name");
+					if (editorField != null) {
+						try {
+							defaultName = editorField.getValue().toString();
+							break;
+							
+						} catch (DataFormatException e) {
+						}
+					}
+				}
+				parent = parent.getParent();
+			}
 			NewSemanticElementDialog dialog = new NewSemanticElementDialog(SystemContext.getApplicationFrame());
+			dialog.setNameField(defaultName);
 			if (dialog.display(this) == BaseDialog.OK_BUTTON_OPTION) {
 				SemanticElement se = dialog.getSemanticElement();				
 				// set it
@@ -330,7 +347,9 @@ public class SemanticElementField extends AdvancedSelectionField {
 	private class NewSemanticElementDialog extends BaseDialog implements DocumentListener {
 
 		private JTextField m_nameField = new JTextField();
-		private JCheckBox  m_setSENode = new JCheckBox("Set the Semantic Element's Node to this Node");
+		private JCheckBox  m_setSENode = new JCheckBox(s_res.getString("NewSemanticElementDialog.setSEsNode"));
+		private JCheckBox  m_setSEParent = new JCheckBox(s_res.getString("NewSemanticElementDialog.setSEsParent"));
+		private JCheckBox  m_multipleInstances = new JCheckBox(s_res.getString("NewSemanticElementDialog.multipleInstances"), true);
 		
 		private SemanticElement m_semanticElement;
 
@@ -340,6 +359,13 @@ public class SemanticElementField extends AdvancedSelectionField {
 			buildUI();
 			setDirty(true);
 			pack(new Dimension(400, 200));
+		}
+		
+		public void setNameField(String name) {
+			// Initialize with node name
+			if (name != null) {
+				m_nameField.setText(name);
+			}	
 		}
 		
 		private void buildUI() {
@@ -359,17 +385,15 @@ public class SemanticElementField extends AdvancedSelectionField {
 			main.add(new JLabel("Name:"), gbc);
 			gbc.gridx++;
 			gbc.weightx = 1.0;
-			gbc.gridwidth = 2;
 			gbc.fill = GridBagConstraints.HORIZONTAL;
-			// Initialize with node name
-			if (m_node != null && m_node.getName() != null) {
-				m_nameField.setText(m_node.getName());
-			}
 			main.add(m_nameField, gbc);
+
+			gbc.insets.top = 0;
+			gbc.insets.bottom = 0;
 			
 			// [X] Set the Semantic Element's Node to this Node
 			gbc.gridy++;
-			gbc.gridx = 0;
+			gbc.gridx = 1;
 			gbc.weightx = 1.0;
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			main.add(m_setSENode, gbc);
@@ -379,6 +403,28 @@ public class SemanticElementField extends AdvancedSelectionField {
 			} else {
 				m_setSENode.setSelected(true);
 			}
+
+			
+			// [X] Set the Semantic Element's Parent
+			gbc.gridy++;
+			gbc.gridx = 1;
+			gbc.weightx = 1.0;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			main.add(m_setSEParent, gbc);
+			// disable if we don't have a node
+			if (m_node == null || m_node.getParentNode() == null || m_node.getParentNode().getSemanticElement() == null) {
+				m_setSEParent.setEnabled(false);
+			} else {
+				m_setSEParent.setSelected(true);
+			}
+			
+			// [X] Multiple Instances
+			gbc.gridy++;
+			gbc.gridx = 1;
+			gbc.weightx = 1.0;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			main.add(m_multipleInstances, gbc);
+			
 			
 			getContentPane().add(main);
 			
@@ -417,9 +463,15 @@ public class SemanticElementField extends AdvancedSelectionField {
 						m_semanticElement = (SemanticElement)newNode.getUserObject();
 						m_semanticElement.setName(seName);
 						newNode.setUserObject(m_semanticElement);	// force name to appear in tree
+						
+						// set these attributes after setUserObject call
 						if (m_setSENode.isSelected()) {
 							m_semanticElement.setSyntaxNode(m_node);
 						}
+						if (m_setSEParent.isSelected()) {
+							m_semanticElement.setParent(m_node.getParentNode().getSemanticElement());
+						}
+						m_semanticElement.setMultipleInstances(m_multipleInstances.isSelected());
 
 						entitySelector.insertNewNode(edNode, newNode);
 						entitySelector.refreshNode(edNode);	// refresh parent node

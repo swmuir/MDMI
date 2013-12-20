@@ -16,6 +16,7 @@ package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,6 +87,25 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 		return (Node)getUserObject();
 	}
 	
+	
+	@Override
+	public Object copyUserObject() throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Object userObjectCopy = super.copyUserObject();
+
+		// don't copy SemanticElement/FieldName
+		Node syntaxNode = (Node)userObjectCopy;
+		syntaxNode.setSemanticElement(null);
+		syntaxNode.setFieldName(null);
+		
+		return userObjectCopy;
+	}
+	
+
+	@Override
+	public boolean canDrag() {
+		return true;
+	}
+
 	@Override
 	public String toString() {
 		Node node = getSyntaxNode();
@@ -246,7 +266,7 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 				// change semantic element to point here
 				semanticElement.setSyntaxNode(syntaxNode);
 				
-				// update node display(s) to reflect sementic element
+				// update node display(s) to reflect semantic element
 				DefaultMutableTreeNode syntaxNodeNode = entitySelector.findNode(semanticElement);
 				if (syntaxNodeNode != null) {
 					model.nodeChanged(syntaxNodeNode);

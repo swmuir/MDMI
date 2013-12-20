@@ -1337,8 +1337,9 @@ public class MdmiModelTree extends JPanel {
 
 		// initialize cursor when drag has started
 		private void beginDrag(MouseEvent e) {
+			int numSelected = getSelectedNodes().size();
 			EditableObjectNode node = getEditableObjectNode(e);
-			if (node != null) {
+			if (node != null && node.canDrag() && numSelected <= 1) {
 				m_draggingNode = node;
 				m_dragCursor = null;
 
@@ -1469,8 +1470,15 @@ public class MdmiModelTree extends JPanel {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
-			// don't care
-			m_draggingNode = null;
+			// treat like a cancel
+			if (m_draggingNode != null) {
+				System.out.println("Mouse moved to " + e.getPoint());
+				m_dragCursor = null;
+				e.getComponent().setCursor(Cursor.getDefaultCursor());
+				m_draggingNode = null;
+				repaintRow((JTree) e.getComponent(), m_droppingRow);
+				m_droppingRow = -1;
+			}
 		}
 	}
 
