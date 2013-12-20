@@ -77,15 +77,11 @@ public class MdmiUow implements Runnable {
       Mdmi.INSTANCE.getPreProcessors().preProcess(transferInfo);
       System.out.println("---------- PRE-PROCESSORS END ----------");
    }
-   
-   private void serializeSemanticModel(String name, ElementValueSet  semanticModel)
-   {
 
+	private void serializeSemanticModel( String name, ElementValueSet semanticModel ) {
 		try {
-			
 			ObjectMapper mapper = new ObjectMapper();
-			
-			
+
 			SimpleModule dateTimeSerializerModule = new SimpleModule("DateTimeSerializerModule", new Version(1, 0, 0, null));
 			dateTimeSerializerModule.addSerializer(ElementValueSet.class, new ElementValueSetSerializer());
 			mapper.registerModule(dateTimeSerializerModule);
@@ -93,40 +89,29 @@ public class MdmiUow implements Runnable {
 			SimpleModule xElementValueSerializerModule = new SimpleModule("XElementValueSerializer", new Version(1, 0, 0, null));
 			xElementValueSerializerModule.addSerializer(XElementValue.class, new XElementValueSerializer());
 			mapper.registerModule(xElementValueSerializerModule);
-			
+
 			SimpleModule semanticElementSerializerModule = new SimpleModule("SemanticElementSerializer", new Version(1, 0, 0, null));
 			xElementValueSerializerModule.addSerializer(SemanticElement.class, new SemanticElementSerializer());
 			mapper.registerModule(semanticElementSerializerModule);
 
-			
 			SimpleModule xDataStructSerializerrModule = new SimpleModule("XDataStructSerializer", new Version(1, 0, 0, null));
 			xDataStructSerializerrModule.addSerializer(XDataStruct.class, new XDataStructSerializer());
 			mapper.registerModule(xDataStructSerializerrModule);
 
-			
-			
-			
-			
-		
 			File jsonFile = new File(String.format("./logs/%s.json", name));
-
 			mapper.writeValue(jsonFile, semanticModel);
-
-		} catch (JsonGenerationException ex) {
-
-			ex.printStackTrace();
-
-		} catch (JsonMappingException ex) {
-
-			ex.printStackTrace();
-
-		} catch (IOException ex) {
-
-			ex.printStackTrace();
-
 		}
-   }
-   
+		catch( JsonGenerationException ex ) {
+			ex.printStackTrace();
+		}
+		catch( JsonMappingException ex ) {
+			ex.printStackTrace();
+		}
+		catch( IOException ex ) {
+			ex.printStackTrace();
+		}
+	}
+
    // 1. Build the source syntax tree and semantic model
    void processInboundSourceMessage() {
       System.out.println("");

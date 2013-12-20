@@ -39,33 +39,27 @@ import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
  * Implementation class for rule execution.
  */
 class ConversionImpl {
-
 	static ObjectMapper mapper = null;
-
 	static FileOutputStream jsonFop = null;
-
 	static File jsonFile = null;
-	
-	boolean first=true;
+
+	boolean first = true;
 
 	public static ConversionImpl Instance = new ConversionImpl();
 
-	private void logToJson(Object object) throws Exception {
+	private void logToJson( Object object ) throws Exception {
 		mapper.writeValue(jsonFop, object);
 	}
 
 	private ConversionImpl() {
-
-
 	}
 
-	void convert(XElementValue src, ConversionInfo ci, XElementValue trg) throws Exception {
-
-		if (first) {
-			first=false;
-		} else {			
+	void convert( XElementValue src, ConversionInfo ci, XElementValue trg ) throws Exception {
+		if( first )
+			first = false;
+		else
 			jsonFop.write(",".getBytes());
-		} 
+
 		ObjectNode conversionNode = mapper.createObjectNode().putObject("conversion");
 		conversionNode.putPOJO("conversionInfo", ci);
 		conversionNode.putPOJO("xElementValue", trg);
@@ -74,17 +68,13 @@ class ConversionImpl {
 		conversionNode.putPOJO("toBusinessElement", toBE);
 
 		ToMessageElement toSE = Conversion.getToSE(trg.getSemanticElement(), ci.trgBER);
-
 		conversionNode.putPOJO("toMessageElement", toSE);
 
 		XValue v = new XValue("v", toBE.getBusinessElement().getReferenceDatatype());
-
 		conversionNode.putPOJO("initialXValue", v);
 
-		if (!hasTrgRule(toSE)) {
+		if( !hasTrgRule(toSE) )
 			cloneValue(trg.getXValue(), v, false);
-
-		}
 		execSrcRule(src, ci, trg, toBE, v);
 
 		conversionNode.putPOJO("toXValue", v);
@@ -94,106 +84,110 @@ class ConversionImpl {
 		conversionNode.putPOJO("finalXValue", trg);
 
 		logToJson(conversionNode);
-
-		
-
 	}
 
-	boolean hasSrcRule(ToBusinessElement toBE) {
+	boolean hasSrcRule( ToBusinessElement toBE ) {
 		return toBE != null && toBE.getRule() != null && 0 < toBE.getRule().length();
 	}
 
-	boolean hasTrgRule(ToMessageElement toSE) {
+	boolean hasTrgRule( ToMessageElement toSE ) {
 		return toSE != null && toSE.getRule() != null && 0 < toSE.getRule().length();
 	}
 
-	void execSrcRule(XElementValue src, ConversionInfo ci, XElementValue trg, ToBusinessElement toBE, XValue v) {
-		if (!hasSrcRule(toBE)) {
+	void execSrcRule( XElementValue src, ConversionInfo ci, XElementValue trg, ToBusinessElement toBE, XValue v ) {
+		if( !hasSrcRule(toBE) ) {
 			cloneValue(src.getXValue(), v, true);
-		} else {
+		}
+		else {
 			IExpressionInterpreter adapter = Mdmi.getInterpreter(toBE, src, toBE.getName(), v);
 			adapter.evalAction(src, toBE.getRule());
 		}
 	}
 
-	void execTrgRule(XValue v, ConversionInfo ci, XElementValue trg, ToMessageElement toSE) {
-		if (!hasTrgRule(toSE)) {
+	void execTrgRule( XValue v, ConversionInfo ci, XElementValue trg, ToMessageElement toSE ) {
+		if( !hasTrgRule(toSE) ) {
 			cloneValue(v, trg.getXValue(), false);
-		} else {
+		}
+		else {
 			IExpressionInterpreter adapter = Mdmi.getInterpreter(toSE, trg, toSE.getName(), v);
 			adapter.evalAction(trg, toSE.getRule());
 		}
 	}
 
-	private void cloneStruct(XDataStruct src, XDataStruct trg, boolean fromSrc) {
-		if (src == null || trg == null) {
+	private void cloneStruct( XDataStruct src, XDataStruct trg, boolean fromSrc ) {
+		if( src == null || trg == null ) {
 			throw new IllegalArgumentException("Null argument!");
 		}
 		ArrayList<XValue> values = trg.getXValues();
-		for (int i = 0; i < values.size(); i++) {
+		for( int i = 0; i < values.size(); i++ ) {
 			XValue t = values.get(i);
 			XValue s = src.getXValue(t.getName());
-			if (s != null) {
+			if( s != null ) {
 				cloneValue(s, t, fromSrc);
 			}
 		}
 	}
 
-	private void cloneChoice(XDataChoice src, XDataChoice trg, boolean fromSrc) {
+	private void cloneChoice( XDataChoice src, XDataChoice trg, boolean fromSrc ) {
 		XValue s = src.getXValue();
 		String fieldName = s.getName();
 		XValue t = trg.setXValue(fieldName);
 		cloneValue(s, t, fromSrc);
 	}
 
-	private void cloneValue(XValue src, XValue trg, boolean fromSrc) {
+	private void cloneValue( XValue src, XValue trg, boolean fromSrc ) {
 		ArrayList<Object> values = src.getValues();
-		if (values.size() <= 0) {
+		if( values.size() <= 0 ) {
 			return;
 		}
-		if (src.getDatatype().isStruct()) {
-			for (int i = 0; i < values.size(); i++) {
+		if( src.getDatatype().isStruct() ) {
+			for( int i = 0; i < values.size(); i++ ) {
 				XDataStruct srcXD = (XDataStruct) values.get(i);
 				XDataStruct trgXD = new XDataStruct(trg);
 				trg.setValue(trgXD);
 				cloneStruct(srcXD, trgXD, fromSrc);
 			}
-		} else if (src.getDatatype().isChoice()) {
-			for (int i = 0; i < values.size(); i++) {
+		}
+		else if( src.getDatatype().isChoice() ) {
+			for( int i = 0; i < values.size(); i++ ) {
 				XDataChoice srcXD = (XDataChoice) values.get(i);
 				XDataChoice trgXD = new XDataChoice(trg);
 				trg.setValue(trgXD);
 				cloneChoice(srcXD, trgXD, fromSrc);
 			}
-		} else { // simple
-			if (src.getDatatype().isPrimitive() || src.getDatatype().isDerived()) {
+		}
+		else { // simple
+			if( src.getDatatype().isPrimitive() || src.getDatatype().isDerived() ) {
 				trg.cloneValues(src);
-			} else {
+			}
+			else {
 				DTSEnumerated eds = (DTSEnumerated) src.getDatatype();
 				DTSEnumerated edt = (DTSEnumerated) trg.getDatatype();
 				MdmiResolver resolver = Mdmi.INSTANCE.getResolver();
 				IEnumerationConverter ecv = null;
-				if (fromSrc) {
+				if( fromSrc ) {
 					MessageGroup srcMap = eds.getOwner();
 					ecv = resolver.getEnumerationConverter(srcMap.getName());
-				} else {
+				}
+				else {
 					MessageGroup trgMap = edt.getOwner();
 					ecv = resolver.getEnumerationConverter(trgMap.getName());
 				}
 				trg.clear();
 
-				if (ecv == null || !ecv.canConvert(eds, edt)) {
-					for (int i = 0; i < values.size(); i++) {
+				if( ecv == null || !ecv.canConvert(eds, edt) ) {
+					for( int i = 0; i < values.size(); i++ ) {
 						EnumerationLiteral srcEL = (EnumerationLiteral) values.get(i);
-						if (srcEL != null) {
+						if( srcEL != null ) {
 							EnumerationLiteral trgEL = edt.getLiteralByCode(srcEL.getCode());
 							trg.setValue(trgEL, -1);
 						}
 					}
-				} else {
-					for (int i = 0; i < values.size(); i++) {
+				}
+				else {
+					for( int i = 0; i < values.size(); i++ ) {
 						EnumerationLiteral srcEL = (EnumerationLiteral) values.get(i);
-						if (srcEL != null) {
+						if( srcEL != null ) {
 							EnumerationLiteral trgEL = ecv.convert(eds, edt, srcEL);
 							trg.setValue(trgEL, -1);
 						}
@@ -208,16 +202,17 @@ class ConversionImpl {
 		try {
 			jsonFop = new FileOutputStream(jsonFile);
 			jsonFop.write("[".getBytes());
-		} catch (FileNotFoundException e1) {
+		}
+		catch( FileNotFoundException e1 ) {
 			e1.printStackTrace();
-		} catch (IOException e) {
+		}
+		catch( IOException e ) {
 			e.printStackTrace();
 		}
 
 		mapper = new MdmiMapper();
 
 		mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-
 
 	}
 
@@ -227,9 +222,10 @@ class ConversionImpl {
 			jsonFop.flush();
 			jsonFop.close();
 			jsonFop = null;
-		} catch (IOException e) {
+		}
+		catch( IOException e ) {
 			e.printStackTrace();
 		}
 
 	}
-} 
+}

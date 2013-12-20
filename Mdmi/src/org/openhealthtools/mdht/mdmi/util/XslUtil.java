@@ -314,7 +314,7 @@ public class XslUtil {
          }
       }
       else {
-         throw new MdmiException("Not support axes expression : " + sAxe);
+         throw new MdmiException("XSLT axes expression: '" + sAxe + "' not supported in " + path);
       }
       return node;
    }
@@ -322,6 +322,15 @@ public class XslUtil {
    private static Node createNodeForPathNoAxes( Element parent, String path, int ordinalIndex ) {
       if( parent == null || path == null || path.length() <= 0 )
          throw new IllegalArgumentException("Null or empty arguments!");
+      ordinalIndex = ordinalIndex < 0 ? 0 : ordinalIndex;
+      
+      // first we check if the path exists, if it does we are done
+      NodeList nodeList = XslUtil.getNodeList(parent, path);
+      if( nodeList != null ) {
+         int count = nodeList.getLength();
+         if( ordinalIndex + 1 <= count )
+         	return nodeList.item(ordinalIndex);
+      }
 
       int isqb = indexOfNotInQuotes(path, '[');
       int islh = indexOfNotInQuotes(path, '/');
@@ -340,8 +349,7 @@ public class XslUtil {
          if( icat == 0 ) {
             // is of this form @attr
             if( 0 < islh )
-               throw new IllegalArgumentException("Invalid xpath expresion '" + path
-                     + "', cannot contain '/' after '@'");
+               throw new IllegalArgumentException("Invalid xpath expresion '" + path + "', cannot contain '/' after '@'");
             String name = path.substring(1);
             return getOrCreateAttribute(parent, name);
          }
