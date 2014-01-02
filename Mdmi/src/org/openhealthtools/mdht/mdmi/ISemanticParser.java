@@ -29,7 +29,7 @@ public interface ISemanticParser {
     * @param root The syntax tree input.
     * @param eset The element set as defined by the message model (IN-OUT parameter).
     */
-   public void buildSemanticModel( MessageModel mdl, ISyntaxNode root, ElementValueSet eset );
+   public void buildSemanticModel( MessageModel mdl, ISyntaxNode root, ElementValueSet eset ,boolean nullFlavors);
 
    /**
     * Create a new syntax tree represented from the given semantic content (element set) and 

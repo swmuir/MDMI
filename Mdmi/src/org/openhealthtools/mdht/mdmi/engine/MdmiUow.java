@@ -119,10 +119,12 @@ public class MdmiUow implements Runnable {
       ISyntacticParser srcSynProv = getSynProv(transferInfo.getSourceMessageGroup());
       ISemanticParser srcSemProv = getSemProv(transferInfo.getSourceMessageGroup());
       srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
-//      System.out.println(srcSyntaxModel.toString());
+      
+      System.out.println(transferInfo.sourceMessage);
+     System.out.println(srcSyntaxModel.toString());
       System.out.println("");
       srcSemanticModel = new ElementValueSet();
-      srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel);
+      srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel,false);
       
       serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
       
@@ -142,10 +144,7 @@ public class MdmiUow implements Runnable {
       System.out.println("");
       System.out.println("---------- TARGET MESSAGE START ----------");
       trgSyntaxModel = (YNode)trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
-//      System.out.println(trgSyntaxModel.toString());
-      System.out.println("");
-      trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel);
-//      System.out.println(trgSemanticModel.toString());
+      trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel,true);
       System.out.println("---------- TARGET MESSAGE END ----------");
       
       
@@ -178,7 +177,6 @@ public class MdmiUow implements Runnable {
       }
       System.out.println("");
       System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
-//      System.out.println(trgSyntaxModel.toString());
       trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
       System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");
    }

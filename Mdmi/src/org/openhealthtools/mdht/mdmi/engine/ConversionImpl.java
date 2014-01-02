@@ -109,6 +109,10 @@ class ConversionImpl {
 			cloneValue(v, trg.getXValue(), false);
 		}
 		else {
+			if ( trg.getXValue().getValues().size() == 0) {
+				XDataStruct xs = new XDataStruct(trg.getXValue());
+				trg.getXValue().addValue(xs);
+			}			
 			IExpressionInterpreter adapter = Mdmi.getInterpreter(toSE, trg, toSE.getName(), v);
 			adapter.evalAction(trg, toSE.getRule());
 		}
