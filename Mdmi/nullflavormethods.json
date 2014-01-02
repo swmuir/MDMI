@@ -1,0 +1,5 @@
+{
+	"InstanceIdentifier":"var src =  %s.getValue();   if(src.isEmpty()) { value.value().setValue('displayable','%s'); } else { var length = src.getXValues().size(); for (var i = 0; i < length; i++) { value.value().setXValue(src.getXValues().get(i) );  }; };",
+	"CodedElement":"var src =  %s.getValue();   if(src.isEmpty()) { value.value().setValue('displayName','%s'); } else { var length = src.getXValues().size(); for (var i = 0; i < length; i++) { value.value().setXValue(src.getXValues().get(i) );  }; };",
+	"Telecom":"var src =  %s.getValue();   if(src.isEmpty()) { value.value().setValue('use','%s'); } else { var length = src.getXValues().size(); for (var i = 0; i < length; i++) { value.value().setXValue(src.getXValues().get(i) );  }; };"
+}
