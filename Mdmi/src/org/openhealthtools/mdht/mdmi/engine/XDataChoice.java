@@ -149,4 +149,9 @@ public class XDataChoice extends XData {
       sb.append("\r\n");
       return sb.toString();
    }
+
+	@Override
+   public boolean isEmpty() {
+	   return false;
+   }
 } // XDataChoice

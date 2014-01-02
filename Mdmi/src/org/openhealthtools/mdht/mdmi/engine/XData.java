@@ -74,4 +74,6 @@ abstract class XData {
 	 * @return The string representation of this value.
 	 */
 	protected abstract String toString(String indent);
+	
+	public abstract boolean isEmpty();
 } // XData

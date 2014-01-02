@@ -67,7 +67,7 @@ public class XDataStruct extends XData {
     * @param src The source for the cloning.
     */
    XDataStruct( XValue owner, XDataStruct src ) {
-      super( owner, (DTCStructured)src.m_datatype );
+      super( owner, src.m_datatype );
       m_values = new ArrayList<XValue>( src.m_values.size() );
       for( int i = 0; i < src.m_values.size(); i++ ) {
          XValue xv = src.m_values.get( i );
@@ -217,10 +217,29 @@ public class XDataStruct extends XData {
    protected String toString( String indent ) {
       StringBuffer sb = new StringBuffer();
       for( int i = 0; i < m_values.size(); i++ ) {
-         XValue v = (XValue)m_values.get( i );
+         XValue v = m_values.get( i );
          sb.append( v.toString(indent + "  ") );
          sb.append("\r\n");
       }
       return sb.toString();
    }
+
+	@Override
+	public boolean isEmpty() {
+		for( XValue xValue : m_values ) {
+			for( Object object : xValue.getValues() ) {
+				if( object != null ) {
+					if( object instanceof String ) {
+						if( !((String) object).isEmpty() ) {
+							return false;
+						}
+					}
+					else {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
 } // XDataStruct
