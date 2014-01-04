@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import org.openhealthtools.mdht.mdmi.editor.common.UniqueID;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.model.Bag;
 import org.openhealthtools.mdht.mdmi.model.Choice;
@@ -113,7 +114,7 @@ public class SpreadSheetModelBuilder {
 	public static boolean checkDirectory(File dir) {
 		// are all files that we need in the list?
 		List<String> filesInDirectory = Arrays.asList(dir.list());
-		String[] requiredFiles = { DATATYPES_FILE, SE_DEF_FILE, SE_MAP_FILE };
+		String[] requiredFiles = { DATATYPES_FILE, /*SE_DEF_FILE,*/ SE_MAP_FILE };
 		for (String requiredFileName : requiredFiles) {
 			boolean foundIt = false;
 			for (String fileInDir : filesInDirectory) {
@@ -318,9 +319,10 @@ public class SpreadSheetModelBuilder {
 		if (!loadDatatypes(new File(m_dir, DATATYPES_FILE), messageGroup)) {
 			return list;
 		}
-		// SE Definition - adds Semantic elements, and creates corresponding
+		// SE Definition (optional) - adds Semantic elements, and creates corresponding
 		// syntax nodes
-		if (!loadSEDefinition(new File(m_dir, SE_DEF_FILE), messageGroup)) {
+		File seDefFile = new File(m_dir, SE_DEF_FILE);
+		if (seDefFile.exists() && !loadSEDefinition(seDefFile, messageGroup)) {
 			return list;
 		}
 		// SE Map (Business Elements)
@@ -1304,6 +1306,8 @@ public class SpreadSheetModelBuilder {
 			String SEfromBER = null;
 			String HL7ValueSet = null;
 			String serverDomain = null;
+			String description = null;
+			String uidString = null;
 
 			// First line is the header
 			if ( (stringList = reader.getNextLine()) == null) {
@@ -1326,6 +1330,7 @@ public class SpreadSheetModelBuilder {
 				
 				// Semantic Element | Business Element Ref | BER Datatype Name | BER Datatype Category
 				//      | Iso | SE to BER | SE From BER | HL7 Value Set | Symantic Server Domain
+				//      | Description | UID 
 
 				int column = 0;
 				elementName = getString(stringList, column++);
@@ -1337,17 +1342,14 @@ public class SpreadSheetModelBuilder {
 				SEfromBER = getString(stringList, column++);
 				HL7ValueSet = getString(stringList, column++);
 				serverDomain = getString(stringList, column++);
+				description = getString(stringList, column++);
+				uidString = getString(stringList, column++);
 				
 				/////////////////////////////////////
 				// Semantic Element Name
 				/////////////////////////////////////
 				SemanticElement semanticElement = null;
-				if (elementName.isEmpty()) {
-					m_valResults.addError(null, "", m_errorLine +
-							"A Semantic Element name is required");
-					continue;
-					
-				} else {
+				if (!elementName.isEmpty()) {
 					elementName = normalizeName(elementName);
 					// find it
 					for (MessageModel messageModel : messageGroup.getModels()) {
@@ -1427,6 +1429,22 @@ public class SpreadSheetModelBuilder {
 						m_valResults.addError(semanticElement,semanticElement.getName(),
 										m_errorLine+ "WARNING: Neither 'SE to BER', nor 'SE From BER' are defined for a "
 											+ semanticElement.getSemanticElementType()+ " element type.");
+					}
+				}
+				
+				///////////////////////////////////////////////////////
+				// Description and UID
+				///////////////////////////////////////////////////////
+				if (!description.isEmpty()) {
+					businessElement.setDescription(description);
+				}
+				if (!uidString.isEmpty()) {
+					// check form
+					if (UniqueID.isUUID(uidString)) {
+						businessElement.setUniqueIdentifier(uidString);
+					} else {
+						m_valResults.addError(businessElement, "", m_errorLine +
+								"Invalid UUID, '" + uidString + "' for '" + beRefName + "'");
 					}
 				}
 			}
