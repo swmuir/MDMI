@@ -70,6 +70,7 @@ public class SemanticElementNode extends EditableObjectNode {
 		setNodeIcon(TreeNodeIcon.SemanticElementIcon);
 		
 		loadChildren(elem);
+		m_parentElement = elem.getParent();
 	}
 	
 	private void loadChildren(SemanticElement elem) {
