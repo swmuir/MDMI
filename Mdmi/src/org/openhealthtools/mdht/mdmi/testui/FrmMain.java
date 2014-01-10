@@ -138,12 +138,10 @@ public class FrmMain extends JFrame {
    }
    
    void onSourceSynProv() {
-      setSourceMap(txtSourceMap.getText(), "org.openhealthtools.mdht.mdmiplugins.parsers.HL7Parser"
-            , "../bin/MdmiPlugins.jar");
+      setSourceMap(txtSourceMap.getText(), "org.openhealthtools.mdht.mdmiplugins.parsers.HL7Parser" , "parsers-0.0.1-SNAPSHOT.jar");
    }
    void onTargetSynProv() {
-      setTargetMap(txtTargetMap.getText(), "org.openhealthtools.mdht.mdmiplugins.parsers.HL7Parser"
-            , "../bin/MdmiPlugins.jar");
+      setTargetMap(txtTargetMap.getText(), "org.openhealthtools.mdht.mdmiplugins.parsers.HL7Parser" , "parsers-0.0.1-SNAPSHOT.jar");
    }
    
    void onSelTargetMap() {
