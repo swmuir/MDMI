@@ -43,6 +43,7 @@ public class NestedEditor extends JPanel implements IEditorField,
 	private static Icon s_deleteIcon = AbstractComponentEditor.getIcon(NestedEditor.class,
 			s_res.getString("GenericEditor.deleteIcon"));
 	
+	private JPanel m_northButtonPanel;
 	private JButton m_addDeleteButon = AbstractComponentEditor.createIconButton(s_addIcon);
 
 	private GenericEditor m_parentEditor;
@@ -55,14 +56,30 @@ public class NestedEditor extends JPanel implements IEditorField,
 		
 		m_parentEditor = parentEditor;
 		
-		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		buttonPanel.add(m_addDeleteButon);
-		buttonPanel.add(new JLabel(fieldName));
-		add(buttonPanel, BorderLayout.NORTH);
+		m_northButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		m_northButtonPanel.add(m_addDeleteButon);
+		m_northButtonPanel.add(new JLabel(fieldName));
+		add(m_northButtonPanel, BorderLayout.NORTH);
 		
 		m_editor = new GenericEditor(parentEditor.getMessageGroup(), objectClass, false);
 		m_editor.setVisible(false);
 		add(m_editor, BorderLayout.CENTER);
+	}
+	
+	// return the top button panel. This panel has a flow layout, and contains the field label, 
+	// and an Add/Deleted button
+	protected JPanel getButtonPanel() {
+		return m_northButtonPanel;
+	}
+	
+	// return the Add/Delete button
+	protected JButton getAddDeleteButton() {
+		return m_addDeleteButon;
+	}
+	
+	// get the user object associated with this editor
+	public Object getObject() {
+		return m_entity;
 	}
 	
 	@Override
@@ -122,7 +139,7 @@ public class NestedEditor extends JPanel implements IEditorField,
 		m_parentEditor.setModified(true);
 	}
 
-	/** Property Change Listener (propegate changes to editor) */
+	/** Property Change Listener (propagate changes to editor) */
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
 		m_parentEditor.setModified(true);

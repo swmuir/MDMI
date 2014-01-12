@@ -53,6 +53,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.tree.ToMessageElementSetNode;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
+import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
@@ -79,7 +80,7 @@ public class SemanticElementBERLinkDialog extends BaseDialog {
 		ConversionRule convRule = null;
 
 		JPanel       rulePanel = null;
-		JComboBox    fieldNameSelector = new JComboBox();
+		JComboBox<Object>    fieldNameSelector = new JComboBox<Object>();
 		RuleTextPane ruleTextPane = new RuleTextPane();
 		JButton      addDeleteButton = new JButton();	// text and icon will be filled in later
 		
@@ -291,7 +292,7 @@ public class SemanticElementBERLinkDialog extends BaseDialog {
 	
 	
 	
-	private JPanel createDataTypePanel(String label, String name, MdmiDatatype datatype, JComboBox fieldSelector) {
+	private JPanel createDataTypePanel(String label, String name, MdmiDatatype datatype, JComboBox<Object> fieldSelector) {
 		//  -- label --------------------------------------
 		// | Name:          text                           |
 		// | Data Type:     text                           |
@@ -585,11 +586,14 @@ public class SemanticElementBERLinkDialog extends BaseDialog {
 	
 	/** Fill in the rule text for both BER to SE and SE to BER */
 	private void generateRuleText() {
+		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
+		String language =  group.getDefaultRuleExprLang();
+		
 		String beFieldName = m_BerToSeInfo.fieldNameSelector.getSelectedItem().toString().trim();
 		String seFieldName = m_SeToBerInfo.fieldNameSelector.getSelectedItem().toString().trim();
 
 		if (m_SeToBerInfo.convRule != null) {
-			String newRule = GenerateToFromElementsDialog.generateRuleText(m_SeToBerInfo.convRule,
+			String newRule = GenerateToFromElementsDialog.generateRuleText(language, m_SeToBerInfo.convRule,
 					seFieldName, beFieldName);
 
 			// append new rule to existing rule
@@ -597,7 +601,7 @@ public class SemanticElementBERLinkDialog extends BaseDialog {
 
 		}
 		if (m_BerToSeInfo.convRule != null) {
-			String newRule = GenerateToFromElementsDialog.generateRuleText(m_BerToSeInfo.convRule,
+			String newRule = GenerateToFromElementsDialog.generateRuleText(language, m_BerToSeInfo.convRule,
 					seFieldName, beFieldName);
 
 			// append new rule to existing rule

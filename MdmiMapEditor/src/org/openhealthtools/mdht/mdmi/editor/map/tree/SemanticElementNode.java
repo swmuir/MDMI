@@ -23,8 +23,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -36,10 +38,13 @@ import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.console.ReferenceLink;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.DataFormatException;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.NestedEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SyntaxNodeField;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateComputedInValuesDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateToFromElementsDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewDatatypeSyntax;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElement;
@@ -47,6 +52,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementFromTo;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementHeirarchy;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementRelationships;
 import org.openhealthtools.mdht.mdmi.model.DTComplex;
+import org.openhealthtools.mdht.mdmi.model.MdmiExpression;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
@@ -205,6 +211,9 @@ public class SemanticElementNode extends EditableObjectNode {
 		}
 	}
 
+	public SemanticElement getSemanticElement() {
+		return (SemanticElement)getUserObject();
+	}
 
 	@Override
 	public String getDisplayName(Object userObject) {
@@ -213,7 +222,7 @@ public class SemanticElementNode extends EditableObjectNode {
 
 	@Override
 	public String getToolTipText() {
-		return ((SemanticElement)getUserObject()).getDescription();
+		return getSemanticElement().getDescription();
 	}
 
 	
@@ -221,7 +230,7 @@ public class SemanticElementNode extends EditableObjectNode {
 	public String toString() {
 		// Show as:
 		//  SemanticElementName <-> SyntaxNodeName
-		SemanticElement element = (SemanticElement)getUserObject();
+		SemanticElement element = getSemanticElement();
 		String displayName = getDisplayName();
 		
 		if (element.getSyntaxNode() != null) {
@@ -302,7 +311,7 @@ public class SemanticElementNode extends EditableObjectNode {
 			menus = new ArrayList<JComponent>();
 		}
 		
-		final SemanticElement semanticElement = (SemanticElement)getUserObject();
+		final SemanticElement semanticElement = getSemanticElement();
 		
 		// Generate From/To Elements
 		menus.add(new JMenuItem(new AbstractAction(s_res.getString("SemanticElementNode.generateToFromElements")) {
@@ -376,19 +385,88 @@ public class SemanticElementNode extends EditableObjectNode {
 		/** Use a custom combo box for parent values */
 		@Override
 		protected IEditorField createEditorField(DataEntryFieldInfo fieldInfo) {
-			if ("Parent".equalsIgnoreCase(fieldInfo.getFieldName())) {
+			String fieldName = fieldInfo.getFieldName();
+			if ("Parent".equalsIgnoreCase(fieldName)) {
 				// Use a special selector that filters out this SemanticElement
 				return new SemanticElementSelector(this);
 				
-			} else if ("SyntaxNode".equalsIgnoreCase(fieldInfo.getFieldName()) &&
+			} else if ("SyntaxNode".equalsIgnoreCase(fieldName) &&
 				Node.class.isAssignableFrom(fieldInfo.getReturnType())) {
 				SyntaxNodeField syntaxField = new SyntaxNodeField(this);
 				// set model context
-				SemanticElement semanticElement = (SemanticElement)getUserObject();
+				SemanticElement semanticElement = getSemanticElement();
 				syntaxField.setSemanticElement(semanticElement);
 				return syntaxField;
+				
+			} else if ("ComputedInValue".equalsIgnoreCase(fieldName)) {
+				return new ComputedInEditor(this, MdmiExpression.class, 
+						ClassUtil.beautifyName(fieldName));
 			}
 			return super.createEditorField(fieldInfo);
+		}
+		
+	}
+	
+	protected class ComputedInEditor extends NestedEditor {
+		private JButton m_wizButton;
+		public ComputedInEditor(GenericEditor parentEditor, Class<?> objectClass, String fieldName) {
+			super(parentEditor, objectClass, fieldName);
+			
+			// add a "generate" button
+			m_wizButton = new JButton();	// just use icon with tooltip
+			m_wizButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
+					SemanticElementNode.s_res.getString("SemanticElementNode.generatedComputedInIcon")));
+			getButtonPanel().add(m_wizButton);
+			
+			// disable button if SE doesn't have a computedIn value or dataType
+			if (getSemanticElement().getComputedInValue() == null ||
+					getSemanticElement().getDatatype() == null) {
+				m_wizButton.setEnabled(false);
+			}
+		}
+
+		@Override
+		public void addNotify() {
+			super.addNotify();
+			m_wizButton.addActionListener(this);
+			m_wizButton.setToolTipText(SemanticElementNode.s_res.getString("SemanticElementNode.generatedComputedInToolTip"));
+		}
+
+
+		@Override
+		public void removeNotify() {
+			m_wizButton.removeActionListener(this);
+			m_wizButton.setToolTipText(null);
+			super.removeNotify();
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if (e.getSource() == m_wizButton) {
+				// display Generate Computed In Values wizard
+				Frame frame = SystemContext.getApplicationFrame();
+				// make sure SE has a dataType
+				if (getSemanticElement().getDatatype() == null) {
+					JOptionPane.showMessageDialog(frame,
+							SemanticElementNode.s_res.getString("SemanticElementNode.missingDataTypeMsg"),
+							SemanticElementNode.s_res.getString("SemanticElementNode.missingDataType"),
+							JOptionPane.ERROR_MESSAGE);
+				} else {
+					GenerateComputedInValuesDialog dlg = new GenerateComputedInValuesDialog(frame, getSemanticElement(),
+							(MdmiExpression)getObject());
+					dlg.setComputedInEditor(this.getEditor());
+					dlg.display(frame);
+				}
+			} else {
+				super.actionPerformed(e);
+			}
+		}
+
+		@Override
+		public void setDisplayValue(Object value) throws DataFormatException {
+			// enable/disable wiz button
+			m_wizButton.setEnabled(value instanceof MdmiExpression);
+			super.setDisplayValue(value);
 		}
 		
 	}
@@ -402,7 +480,7 @@ public class SemanticElementNode extends EditableObjectNode {
 		@Override
 		protected Collection<? extends Object> getComboBoxData() {
 			// remove any entries that contain this SemanticElement 
-			SemanticElement thisElement = (SemanticElement)getUserObject();
+			SemanticElement thisElement = getSemanticElement();
 			
 			Collection<? extends Object> data = super.getComboBoxData();
 			for (Iterator<? extends Object> iter = data.iterator(); iter.hasNext();) {
@@ -442,35 +520,6 @@ public class SemanticElementNode extends EditableObjectNode {
 		}
 		
 	}
-//	
-//	public class NewSemanticElement extends NewObjectInfo {
-//
-//		@Override
-//		public EditableObjectNode addNewChild(Object childObject) {
-//			SemanticElement parent = (SemanticElement)getUserObject();
-//			SemanticElement element = (SemanticElement)childObject;
-//			
-//			parent.addChild(element);
-//			element.setParent(parent);
-//			element.setElementSet(parent.getElementSet());
-//
-//			return new SemanticElementNode(element);
-//		}
-//
-//		@Override
-//		public Class<?> getChildClass() {
-//			return SemanticElement.class;
-//		}
-//
-//		@Override
-//		public String getChildName(Object childObject) {
-//			return ((SemanticElement)childObject).getName();
-//		}
-//
-//		@Override
-//		public void setChildName(Object childObject, String newName) {
-//			((SemanticElement)childObject).setName(newName);
-//		}
-//	}
+
 
 }

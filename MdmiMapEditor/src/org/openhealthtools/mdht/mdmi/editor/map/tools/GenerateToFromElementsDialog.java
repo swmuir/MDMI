@@ -23,6 +23,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ResourceBundle;
@@ -46,7 +48,7 @@ import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField;
-import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField.ComboBoxItem;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.RuleLanguageSelector;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.ConversionRuleNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
@@ -66,12 +68,11 @@ import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
 
-/** A dialog used for selecting a MessageGroup, MessageModel, and one or more
- * Semantic Elements within that message model
+/** A dialog used for generating To/From Rules for a selected Semantic Element
  * @author Conway
  *
  */
-public class GenerateToFromElementsDialog extends BaseDialog {
+public class GenerateToFromElementsDialog extends BaseDialog implements ActionListener, PropertyChangeListener {
 	public static final String CR_LF = "\r\n";
 	public static final String SPACES = "    ";
 
@@ -82,9 +83,11 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 	private SemanticElement m_semanticElement = null;
 
-	private JComboBox m_businessElementSelector  = new JComboBox();
-	private JComboBox m_SEfieldNameSelector  = new JComboBox();
-	private JComboBox m_BEfieldNameSelector  = new JComboBox();
+	private JComboBox<Object> m_businessElementSelector  = new JComboBox<Object>();
+	private JComboBox<Object> m_SEfieldNameSelector  = new JComboBox<Object>();
+	private JComboBox<Object> m_BEfieldNameSelector  = new JComboBox<Object>();
+	
+	private RuleLanguageSelector m_ruleLanguageSelector = new RuleLanguageSelector();
 
 	private JRadioButton m_isoButton     = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.isomorphic"));
 	private JRadioButton m_fromBERButton = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toMdmi"));
@@ -98,13 +101,10 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	private JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
 	private JTextField  m_name = new JTextField();
 
-//	private ModelRenderers.BusinessElementRenderer m_businessElementRenderer = new ModelRenderers.BusinessElementRenderer();
-
 	private FieldNameComboBoxItemRenderer m_fieldNameRenderer = new FieldNameComboBoxItemRenderer();
 	
 	private ActionListener m_businessElementListener = new BusinessElementListener();
 	private ActionListener m_directionListener = new DirectionListener();
-	private ActionListener m_fieldNameListener = new FieldNameListener();
 	
 	private JRadioButton m_prevButton = null;
 
@@ -118,7 +118,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 	
 	private void buildUI() {
-		// 
+		// Select Language:      (o) Java Script   ( ) NRL 
 		//                             
 		// Direction:            ( ) Iso   ( ) From   ( ) To
 		// Business Element:     [x] Filter by Data Type
@@ -133,8 +133,12 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		// | Field Name:       [__________________|v]   |
 		//  --------------------------------------------
 		
-		
+		// Populate Controls before laying out
 		MdmiDatatype dataType = m_semanticElement.getDatatype();
+		
+//		// for now - don't use group's language
+//		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
+//		m_ruleLanguageSelector.setLanguage(group.getDefaultRuleExprLang());
 
 		m_isoButton.setSelected(true);
 		m_fromBERButton.setSelected(false);
@@ -164,8 +168,22 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		gbc.anchor = GridBagConstraints.WEST;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
+		
+		// Language
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.selectLanguage")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
+		gbc.insets.right = 0;	// don't need insets since the next component has FlowLayout padding
+		mainPanel.add(m_ruleLanguageSelector, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
 
 		// Direction 
+		gbc.gridx = 0;
+		gbc.gridy++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.NONE;
 		gbc.insets.right = 0;	// don't need insets since the next component has FlowLayout padding
@@ -261,14 +279,15 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 		
 		// Set up listeners and renderers
+		m_ruleLanguageSelector.addPropertyChangeListener(this);
 		m_isoButton.addActionListener(m_directionListener);
 		m_fromBERButton.addActionListener(m_directionListener);
 		m_toBERButton.addActionListener(m_directionListener);
 		m_filterByDatatypeButton.addActionListener(m_directionListener);
 
-		m_SEfieldNameSelector.addActionListener(m_fieldNameListener);
+		m_SEfieldNameSelector.addActionListener(this);
 		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
-		m_BEfieldNameSelector.addActionListener(m_fieldNameListener);
+		m_BEfieldNameSelector.addActionListener(this);
 		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
 		
 //		m_businessElementSelector.setRenderer(m_businessElementRenderer);
@@ -346,7 +365,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 	
 	
-	private JPanel createDataTypePanel(String label, JLabel datatypeLabel, JComboBox fieldSelector) {
+	private JPanel createDataTypePanel(String label, JLabel datatypeLabel, JComboBox<Object> fieldSelector) {
 		//  -- label ---------------------
 		// |  Datatype:   xxxxxx          |
 		// |  Field Name: [           |v] |
@@ -394,13 +413,14 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 	@Override
 	public void dispose() {
+		m_ruleLanguageSelector.removePropertyChangeListener(this);
 		m_businessElementSelector.removeActionListener(m_businessElementListener);
 		m_isoButton.removeActionListener(m_directionListener);
 		m_toBERButton.removeActionListener(m_directionListener);
 		m_fromBERButton.removeActionListener(m_directionListener);
 		m_filterByDatatypeButton.removeActionListener(m_directionListener);
-		m_BEfieldNameSelector.removeActionListener(m_fieldNameListener);
-		m_SEfieldNameSelector.removeActionListener(m_fieldNameListener);
+		m_BEfieldNameSelector.removeActionListener(this);
+		m_SEfieldNameSelector.removeActionListener(this);
 		
 //		m_businessElementSelector.setRenderer(null);
 		m_BEfieldNameSelector.setRenderer(null);
@@ -562,9 +582,9 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 
 		// if Isomorphic, the rule should be left blank
 		if (!m_isoButton.isSelected()) {
-		
+			String language = m_ruleLanguageSelector.getLanguage();
 			// Rule will be of the form: Set <target> to <source>
-			String newRule = generateRuleText(conversionRule, seFieldName, beFieldName);
+			String newRule = generateRuleText(language, conversionRule, seFieldName, beFieldName);
 
 			// append new rule to existing rule
 			String rule = conversionRule.getRule();
@@ -594,17 +614,13 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		return true;
 	}
 	
-	public static String generateRuleText(ConversionRule theRule, String seFieldName, String beFieldName) {
-		String language = "JS";
-		if (theRule.getOwner() != null) {
-			language = theRule.getOwner().getElementSet().getModel().getGroup().getDefaultRuleExprLang();
-		}
+	public static String generateRuleText(String language, ConversionRule theRule, String seFieldName, String beFieldName) {
 		
 		String ruleText = null;
-		if ("NRL".equals(language)) {
+		if (RuleLanguageSelector.NRL.equals(language)) {
 			ruleText = generateNRLRuleText(theRule, seFieldName, beFieldName);
 		} else {
-			// default is JS
+			// default is Java Script
 			ruleText = generateJSRuleText(theRule, seFieldName, beFieldName);
 		}
 		
@@ -973,7 +989,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 
 	/** populate the combo box with the fields from the datatype */
-	public static void populateFieldNames(JComboBox comboBox, MdmiDatatype dataType, String path) {
+	public static void populateFieldNames(JComboBox<Object> comboBox, MdmiDatatype dataType, String path) {
 		if (dataType instanceof DTComplex) {
 			for (Field field : ((DTComplex)dataType).getFields()) {
 				MdmiDatatype fieldDataType = field.getDatatype();
@@ -1006,7 +1022,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	}
 	
 	/** Look for recursion by checking if the fields of this data type are already in the combo box */
-	private static boolean fieldsInCombobox(JComboBox fieldNameComboBox, DTComplex dataType) {
+	private static boolean fieldsInCombobox(JComboBox<Object> fieldNameComboBox, DTComplex dataType) {
 
 		for (Field field : dataType.getFields()) {
 			for (int i=0; i<fieldNameComboBox.getItemCount(); i++) {
@@ -1051,12 +1067,17 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 		}
 	}
 	
-	// Field Name changed - enable Apply/Save
-	private class FieldNameListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			setDirty(true);
-		}
+	// General purpose ActionListener - enable Apply/Save
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		setDirty(true);
+	}
+
+
+	// General purpose propertyChangeListener - enable Apply/Save
+	@Override
+	public void propertyChange(PropertyChangeEvent evt) {
+		setDirty(true);	// enable/disable OK button
 	}
 
 	private class BusinessElementListener implements ActionListener {
@@ -1081,7 +1102,7 @@ public class GenerateToFromElementsDialog extends BaseDialog {
 	public static class FieldNameComboBoxItemRenderer extends DefaultListCellRenderer {
 
 		@Override
-		public Component getListCellRendererComponent(JList list, Object value,
+		public Component getListCellRendererComponent(JList<?> list, Object value,
 				int index, boolean isSelected, boolean cellHasFocus) {
 			
 			Icon icon = null;
