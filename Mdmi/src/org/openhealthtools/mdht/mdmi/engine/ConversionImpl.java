@@ -29,11 +29,7 @@ import org.openhealthtools.mdht.mdmi.Mdmi;
 import org.openhealthtools.mdht.mdmi.MdmiResolver;
 import org.openhealthtools.mdht.mdmi.engine.Conversion.ConversionInfo;
 import org.openhealthtools.mdht.mdmi.engine.json.MdmiMapper;
-import org.openhealthtools.mdht.mdmi.model.DTSEnumerated;
-import org.openhealthtools.mdht.mdmi.model.EnumerationLiteral;
-import org.openhealthtools.mdht.mdmi.model.MessageGroup;
-import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
-import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
+import org.openhealthtools.mdht.mdmi.model.*;
 
 /**
  * Implementation class for rule execution.
@@ -109,10 +105,11 @@ class ConversionImpl {
 			cloneValue(v, trg.getXValue(), false);
 		}
 		else {
-			if ( trg.getXValue().getValues().size() == 0) {
-				XDataStruct xs = new XDataStruct(trg.getXValue());
+            if (trg.getXValue().getValues().size() == 0 && (trg.getXValue().getDatatype() instanceof DTCStructured)) {
+                System.out.println("test: "+trg.getXValue());
+                XDataStruct xs = new XDataStruct(trg.getXValue());
 				trg.getXValue().addValue(xs);
-			}			
+			}
 			IExpressionInterpreter adapter = Mdmi.getInterpreter(toSE, trg, toSE.getName(), v);
 			adapter.evalAction(trg, toSE.getRule());
 		}

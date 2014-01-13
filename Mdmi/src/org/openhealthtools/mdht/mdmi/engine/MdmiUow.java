@@ -125,12 +125,7 @@ public class MdmiUow implements Runnable {
       System.out.println("");
       srcSemanticModel = new ElementValueSet();
       srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel,false);
-      
       serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
-      
-	
-
-
    }
 
    // 2. Build the target syntax tree and semantic model (if any)
