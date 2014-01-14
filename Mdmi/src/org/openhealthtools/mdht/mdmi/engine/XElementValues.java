@@ -27,6 +27,11 @@ import org.openhealthtools.mdht.mdmi.model.*;
 final class XElementValues {
    public ArrayList<XES> elementValues = new ArrayList<XES>();
    
+   /**
+    * Construct one from an element values set.
+    * 
+    * @param eset The element value set to useas source.
+    */
    public XElementValues( ElementValueSet eset ) {
       ArrayList<IElementValue> values = eset.getAllElementValues();
       for( IElementValue value : values ) {

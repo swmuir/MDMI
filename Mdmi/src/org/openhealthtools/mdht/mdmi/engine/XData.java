@@ -24,8 +24,7 @@ import org.openhealthtools.mdht.mdmi.model.DTComplex;
  * @author goancea
  */
 abstract class XData {
-	protected XValue m_owner;
-
+	protected XValue    m_owner;
 	protected DTComplex m_datatype;
 
 	/**
@@ -75,5 +74,10 @@ abstract class XData {
 	 */
 	protected abstract String toString(String indent);
 	
+	/**
+	 * Return true if the data structure/choice has no value.
+	 * 
+	 * @return True if the data structure/choice has no value.
+	 */
 	public abstract boolean isEmpty();
 } // XData

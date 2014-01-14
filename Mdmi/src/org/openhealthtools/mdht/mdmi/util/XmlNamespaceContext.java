@@ -19,11 +19,18 @@ import java.util.*;
 import javax.xml.*;
 import javax.xml.namespace.*;
 
+import org.w3c.dom.*;
+
 public final class XmlNamespaceContext implements NamespaceContext {
    private String                                 defaultNsPrefix;
    private final HashMap<String, String>          prefixes;
    private final HashMap<String, HashSet<String>> namespaces;
-   
+  
+   /**
+    * Default ctor - uses only the default namespace prefix.
+    * 
+    * @param defaultNsPrefix The default namespace prefix.
+    */
    public XmlNamespaceContext( String defaultNsPrefix ) {
       this.defaultNsPrefix = defaultNsPrefix;
       prefixes = new HashMap<String, String>();
@@ -32,6 +39,12 @@ public final class XmlNamespaceContext implements NamespaceContext {
       addImpl(XMLConstants.XMLNS_ATTRIBUTE, XMLConstants.XMLNS_ATTRIBUTE_NS_URI);
    }
 
+   /**
+    * Construct one from a given map of prefix-namespeces and the default NS prefix.
+    * 
+    * @param prefixNamespaceMap Map of prefix-namespaces.
+    * @param defaultNsPrefix The default namespace prefix.
+    */
    public XmlNamespaceContext( Map<String, String> prefixNamespaceMap, String defaultNsPrefix ) {
       this(defaultNsPrefix);
       if( prefixNamespaceMap == null )
@@ -42,10 +55,21 @@ public final class XmlNamespaceContext implements NamespaceContext {
       }
    }
 
+   /**
+    * Get the map of prefix-namespaces in this instance.
+    * 
+    * @return The map of prefix-namespaces in this instance.
+    */
    public Map<String, String> getPrefixNamespaceUriMap() {
       return Collections.unmodifiableMap(prefixes);
    }
 
+   /**
+    * Add a prefix-namespace pair to this instance.
+    * 
+    * @param prefix The prefix.
+    * @param namespaceUri The namespace - nsut not be null;
+    */
    public void add( String prefix, String namespaceUri ) {
       if( prefix == null )
          throw new IllegalArgumentException("Null prefix");
@@ -66,6 +90,7 @@ public final class XmlNamespaceContext implements NamespaceContext {
       addImpl(prefix, namespaceUri);
    }
 
+   // implementation of the add - checks for duplicates.
    private void addImpl( String prefix, String namespaceUri ) {
       if( prefix.length() <= 0 )
          prefix = defaultNsPrefix;
@@ -77,6 +102,45 @@ public final class XmlNamespaceContext implements NamespaceContext {
       }
       if( !ps.contains(prefix) )
          ps.add(prefix);
+   }
+
+   /**
+    * Get all the namespaces from a DOM document.
+    * 
+    * @param doc The document.
+    * @param defaultNsPrefix The string to use as default prefix.
+    * @return The map of namspaces used.
+    */
+   public static XmlNamespaceContext getDocumentNamespaces( Document doc, String defaultNsPrefix ) {
+      if( doc == null )
+         throw new IllegalArgumentException("Null document!");
+      Element root = doc.getDocumentElement();
+      XmlNamespaceContext ctx = new XmlNamespaceContext(defaultNsPrefix);
+      scan(root, ctx);
+      return ctx;
+   }
+
+   // scan the document for namespaces - this may be expensive depending on the document size.
+   private static void scan( Element root, XmlNamespaceContext ctx ) {
+      NamedNodeMap attrs = root.getAttributes();
+      if( attrs != null ) {
+         for( int i = 0; i < attrs.getLength(); i++ ) {
+            Attr attr = (Attr)attrs.item(i);
+            String an = attr.getNodeName();
+            if( an.startsWith("xmlns") ) {
+               if( an.equals("xmlns") ) {
+                  ctx.add("", attr.getNodeValue());
+               }
+               else if( an.startsWith("xmlns:") ) {
+                  ctx.add(an.substring(6), attr.getNodeValue());
+               }
+            }
+         }
+      }
+      ArrayList<Element> children = XmlUtil.getElements(root);
+      for( int i = 0; i < children.size(); i++ ) {
+         scan(children.get(i), ctx);
+      }
    }
    
    @Override

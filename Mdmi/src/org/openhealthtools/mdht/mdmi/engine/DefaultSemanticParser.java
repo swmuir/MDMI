@@ -65,7 +65,6 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 			nullFlavorValues = mapper.readValue(new File("nullflavorvalues.json"), new TypeReference<HashMap<String, String>>() {
 			});
-
 		}
 		catch( Exception e ) {
 			// Continue to process as the run time does not necessarily require the null flavor files
@@ -117,9 +116,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 	@Override
 	public ISyntaxNode createNewSyntacticModel( MessageModel mdl, ElementValueSet eset ) {
 		Node root = mdl.getSyntaxModel().getRoot();
-		if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 ) {
+		if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 )
 			throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(root));
-		}
 		YNode yroot = createYNode(root);
 		updateSyntacticModel(mdl, eset, yroot);
 		return yroot;
@@ -127,9 +125,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 	@Override
 	public void updateSyntacticModel( MessageModel mdl, ElementValueSet eset, ISyntaxNode yr ) {
-		if( mdl == null || eset == null || yr == null ) {
+		if( mdl == null || eset == null || yr == null )
 			throw new IllegalArgumentException("Null argument!");
-		}
 		YNode yroot = (YNode) yr;
 
 		// 1. set computed SEs
@@ -143,9 +140,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 		// 2. Update the syntax model
 		Node root = mdl.getSyntaxModel().getRoot();
-		if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 ) {
-			throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(root));
-		}
+		if( root.getMinOccurs() != 1 || root.getMaxOccurs() != 1 )
+			throw new MdmiException("Invalid mapping for root node " + DefaultSyntacticParser.getNodePath(root));
 		XElementValues values = new XElementValues(eset);
 		// top level XElementValues
 		for( XElementValues.XES xes : values.elementValues ) {
@@ -156,7 +152,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 				ynodes.add(ynode);
 			}
 			else {
-				YNode parent = (YNode) ynode.getParent();
+				YNode parent = (YNode)ynode.getParent();
 				if( parent != null ) {
 					ynodes = ensureParentHasChildren(parent, ynode.getNode(), n);
 				}
@@ -171,7 +167,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 	private void getElements( YNode yroot ) {
 		Node node = yroot.getNode();
-		System.out.println("AAAAAAAAA"+node.getName());
+		//System.out.println("AAAAAAAAA" + node.getName());
 		SemanticElement me = node.getSemanticElement();
 		if( me == null ) {
 			// node is not mapped to an element or field (one of the top nodes)
@@ -215,9 +211,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 	// a leaf mapped to a simple type (must be simple)
 	private void getSimpleElement( YLeaf yleaf, XElementValue owner ) {
 		SemanticElement me = yleaf.getLeaf().getSemanticElement();
-		if( me == null ) {
+		if( me == null )
 			throw new MdmiException("Null SE for node {0}", DefaultSyntacticParser.getNodePath(yleaf.getNode()));
-		}
 		XElementValue xe = new XElementValue(me, valueSet);
 		if( owner != null ) {
 			// set parent-child relationship
@@ -252,7 +247,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 				xe.getXValue().addValue(o);
 			}
 			else if( dt.isExternal() ) {
-				DTExternal dte = (DTExternal) dt;
+				DTExternal dte = (DTExternal)dt;
 				URI uri = dte.getTypeSpec();
 				if( uri != null ) {
 					Object o = Mdmi.INSTANCE.getExternalResolvers().getDictionaryValue(dte, value);
@@ -326,13 +321,6 @@ public class DefaultSemanticParser implements ISemanticParser {
 	}
 
 	private void getStructElement( YBag ybag, XElementValue owner ) {
-		
-		if (owner != null && owner.getSemanticElement() != null) {
-			System.out.println(" ------------>>>>>>> "+  owner.getSemanticElement().getName());
-		} else {
-			System.out.println("null");
-		}
-	
 		SemanticElement me = ybag.getBag().getSemanticElement();
 		if( me == null ) {
 			throw new IllegalArgumentException("Missing Semantic Elements for " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
@@ -577,11 +565,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 	// set the node value(s) for all fields
 	private void setYNodeValues( YNode ynode, Object value ) {
-
-		if( value == null ) {
+		if( value == null )
 			return;
-		}
-
 		Node node = ynode.getNode();
 		if( node instanceof Bag ) {
 			if( !(value instanceof XDataStruct) ) {
@@ -603,10 +588,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 	}
 
 	private void setYNodeValuesForBag( YBag ybag, XDataStruct xds ) {
-		if( xds.getXValues().size() <= 0 ) {
+		if( xds.getXValues().size() <= 0 )
 			return; // nothing to set
-		}
-
 		Node node = ybag.getNode();
 		Bag bag = (Bag) node;
 		Collection<Node> nodes = bag.getNodes();
@@ -629,9 +612,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 	}
 
 	private void setYNodeValuesForChoice( YChoice ychoice, XDataChoice xdc ) {
-		if( xdc.getXValue() == null ) {
+		if( xdc.getXValue() == null )
 			return;
-		}
 		XValue xvalue = xdc.getXValue();
 		if( xvalue != null && xvalue.size() > 0 ) {
 			Node n = ychoice.getChosenNode();
@@ -644,35 +626,27 @@ public class DefaultSemanticParser implements ISemanticParser {
 	}
 
 	private void setLeafValue( YLeaf yleaf, Object value ) {
-		if( value == null ) {
+		if( value == null )
 			return;
-		}
 		Node node = yleaf.getNode();
-
 		MdmiDatatype dt = getDatatype(node);
-		if( !(dt.isSimple() || dt.isExternal()) ) {
+		if( !(dt.isSimple() || dt.isExternal()) )
 			throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(yleaf.getNode()));
-		}
-
 		try {
-
 			String format = yleaf.getLeaf().getFormat();
 			XDT xdt = XDT.fromString(format);
-
 			String v = null;
 			if( dt.isPrimitive() ) {
 				DTSPrimitive pdt = (DTSPrimitive) dt;
-				if( xdt == null ) {
+				if( xdt == null )
 					xdt = XDT.fromPDT(pdt);
-				}
 				v = XDT.convertToString(pdt, value, format, xdt);
 			}
 			else if( dt.isDerived() ) {
 				DTSDerived ddt = (DTSDerived) dt;
 				DTSPrimitive pdt = ddt.getPrimitiveBaseType();
-				if( xdt == null ) {
+				if( xdt == null )
 					xdt = XDT.fromPDT(pdt);
-				}
 				v = XDT.convertToString(pdt, value, format, xdt);
 			}
 			else if( dt.isExternal() ) {
@@ -740,12 +714,9 @@ public class DefaultSemanticParser implements ISemanticParser {
 	 * Ensure the child of the specified parent exists, at the given index.
 	 * Return the ynode at the given index. Will create it if necessary.
 	 * 
-	 * @param parent
-	 *           The parent ynode.
-	 * @param node
-	 *           The child type.
-	 * @param index
-	 *           The index of the child in the parent children of the same type.
+	 * @param parent The parent ynode.
+	 * @param node The child type.
+	 * @param index The index of the child in the parent children of the same type.
 	 * @return The ynode at the requested index (may be creating it if need be).
 	 */
 	private YNode ensureYNodeExists( YNode parent, Node node, int index ) {
@@ -847,15 +818,10 @@ public class DefaultSemanticParser implements ISemanticParser {
 	 * getPath(NodeC, NodeA) return {NodeB, NodeC}
 	 * </pre>
 	 * 
-	 * @param se
-	 *           The semantic element mapped to the node we want an absolute
-	 *           path.
-	 * @param node
-	 *           The node relative to which we want the path (excluding the node
-	 *           given).
-	 * @return The relative path from the node the se given is mapped to to the
-	 *         specified node. If the given node is null, it will return the
-	 *         absolute path.
+	 * @param se The semantic element mapped to the node we want an absolute path.
+	 * @param node The node relative to which we want the path (excluding the node given).
+	 * @return The relative path from the node the se given is mapped to to the specified node.
+	 *         If the given node is null, it will return the absolute path.
 	 */
 	private ArrayList<Node> getPath( SemanticElement se, Node node ) {
 		ArrayList<Node> path = new ArrayList<Node>();
@@ -872,18 +838,14 @@ public class DefaultSemanticParser implements ISemanticParser {
 	 * Assumes the path is absolute, i.e. relative to the root of the syntax
 	 * tree. Will create the ynodes on the path, if required.
 	 * 
-	 * @param yroot
-	 *           The root of the syntax tree.
-	 * @param se
-	 *           The semantic element to which the syntax node to look for is
-	 *           mapped.
+	 * @param yroot The root of the syntax tree.
+	 * @param se The semantic element to which the syntax node to look for is mapped.
 	 * @return The ynode corresponding to the SE passed in.
 	 */
 	private YNode ensureAbsolutePath( YNode yroot, SemanticElement se ) {
 		ArrayList<Node> path = getPath(se, null);
-		if( path.size() == 1 ) {
+		if( path.size() == 1 )
 			return yroot;
-		}
 		int index = 1;
 		YNode parent = yroot;
 		do {
@@ -898,11 +860,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 	 * Assumes the path is relative to the given ynode. Will create the ynodes on
 	 * the path, if required.
 	 * 
-	 * @param ynode
-	 *           The node relative to which we ensure we have a path
-	 * @param se
-	 *           The semantic element to which the syntax node to look for is
-	 *           mapped.
+	 * @param ynode The node relative to which we ensure we have a path
+	 * @param se The semantic element to which the syntax node to look for is mapped.
 	 * @return The ynode corresponding to the SE passed in.
 	 */
 	private YNode ensureRelativePath( YNode ynode, SemanticElement se ) {
@@ -919,22 +878,18 @@ public class DefaultSemanticParser implements ISemanticParser {
 	/**
 	 * Ensure parent has at least one child of the given type.
 	 * 
-	 * @param parent
-	 *           The parent.
-	 * @param childType
-	 *           The child type.
+	 * @param parent The parent.
+	 * @param childType The child type.
 	 * @return The existing node, either existing of newly created.
 	 */
 	private YNode ensureParentHasChild( YNode parent, Node childType ) {
-		if( parent.getNode() instanceof LeafSyntaxTranslator ) {
+		if( parent.getNode() instanceof LeafSyntaxTranslator )
 			throw new MdmiException("Invalid parent, found leaf, expected a bag or a choice!");
-		}
 		if( parent.getNode() instanceof Bag ) {
 			YBag ybag = (YBag) parent;
 			ArrayList<YNode> nodes = ybag.getYNodesForNode(childType);
-			if( 0 < nodes.size() ) {
+			if( 0 < nodes.size() )
 				return nodes.get(0); // get the first if more than one
-			}
 			// need to add a node of that type
 			if( childType instanceof Bag ) {
 				YBag child = new YBag((Bag) childType, ybag);
@@ -955,9 +910,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 		else {
 			YChoice ychoice = (YChoice) parent;
 			ArrayList<YNode> nodes = ychoice.getYNodes();
-			if( 0 < nodes.size() ) {
+			if( 0 < nodes.size() )
 				return nodes.get(0); // get the first if more than one
-			}
 			// need to add a node of that type
 			if( childType instanceof Bag ) {
 				YBag child = new YBag((Bag) childType, ychoice);
@@ -978,9 +932,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 	}
 
 	private ArrayList<YNode> ensureParentHasChildren( YNode parent, Node childType, int n ) {
-		if( parent == null || parent.getNode() instanceof LeafSyntaxTranslator ) {
+		if( parent == null || parent.getNode() instanceof LeafSyntaxTranslator )
 			throw new MdmiException("Invalid parent, found leaf, expected a bag or a choice!");
-		}
 		if( parent.getNode() instanceof Bag ) {
 			YBag ybag = (YBag) parent;
 			ArrayList<YNode> nodes = ybag.getYNodesForNode(childType);

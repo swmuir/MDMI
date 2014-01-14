@@ -17,6 +17,7 @@ package org.openhealthtools.mdht.mdmi.util;
 import java.util.*;
 import java.util.regex.*;
 import java.text.*;
+
 import org.w3c.dom.*;
 import org.openhealthtools.mdht.mdmi.*;
 
@@ -827,7 +828,8 @@ public class XmlUtil {
          XmlParser p = new XmlParser();
          synchronized( doc ) {
             Element root = doc.getDocumentElement();
-            Node node = XslUtil.getNode(root, path, null); // TODO
+            XmlNamespaceContext context = XmlNamespaceContext.getDocumentNamespaces(doc, XslUtil.DEFAULT_NS);
+            Node node = XslUtil.getNode(root, path, context);
             if( node == null )
                return docs;
             Element part = (Element)node;
@@ -864,7 +866,8 @@ public class XmlUtil {
       try {
          synchronized( mainDoc ) {
             Element root = mainDoc.getDocumentElement();
-            Node node = XslUtil.getNode(root, path, null); // TODO
+            XmlNamespaceContext context = XmlNamespaceContext.getDocumentNamespaces(mainDoc, XslUtil.DEFAULT_NS);
+            Node node = XslUtil.getNode(root, path, context);
             if( node == null )
                return null;
             Element owner = (Element)node;

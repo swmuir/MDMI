@@ -45,7 +45,7 @@ public class DefaultSyntacticParser implements ISyntacticParser {
          Document doc = p.parse(new ByteArrayInputStream(data));
 
          Element root = doc.getDocumentElement();
-         context = XslUtil.getDocumentNamespaces(doc, XslUtil.DEFAULT_NS);
+         context = XmlNamespaceContext.getDocumentNamespaces(doc, XslUtil.DEFAULT_NS);
          MessageSyntaxModel syn = mdl.getSyntaxModel();
          Node node = syn.getRoot();
          String nodeName = location(node); // for the root node it is its name

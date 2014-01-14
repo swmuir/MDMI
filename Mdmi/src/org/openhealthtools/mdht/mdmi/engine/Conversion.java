@@ -45,23 +45,23 @@ public class Conversion {
 	 * Construct an instance from the given unit of work.
 	 * 
 	 * @param owner
-	 *            The UoW owner.
+	 *           The UoW owner.
 	 */
-	Conversion(MdmiUow owner) {
-		if (owner == null || owner.transferInfo == null || owner.transferInfo.targetElements == null) {
+	Conversion( MdmiUow owner ) {
+		if( owner == null || owner.transferInfo == null || owner.transferInfo.targetElements == null )
 			throw new IllegalArgumentException("Null or invalid argument!");
-		}
 		m_owner = owner;
 		m_transferInfo = m_owner.transferInfo;
 
 		ArrayList<String> elements = m_transferInfo.targetElements;
-		if (elements.size() <= 0) {
+		if( elements.size() <= 0 ) {
 			System.out.println("WARNING: no transfer targets specified, nothing to do!");
 			return;
 		}
-		if (m_transferInfo.useDictionary) {
+		if( m_transferInfo.useDictionary ) {
 			initFromDictionaryElements(elements);
-		} else {
+		}
+		else {
 			initFromTargetElements(elements);
 		}
 	}
@@ -72,42 +72,39 @@ public class Conversion {
 	 * m_transferInfo.targetElements are target BusinessElementRefecence names.
 	 * 
 	 * @param elements
-	 *            The elements to use, a list of strings.
+	 *           The elements to use, a list of strings.
 	 */
-	private void initFromDictionaryElements(ArrayList<String> elements) {
+	private void initFromDictionaryElements( ArrayList<String> elements ) {
 		MessageModel trgModel = m_transferInfo.targetModel.getModel();
 		MessageModel srcModel = m_transferInfo.sourceModel.getModel();
 
 		MdmiDomainDictionaryReference trgDict = trgModel.getGroup().getDomainDictionary();
 		MdmiDomainDictionaryReference srcDict = srcModel.getGroup().getDomainDictionary();
 
-		for (int i = 0; i < elements.size(); i++) {
+		for( int i = 0; i < elements.size(); i++ ) {
 			String name = elements.get(i);
 			MdmiBusinessElementReference trgBER = trgDict.getBusinessElement(name);
-			if (trgBER == null) {
+			if( trgBER == null )
 				throw new MdmiException("Conversion: invalid target BER " + name);
-			}
 
 			String uid = trgBER.getUniqueIdentifier();
 			MdmiBusinessElementReference srcBER = srcDict.getBusinessElementByUniqueID(uid);
-			if (srcBER == null) {
+			if( srcBER == null )
 				throw new MdmiException("Conversion: invalid source BER for unique ID " + uid);
-			}
 
 			ArrayList<SemanticElement> trgSes = getTargetSESforBER(trgModel, trgBER);
-			if (trgSes.size() <= 0) {
+			if( trgSes.size() <= 0 )
 				throw new MdmiException("Conversion: invalid mapping, missing target SEs, target BER is " + trgBER.getName());
-			}
 
 			ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
-			for (int j = 0; j < trgSes.size(); j++) {
+			for( int j = 0; j < trgSes.size(); j++ ) {
 				SemanticElement target = trgSes.get(j);
 				ConversionInfo ci = new ConversionInfo(target, trgBER, srcBER);
 				ArrayList<SemanticElement> srcSes = getSourceSESforBER(srcModel, srcBER);
-				if (srcSes.size() <= 0) {
+				if( srcSes.size() <= 0 ) {
 					throw new MdmiException("Conversion: invalid mapping, missing source SEs, source BER is " + ci.srcBER.getName());
 				}
-				for (int k = 0; k < srcSes.size(); k++) {
+				for( int k = 0; k < srcSes.size(); k++ ) {
 					SemanticElement ses = srcSes.get(k);
 					ci.source.add(ses);
 				}
@@ -123,40 +120,36 @@ public class Conversion {
 	 * m_transferInfo.targetElements are target SemanticElement names.
 	 * 
 	 * @param elements
-	 *            The elements to use, a list of strings.
+	 *           The elements to use, a list of strings.
 	 */
-	private void initFromTargetElements(ArrayList<String> elements) {
+	private void initFromTargetElements( ArrayList<String> elements ) {
 		MessageModel trgModel = m_transferInfo.targetModel.getModel();
 		MessageModel srcModel = m_transferInfo.sourceModel.getModel();
 
 		MdmiDomainDictionaryReference srcDict = srcModel.getGroup().getDomainDictionary();
 
-		for (int i = 0; i < elements.size(); i++) {
+		for( int i = 0; i < elements.size(); i++ ) {
 			String name = elements.get(i);
 			SemanticElement target = trgModel.getElementSet().getSemanticElement(name);
-			if (target == null) {
+			if( target == null )
 				throw new MdmiException("Conversion: invalid target SE " + name);
-			}
 
 			ArrayList<MdmiBusinessElementReference> trgBers = getTargetBERSforSE(trgModel, target);
-			if (trgBers.size() <= 0) {
+			if( trgBers.size() <= 0 )
 				throw new MdmiException("Conversion: invalid target BERs " + target.getName());
-			}
 
 			ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
-			for (int j = 0; j < trgBers.size(); j++) {
+			for( int j = 0; j < trgBers.size(); j++ ) {
 				MdmiBusinessElementReference trgBER = trgBers.get(j);
 				String uid = trgBER.getUniqueIdentifier();
 				MdmiBusinessElementReference srcBER = srcDict.getBusinessElementByUniqueID(uid);
-				if (srcBER == null) {
+				if( srcBER == null )
 					throw new MdmiException("Conversion: invalid source BER element for unique ID " + uid);
-				}
 				ConversionInfo ci = new ConversionInfo(target, trgBER, srcBER);
 				ArrayList<SemanticElement> srcSes = getSourceSESforBER(srcModel, srcBER);
-				if (srcSes.size() <= 0) {
+				if( srcSes.size() <= 0 )
 					throw new MdmiException("Conversion: no source SEs found, source BER is " + ci.srcBER.getName());
-				}
-				for (int k = 0; k < srcSes.size(); k++) {
+				for( int k = 0; k < srcSes.size(); k++ ) {
 					SemanticElement ses = srcSes.get(k);
 					ci.source.add(ses);
 				}
@@ -170,32 +163,30 @@ public class Conversion {
 	 * Execute all the conversions for this unit of work.
 	 */
 	void execute() {
-
 		try {
-
 			ConversionImpl impl = ConversionImpl.Instance;
-
 			impl.start();
-			
+
 			ArrayList<ConversionInfo> cis = getTopLevelCis();
-			for (int i = 0; i < cis.size(); i++) {
+			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
 				System.out.println("Conversion[" + i + "]: " + ci.toString());
-				for (int j = 0; j < ci.source.size(); j++) {
+				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
 					System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getElementValuesByType(ci.target);
 					System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
-					if (ci.target.isMultipleInstances()) {
-						for (int k = 0; k < srcs.size(); k++) {
+					if( ci.target.isMultipleInstances() ) {
+						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
 							XElementValue trg = null;
-							if (k < trgs.size()) {
+							if( k < trgs.size() ) {
 								trg = (XElementValue) trgs.get(k);
-							} else {
+							}
+							else {
 								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-								if (trgs.size() > 0) {
+								if( trgs.size() > 0 ) {
 									IElementValue parentContainer = trgs.get(0).getParent();
 									generateTargetValue(trg, parentContainer);
 								}
@@ -203,14 +194,16 @@ public class Conversion {
 							impl.convert(src, ci, trg);
 							execute(src, ci, trg);
 						}
-					} else {
+					}
+					else {
 						XElementValue trg = null;
-						if (trgs.size() <= 0) {
+						if( trgs.size() <= 0 ) {
 							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-						} else {
+						}
+						else {
 							trg = (XElementValue) trgs.get(0);
 						}
-						for (int k = 0; k < srcs.size(); k++) {
+						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
 							impl.convert(src, ci, trg);
 							execute(src, ci, trg);
@@ -218,63 +211,60 @@ public class Conversion {
 					}
 				}
 			}
-			
-			
 			impl.end();
-
-		} catch (Exception e) {
+		}
+		catch( Exception e ) {
 			throw new MdmiException(e.getMessage());
 		}
 	}
 
-	private void execute(XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner) {
-
+	private void execute( XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner ) {
 		try {
-
 			ConversionImpl impl = ConversionImpl.Instance;
-
 			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
-			for (int i = 0; i < cis.size(); i++) {
+			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
 				System.out.println("Conversion: " + ci.toString());
-				for (int j = 0; j < ci.source.size(); j++) {
+				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					SemanticElement seParent = source.getParent();
 					SemanticElement seParentOwner = srcOwner.getSemanticElement();
 					ArrayList<IElementValue> srcs = null;
-					// if the owner SE is not the same as the source parent SE,
-					// use
-					// all elements, otherwise get only children
-					if (seParent != seParentOwner) {
+					// if the owner SE is not the same as the source parent SE, use all elements, otherwise get only children
+					if( seParent != seParentOwner ) {
 						srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
-					} else {
+					}
+					else {
 						srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
 					}
 					System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
 					System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
-					if (ci.target.isMultipleInstances()) {
-						for (int k = 0; k < srcs.size(); k++) {
+					if( ci.target.isMultipleInstances() ) {
+						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
 							XElementValue trg = null;
-							if (k < trgs.size()) {
+							if( k < trgs.size() ) {
 								trg = (XElementValue) trgs.get(k);
-							} else {
+							}
+							else {
 								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
 								trgOwner.addChild(trg);
 							}
 							impl.convert(src, ci, trg);
 							execute(src, ci, trg);
 						}
-					} else {
+					}
+					else {
 						XElementValue trg = null;
-						if (trgs.size() <= 0) {
+						if( trgs.size() <= 0 ) {
 							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
 							trgOwner.addChild(trg);
-						} else {
+						}
+						else {
 							trg = (XElementValue) trgs.get(0);
 						}
-						for (int k = 0; k < srcs.size(); k++) {
+						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
 							impl.convert(src, ci, trg);
 							execute(src, ci, trg);
@@ -283,20 +273,21 @@ public class Conversion {
 				}
 			}
 
-		} catch (Exception e) {
+		}
+		catch( Exception e ) {
 			throw new MdmiException(e.getMessage());
 		}
 
 	}
 
 	// generates target ElementValue tree
-	private void generateTargetValue(IElementValue targetValue, IElementValue parentContainer) {
-		if (parentContainer == null) {
+	private void generateTargetValue( IElementValue targetValue, IElementValue parentContainer ) {
+		if( parentContainer == null )
 			return;
-		}
-		if (!targetValue.getSemanticElement().getSyntaxNode().isSingle()) {
+		if( !targetValue.getSemanticElement().getSyntaxNode().isSingle() ) {
 			parentContainer.addChild(targetValue);
-		} else {
+		}
+		else {
 			IElementValue parentTargetValue = new XElementValue(targetValue.getSemanticElement().getParent(), m_owner.trgSemanticModel);
 			((XValue) parentTargetValue.getXValue()).intializeStructs();
 			parentTargetValue.addChild(targetValue);
@@ -307,31 +298,27 @@ public class Conversion {
 	}
 
 	// generates target element values for required SNs
-	private void generateRequiredSEValues(SemanticElement sourceSE, IElementValue sourceEV) {
-		for (SemanticElement childSE : sourceSE.getChildren()) {
-			if (!hasChildElementValue(sourceEV, childSE) && childSE.getSyntaxNode().isRequired()) {
+	private void generateRequiredSEValues( SemanticElement sourceSE, IElementValue sourceEV ) {
+		for( SemanticElement childSE : sourceSE.getChildren() ) {
+			if( !hasChildElementValue(sourceEV, childSE) && childSE.getSyntaxNode().isRequired() ) {
 				XElementValue childTargetValue = new XElementValue(childSE, m_owner.trgSemanticModel);
 				childTargetValue.getXValue().intializeStructs();
 				sourceEV.addChild(childTargetValue);
 				childTargetValue.setParent(sourceEV);
 			}
 
-			if (childSE.getChildren().size() > 0) {
+			if( childSE.getChildren().size() > 0 )
 				generateRequiredSEValues(childSE, getChildElementValue(sourceEV, childSE));
-			}
 		}
 	}
 
-	private boolean hasChildElementValue(IElementValue elementValue, SemanticElement childSemanticElement) {
-		if (getChildElementValue(elementValue, childSemanticElement) != null) {
-			return true;
-		}
-		return false;
+	private boolean hasChildElementValue( IElementValue elementValue, SemanticElement childSemanticElement ) {
+		return getChildElementValue(elementValue, childSemanticElement) != null;
 	}
 
-	private IElementValue getChildElementValue(IElementValue elementValue, SemanticElement childSemanticElement) {
-		for (IElementValue childEV : elementValue.getChildren()) {
-			if (childEV.getSemanticElement() == childSemanticElement) {
+	private IElementValue getChildElementValue( IElementValue elementValue, SemanticElement childSemanticElement ) {
+		for( IElementValue childEV : elementValue.getChildren() ) {
+			if( childEV.getSemanticElement() == childSemanticElement ) {
 				return childEV;
 			}
 		}
@@ -342,10 +329,10 @@ public class Conversion {
 	// or have a LOCAL parent
 	private ArrayList<ConversionInfo> getTopLevelCis() {
 		ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
-		for (int i = 0; i < m_conversionInfos.size(); i++) {
+		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
-			if (parent == null || parent.getSemanticElementType() == SemanticElementType.LOCAL) {
+			if( parent == null || parent.getSemanticElementType() == SemanticElementType.LOCAL ) {
 				cis.add(ci);
 			}
 		}
@@ -353,13 +340,12 @@ public class Conversion {
 	}
 
 	// get the CIs for which the target SE is a child of the given SE
-	private ArrayList<ConversionInfo> getCisForSE(SemanticElement parent) {
+	private ArrayList<ConversionInfo> getCisForSE( SemanticElement parent ) {
 		ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
-		for (int i = 0; i < m_conversionInfos.size(); i++) {
+		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
-			if (parent.hasChild(ci.target)) {
+			if( parent.hasChild(ci.target) )
 				cis.add(ci);
-			}
 		}
 		return cis;
 	}
@@ -367,110 +353,106 @@ public class Conversion {
 	// given a BER get a list of all SEs that have a ToBusinessElement rule for
 	// it
 	// and if none get a name match
-	private ArrayList<SemanticElement> getSourceSESforBER(MessageModel model, MdmiBusinessElementReference ber) {
+	private ArrayList<SemanticElement> getSourceSESforBER( MessageModel model, MdmiBusinessElementReference ber ) {
 		ArrayList<SemanticElement> a = new ArrayList<SemanticElement>();
 		Collection<SemanticElement> srcSEs = model.getElementSet().getSemanticElements();
-		for (Iterator<SemanticElement> itSE = srcSEs.iterator(); itSE.hasNext();) {
+		for( Iterator<SemanticElement> itSE = srcSEs.iterator(); itSE.hasNext(); ) {
 			SemanticElement se = itSE.next();
 			Collection<ToBusinessElement> toBEs = se.getFromMdmi();
-			for (Iterator<ToBusinessElement> itBE = toBEs.iterator(); itBE.hasNext();) {
+			for( Iterator<ToBusinessElement> itBE = toBEs.iterator(); itBE.hasNext(); ) {
 				ToBusinessElement tbe = itBE.next();
-				if (tbe != null && tbe.getBusinessElement() == ber) {
+				if( tbe != null && tbe.getBusinessElement() == ber ) {
 					a.add(se);
 					break;
 				}
 			}
 		}
-		if (a.size() <= 0) {
+		if( a.size() <= 0 ) {
 			SemanticElement se = model.getElementSet().getSemanticElement(ber.getName());
-			if (se != null) {
+			if( se != null )
 				a.add(se);
-			}
 		}
 		return a;
 	}
 
-	// given a BER get a list of all SEs that have a ToMessageElement rule for
-	// it
-	// and if none get a name match
-	private ArrayList<SemanticElement> getTargetSESforBER(MessageModel model, MdmiBusinessElementReference ber) {
+	// given a BER get a list of all SEs that have a ToMessageElement rule for it and if none get a name match
+	private ArrayList<SemanticElement> getTargetSESforBER( MessageModel model, MdmiBusinessElementReference ber ) {
 		ArrayList<SemanticElement> a = new ArrayList<SemanticElement>();
 		Collection<SemanticElement> srcSEs = model.getElementSet().getSemanticElements();
-		for (Iterator<SemanticElement> itSE = srcSEs.iterator(); itSE.hasNext();) {
+		for( Iterator<SemanticElement> itSE = srcSEs.iterator(); itSE.hasNext(); ) {
 			SemanticElement se = itSE.next();
 			Collection<ToMessageElement> toMEs = se.getToMdmi();
-			for (Iterator<ToMessageElement> itME = toMEs.iterator(); itME.hasNext();) {
+			for( Iterator<ToMessageElement> itME = toMEs.iterator(); itME.hasNext(); ) {
 				ToMessageElement tme = itME.next();
-				if (tme != null && tme.getBusinessElement() == ber) {
+				if( tme != null && tme.getBusinessElement() == ber ) {
 					a.add(se);
 					break;
 				}
 			}
 		}
-		if (a.size() <= 0) {
+		if( a.size() <= 0 ) {
 			SemanticElement se = model.getElementSet().getSemanticElement(ber.getName());
-			if (se != null) {
+			if( se != null )
 				a.add(se);
-			}
 		}
 		return a;
 	}
 
-	@SuppressWarnings("unused")
-	private ArrayList<MdmiBusinessElementReference> getSourceBERSforSE(MessageModel model, SemanticElement se) {
+	@SuppressWarnings( "unused" )
+	private ArrayList<MdmiBusinessElementReference> getSourceBERSforSE( MessageModel model, SemanticElement se ) {
 		ArrayList<MdmiBusinessElementReference> a = new ArrayList<MdmiBusinessElementReference>();
 		Collection<ToBusinessElement> toBEs = se.getFromMdmi();
-		for (Iterator<ToBusinessElement> itBE = toBEs.iterator(); itBE.hasNext();) {
+		for( Iterator<ToBusinessElement> itBE = toBEs.iterator(); itBE.hasNext(); ) {
 			ToBusinessElement tbe = itBE.next();
-			if (tbe != null) {
+			if( tbe != null ) {
 				a.add(tbe.getBusinessElement());
 				break;
 			}
 		}
-		if (a.size() <= 0) {
+		if( a.size() <= 0 ) {
 			MdmiBusinessElementReference ber = model.getGroup().getDomainDictionary().getBusinessElement(se.getName());
-			if (ber != null) {
+			if( ber != null ) {
 				a.add(ber);
 			}
 		}
 		return a;
 	}
 
-	private ArrayList<MdmiBusinessElementReference> getTargetBERSforSE(MessageModel model, SemanticElement se) {
+	private ArrayList<MdmiBusinessElementReference> getTargetBERSforSE( MessageModel model, SemanticElement se ) {
 		ArrayList<MdmiBusinessElementReference> a = new ArrayList<MdmiBusinessElementReference>();
 		Collection<ToMessageElement> toMEs = se.getToMdmi();
-		for (Iterator<ToMessageElement> itME = toMEs.iterator(); itME.hasNext();) {
+		for( Iterator<ToMessageElement> itME = toMEs.iterator(); itME.hasNext(); ) {
 			ToMessageElement tme = itME.next();
-			if (tme != null) {
+			if( tme != null ) {
 				a.add(tme.getBusinessElement());
 				break;
 			}
 		}
-		if (a.size() <= 0) {
+		if( a.size() <= 0 ) {
 			MdmiBusinessElementReference ber = model.getGroup().getDomainDictionary().getBusinessElement(se.getName());
-			if (ber != null) {
+			if( ber != null ) {
 				a.add(ber);
 			}
 		}
 		return a;
 	}
 
-	static ToBusinessElement getToBE(SemanticElement src, MdmiBusinessElementReference ber) {
+	static ToBusinessElement getToBE( SemanticElement src, MdmiBusinessElementReference ber ) {
 		Collection<ToBusinessElement> toBEs = src.getFromMdmi();
-		for (Iterator<ToBusinessElement> it = toBEs.iterator(); it.hasNext();) {
+		for( Iterator<ToBusinessElement> it = toBEs.iterator(); it.hasNext(); ) {
 			ToBusinessElement t = it.next();
-			if (t.getBusinessElement() == ber) {
+			if( t.getBusinessElement() == ber ) {
 				return t;
 			}
 		}
 		return null;
 	}
 
-	static ToMessageElement getToSE(SemanticElement trg, MdmiBusinessElementReference ber) {
+	static ToMessageElement getToSE( SemanticElement trg, MdmiBusinessElementReference ber ) {
 		Collection<ToMessageElement> toSEs = trg.getToMdmi();
-		for (Iterator<ToMessageElement> it = toSEs.iterator(); it.hasNext();) {
+		for( Iterator<ToMessageElement> it = toSEs.iterator(); it.hasNext(); ) {
 			ToMessageElement t = it.next();
-			if (t.getBusinessElement() == ber) {
+			if( t.getBusinessElement() == ber ) {
 				return t;
 			}
 		}
@@ -484,23 +466,20 @@ public class Conversion {
 	 * @author goancea
 	 */
 	static public class ConversionInfo implements ICloneable<ConversionInfo> {
-		public SemanticElement target; // target message element
-		public MdmiBusinessElementReference trgBER; // target business element
-												// reference
-		public MdmiBusinessElementReference srcBER; // source business element
-												// reference (same unique ID as
-												// target)
-		ArrayList<SemanticElement> source; // source message elements
+		public SemanticElement              target; // target message element
+		public MdmiBusinessElementReference trgBER; // target business element reference
+		public MdmiBusinessElementReference srcBER; // source business element reference (same unique ID as target)
+		ArrayList<SemanticElement>          source; // source message elements
 
-		public ConversionInfo(SemanticElement target, MdmiBusinessElementReference trgBER, MdmiBusinessElementReference srcBER) {
+		public ConversionInfo( SemanticElement target, MdmiBusinessElementReference trgBER, MdmiBusinessElementReference srcBER ) {
 			this.target = target;
 			this.trgBER = trgBER;
 			this.srcBER = srcBER;
 			this.source = new ArrayList<SemanticElement>();
 		}
 
-		@SuppressWarnings("unchecked")
-		ConversionInfo(ConversionInfo src) {
+		@SuppressWarnings( "unchecked" )
+		ConversionInfo( ConversionInfo src ) {
 			target = src.target;
 			trgBER = src.trgBER;
 			srcBER = src.srcBER;
@@ -515,12 +494,13 @@ public class Conversion {
 		@Override
 		public String toString() {
 			StringBuffer sb = new StringBuffer();
-			if (source.size() == 1) {
+			if( source.size() == 1 ) {
 				sb.append(source.get(0).getName() + " -> ");
-			} else {
+			}
+			else {
 				sb.append("[ ");
-				for (int i = 0; i < source.size(); i++) {
-					if (i > 0) {
+				for( int i = 0; i < source.size(); i++ ) {
+					if( i > 0 ) {
 						sb.append(", ");
 					}
 					sb.append(source.get(i).getName());

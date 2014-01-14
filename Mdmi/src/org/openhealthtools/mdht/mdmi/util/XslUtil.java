@@ -53,45 +53,6 @@ public class XslUtil {
          initialize(0x1000);
       return s_cache;
    }
-
-   /**
-    * Get the namespaces from a DOM document.
-    * 
-    * @param doc The document.
-    * @param defaultNsPrefix The string to use as default prefix.
-    * @return The map of namspaces used.
-    */
-   public static XmlNamespaceContext getDocumentNamespaces( Document doc, String defaultNsPrefix ) {
-      if( doc == null )
-         throw new IllegalArgumentException("Null document!");
-      Element root = doc.getDocumentElement();
-      XmlNamespaceContext ctx = new XmlNamespaceContext(defaultNsPrefix);
-      scan(root, ctx);
-      return ctx;
-   }
-
-   private static void scan( Element root, XmlNamespaceContext ctx ) {
-      NamedNodeMap attrs = root.getAttributes();
-      if( attrs != null ) {
-         for( int i = 0; i < attrs.getLength(); i++ ) {
-            Attr attr = (Attr)attrs.item(i);
-            String an = attr.getNodeName();
-            if( an.startsWith("xmlns") ) {
-               if( an.equals("xmlns") ) {
-                  ctx.add("", attr.getNodeValue());
-               }
-               else if( an.startsWith("xmlns:") ) {
-                  ctx.add(an.substring(6), attr.getNodeValue());
-               }
-            }
-         }
-      }
-      ArrayList<Element> children = XmlUtil.getElements(root);
-      for( int i = 0; i < children.size(); i++ ) {
-         scan(children.get(i), ctx);
-      }
-   }
-
    /**
     * Get the DOM nodes that match the XPath passed in, relative to the element given. XPath must be relative.
     * 
@@ -266,25 +227,26 @@ public class XslUtil {
    }
 
    /**
-    * Create or get and existing node or hierarchy of nodes based on the given XPath. Supported expressions are most
-    * XPath constructs:
-    * 
+    * Create or get and existing node or hierarchy of nodes based on the given XPath.
+    * Supported expressions are most (but not all) XPath constructs:
     * <pre>
-    * elem
-    * {@literal @}attr
-    * e1/e2/../eN
-    * e1/e2/../eN/text()
-    * e1/e2/../eN{@literal @}attr
-    * e1/e2/../eN/{@literal @}attr
-    * a[2]/b[3]
-    * a/b[3]/c/d[2]{@literal @}attr
-    * a/b[3]/c/d[2]/{@literal @}attr
-    * a/b/c[d[{@literal @}a='value']]
-    * a[b/c/text()='value']
+    * elem - select child element 'elem' of the parent node.
+    * @attr - select attribute 'attr' of the parent node
+    * e1/e2/eN - select element 'eN' child of 'e2', child of 'e1, in turn child of parent. 
+    * e1/e2/../eN/text() - select the text content of the same as previous element.
+    * e1/e2/../eN@attr - select the 'attr' attribute of the same as previous element.
+    * e1/e2/../eN/@attr - same as previous - different notation.
+    * a[2]/b[3] - use literal index (the third child element b of the second element a, child of parent).
+    * a/b/c[d[@a='v']] - select element c, child of b child of a child of parent, which has an attribute 'a' with the value 'v'.
+    * a[b/c/text()='v'] - select element a child of parent, which has a child b, which has a child c, which has a text with the value 'v'.
+    * a/b/ancestor::test/c - select the c node child of be which has a child of test as well.
     * </pre>
     * 
     * More than one node of the specified type may be created (for the nodes which support this) by using the
-    * ordinalIndex.
+    * ordinalIndex. The path must be relative to the node passed in, so a path cannot begin with '/'.
+    * Also relative paths like '//' cannot be used.
+    * The ./ (current node) is implicit if it is missing. That is "./e" == "e".
+    * The only axe/axis expression allowed is "ancestor".
     * 
     * @param parent Node relative to which the XPath expression will be evaluated.
     * @param path The XPath expression to evaluate
@@ -292,45 +254,61 @@ public class XslUtil {
     * @return The existing or created end node, as identified in the path.
     */
    public static Node createNodeForPath( Element parent, String path, int ordinalIndex ) {
+   	if( path.startsWith("/") )
+         throw new MdmiException("Invalid XSLT expression: '" + path + "' may not contain be absolute '/'");
+   	if( path.startsWith("//") )
+         throw new MdmiException("Invalid XSLT expression: '" + path + "' may not contain relative descendants '//'");
+   		
+      // first we check if the path exists, if it does we are done
+      NodeList nodeList = XslUtil.getNodeList(parent, path);
+      if( nodeList != null ) {
+         int count = nodeList.getLength();
+         if( ordinalIndex + 1 <= count )
+         	return nodeList.item(ordinalIndex); // done, we found it, so just return it.
+      }
+
       String axesPath[] = splitForFirstAxes(path);
       if( null == axesPath )
-         return createNodeForPathNoAxes(parent, path, ordinalIndex);
+         return createNodeForPathNoAxes(parent, path, ordinalIndex); // no axis
+      // we found an axis
       String sPath = axesPath[0];
       String sAxe = axesPath[1];
       String sAxePath = axesPath[2];
-      Node nodeForPathNoAxes = createNodeForPathNoAxes(parent, sPath, ordinalIndex);
+      String sAxeRestOfPath = axesPath[3];
+      Node nodeForPathNoAxes = parent;
+      if( sPath != null )
+      	nodeForPathNoAxes = createNodeForPathNoAxes(parent, sPath, ordinalIndex);
       Node node = null;
-      if( ANCESTOR.equals(sAxe) ) {
-         String axesTag[] = splitForBrackets(sAxePath);
-         node = nodeForPathNoAxes;
-         String nodeNameInPath = axesTag[0];
-         int index = nodeNameInPath.indexOf(':');
-         nodeNameInPath = index == -1 ? nodeNameInPath : nodeNameInPath.substring(index + 1);
-         while( node != null ) {
-            node = node.getParentNode();
-            if( node.getNodeName().equals(nodeNameInPath) ) {
-               break;
-            }
+      if( !ANCESTOR.equals(sAxe) ) 
+         throw new MdmiException("XSLT axis expression: '" + sAxe + "' not supported in " + path);
+      
+      String axesTag[] = splitForBrackets(sAxePath);  // in case we have 'e1[...]'
+      node = nodeForPathNoAxes;
+      String nodeNameInPath = axesTag[0];
+      int index = nodeNameInPath.indexOf(':'); // remove namespace prefix (for ns:e1)
+      nodeNameInPath = index == -1 ? nodeNameInPath : nodeNameInPath.substring(index + 1);
+      while( node != null ) {
+         node = node.getParentNode();
+         if( node.getNodeName().equals(nodeNameInPath) ) {
+            break;
          }
       }
-      else {
-         throw new MdmiException("XSLT axes expression: '" + sAxe + "' not supported in " + path);
+      if( node == null )
+         throw new MdmiException("Invalid XSLT expression: '" + path + "' ancestor not found: " + nodeNameInPath);
+      if( null == axesTag[1] ) {
+      	if( null == sAxeRestOfPath )
+            return node;
+      	else
+            return createNodeForPathNoAxes((Element)node, sAxeRestOfPath, ordinalIndex);
       }
-      return node;
+      String sp = null == axesTag[2] ? axesTag[1] : axesTag[1] + axesTag[2];
+      return createNodeForPathNoAxes((Element)node, sp + sAxeRestOfPath, ordinalIndex);
    }
 
    private static Node createNodeForPathNoAxes( Element parent, String path, int ordinalIndex ) {
       if( parent == null || path == null || path.length() <= 0 )
          throw new IllegalArgumentException("Null or empty arguments!");
       ordinalIndex = ordinalIndex < 0 ? 0 : ordinalIndex;
-      
-      // first we check if the path exists, if it does we are done
-      NodeList nodeList = XslUtil.getNodeList(parent, path);
-      if( nodeList != null ) {
-         int count = nodeList.getLength();
-         if( ordinalIndex + 1 <= count )
-         	return nodeList.item(ordinalIndex);
-      }
 
       int isqb = indexOfNotInQuotes(path, '[');
       int islh = indexOfNotInQuotes(path, '/');
@@ -412,8 +390,8 @@ public class XslUtil {
                // e[...]
                String[] a = splitForBrackets(spath);
                name = a[0];
-               String expr = a[1];
-               spath = a[2];
+               String expr = a[1]; // never null here, we just checked for '['
+               spath = null == a[2] ? "" : a[2];
                int index = xpathIndex(expr);
                if( 0 < index ) {
                   // numeric index, one based
@@ -462,7 +440,7 @@ public class XslUtil {
             x = indexOfNotInQuotes(spath, '[');
             y = indexOfNotInQuotes(spath, '/');
          }
-         if( 0 < spath.length() )
+         if( null == spath || 0 < spath.length() )
             return getOrCreateElement(p, spath, ordinalIndex);
          return p;
       }
@@ -538,9 +516,28 @@ public class XslUtil {
       return -1;
    }
 
+   /**
+    * It will split and XSLT axis expression like:
+    * <pre>
+    * ancestor::test
+    * e1/e2/ancestor::test
+    * ancestor::test/e3
+    * e1/e2/ancestor::test/e3[@a='v']
+    * </pre>
+    * 
+    * into parts:
+    * <pre>
+    * e1/e2/
+    * ancestor
+    * test
+    * /e3[@a='v']
+    * </pre>
+    * @param s the expression to split.
+    * @return The array containing the parts, as shown above.
+    */
    private static String[] splitForFirstAxes( String s ) {
       String[] a = new String[4];
-      int i = s.indexOf("::", 0);
+      int i = indexOfNotInQuotes(s, "::");
       if( 0 > i )
          return null;
       String part1 = s.substring(0, i);
@@ -548,18 +545,47 @@ public class XslUtil {
       int part1LastsSlash = part1.lastIndexOf('/');
       int part2FirstSlash = part2.indexOf('/');
 
-      a[0] = part1.substring(0, part1LastsSlash); //
-      a[1] = part1.substring(part1LastsSlash + 1);// axe
-      a[2] = part2FirstSlash == -1 ? part2 : part2.substring(0, part2FirstSlash);// axe path
+      if( part1LastsSlash < 0 ) {
+         a[0] = null;
+         a[1] = part1;// axe
+      }
+      else {
+         a[0] = part1.substring(0, part1LastsSlash); //
+         a[1] = part1.substring(part1LastsSlash + 1);// axe
+      }
+      if( part2FirstSlash < 0 ) {
+         a[2] = part2;// axe path
+         a[3] = null;
+      }
+      else {
+         a[2] = part2.substring(0, part2FirstSlash); // axe path
+         a[3] = part2.substring(part2FirstSlash);// rest of path after axe
+      }
       return a;
    }
 
+   /**
+    * Split an expression like:
+    * <pre>
+    * e1/e2[e3[@a='v']]/e4...
+    * </pre>
+    * In the following:
+    * <pre>
+    * e1/e2
+    * [e3[@a='v']]
+    * /e4...
+    * </pre>
+    * If no brackets are present, then the return string array will have items at index 1 and 2 null. 
+    * @param s
+    * @return
+    */
    private static String[] splitForBrackets( String s ) {
       String[] a = new String[3];
       int i = indexOfNotInQuotes(s, '[');
-      if( i <= 0 )
-         throw new IllegalArgumentException("Invalid xpath expresion '" + s
-               + "', does not contain '[', or has it at index 0");
+      if( i <= 0 ) {
+      	a[0] = s;
+      	return a;
+      }
       int j = i;
       int closeBindex = -1;
       int openBcount = 0;
@@ -588,7 +614,7 @@ public class XslUtil {
       a[0] = s.substring(0, i);
       a[1] = s.substring(i + 1, closeBindex);
       if( s.length() <= closeBindex + 1 )
-         a[2] = "";
+         a[2] = null;
       else
          a[2] = s.substring(closeBindex + 1);
       return a;
@@ -612,6 +638,31 @@ public class XslUtil {
                insideQuotes = true;
          }
          if( c == x && !insideQuotes )
+            i = j;
+         j++;
+      }
+      return i;
+   }
+
+   private static int indexOfNotInQuotes( String s, String x ) {
+      int i = s.indexOf(x);
+      if( i < 0 )
+         return i;
+      i = -1;
+      int j = 0;
+      int n = x.length();
+      boolean insideQuotes = false;
+      while( j + n < s.length() && i < 0 ) {
+         char c = s.charAt(j);
+         if( c == '\'' ) {
+            if( insideQuotes ) {
+               if( 0 <= j - 1 && s.charAt(j - 1) != '\\' )
+                  insideQuotes = false;
+            }
+            else
+               insideQuotes = true;
+         }
+         if( !insideQuotes && x.equals(s.substring(j, j+n)))
             i = j;
          j++;
       }
@@ -792,27 +843,62 @@ public class XslUtil {
    }
 
    public static void main( String[] args ) {
-      //String a[] = splitForFirstAxes("something1/something2/AXES::tag/something3");
-      //a = splitForFirstAxes("component/section[templateId[@root=\"2.16.840.1.113883.10.20.21.2.6.1\"]]/ancestor::DEFAULT_NS:component[1]");
-      //System.out.println(a[0] + " " + a[1] + " " + a[2]);
-      //a = splitForFirstAxes("something1/something2/AXES::test/something3");
-      //System.out.println(a[0] + " " + a[1] + " " + a[2]);
+      String a[] = splitForFirstAxes("e1/e2/ancestor::tag/e3");
+      System.out.println(a[0] + " " + a[1] + " " + a[2] + " " + a[3]);
+      a = splitForFirstAxes("component/section[templateId[@root=\"2.16.840.1.113883.10.20.21.2.6.1\"]]/ancestor::DEFAULT_NS:component[1]");
+      System.out.println(a[0] + " " + a[1] + " " + a[2] + " " + a[3]);
       
       String xml = "<root><e a='v1'/><e a='v2'/></root>";
       XmlParser p = new XmlParser();
       Document doc = p.parse(new StringReader(xml));
       Element root = doc.getDocumentElement();
-      String expr1 = "e[@a='v1']";
-      String expr2 = "e[@a='v2']";
 
-      Node n = createNodeForPath(root, expr1, 0);
+      Node n = createNodeForPath(root, "e[@a='v1']", 0);
       Element e = (Element)n;
       XmlUtil.addElement(e, "test1", "value1");
+      System.out.println("----------");
       System.out.println(XmlWriter.toString(doc));
 
-      n = createNodeForPath(root, expr2, 0);
+      n = createNodeForPath(root, "e[@a='v2']", 0);
       e = (Element)n;
       XmlUtil.addElement(e, "test2", "value2");
+      System.out.println("----------");
+      System.out.println(XmlWriter.toString(doc));
+      
+      xml="<root>" +
+          "  <e1>" +
+          "    <e2 a='v1'></e2>" +
+          "    <x>test1</x>" +
+          "  </e1>" +
+          "  <e1>" +
+          "    <e2 a='v2'></e2>" +
+          "  </e1>" +
+      	 "</root>";
+      p = new XmlParser();
+      doc = p.parse(new StringReader(xml));
+      root = doc.getDocumentElement();
+      n = createNodeForPath(root, "e1[e2[@a='v1']]/e2[@a='v1']", 0);
+      e = (Element)n;
+      Element x = XmlUtil.getElement(e,  "x");
+      if( x == null )
+      	x = XmlUtil.addElement(e, "x");
+      XmlUtil.setText(x, "changed1");
+      
+      n = createNodeForPath(root, "e1[e2[@a='v2']]/e2[@a='v2']", 0);
+      e = (Element)n;
+      x = XmlUtil.getElement(e,  "x");
+      if( x == null )
+      	x = XmlUtil.addElement(e, "x");
+      XmlUtil.setText(x, "changed2");
+      
+      n = createNodeForPath(root, "e1[e2[@a='v3']]/e2[@a='v3']", 0);
+      e = (Element)n;
+      x = XmlUtil.getElement(e,  "x");
+      if( x == null )
+      	x = XmlUtil.addElement(e, "x");
+      XmlUtil.setText(x, "changed3");
+      
+      System.out.println("----------");
       System.out.println(XmlWriter.toString(doc));
    }
 } // XslUtil

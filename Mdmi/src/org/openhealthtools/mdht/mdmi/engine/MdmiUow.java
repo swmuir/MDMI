@@ -1,17 +1,17 @@
 /*******************************************************************************
-* Copyright (c) 2012 Firestar Software, Inc.
-* All rights reserved. This program and the accompanying materials
-* are made available under the terms of the Eclipse Public License v1.0
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v10.html
-*
-* Contributors:
-*     Firestar Software, Inc. - initial API and implementation
-*
-* Author:
-*     Gabriel Oancea
-*
-*******************************************************************************/
+ * Copyright (c) 2012 Firestar Software, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Firestar Software, Inc. - initial API and implementation
+ *
+ * Author:
+ *     Gabriel Oancea
+ *
+ *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
 import java.io.File;
@@ -29,54 +29,56 @@ import org.openhealthtools.mdht.mdmi.engine.json.XElementValueSerializer;
 import org.openhealthtools.mdht.mdmi.model.*;
 
 /**
- * MDMI Unit of Work. Will execute a transfer from the source to the target messages, based on the given maps.
+ * MDMI Unit of Work. Will execute a transfer from the source to the target
+ * messages, based on the given maps.
  * 
  * @author goancea
  */
 public class MdmiUow implements Runnable {
-   MdmiEngine       owner;
-   MdmiTransferInfo transferInfo;
-   ISyntaxNode      srcSyntaxModel;
-   ElementValueSet  srcSemanticModel;
-   ISyntaxNode      trgSyntaxModel;
-   ElementValueSet  trgSemanticModel;
+	MdmiEngine       owner;
+	MdmiTransferInfo transferInfo;
+	ISyntaxNode      srcSyntaxModel;
+	ElementValueSet  srcSemanticModel;
+	ISyntaxNode      trgSyntaxModel;
+	ElementValueSet  trgSemanticModel;
 
-   /**
-    * Construct a new unit of work instance with the given owner and transfer info.
-    * 
-    * @param owner The actual owner.
-    * @param transferInfo The transfer info - data used to execute a transfer.
-    */
-   MdmiUow( MdmiEngine owner, MdmiTransferInfo transferInfo ) {
-      this.owner = owner;
-      this.transferInfo = transferInfo;
-   }
+	/**
+	 * Construct a new unit of work instance with the given owner and transfer
+	 * info.
+	 * 
+	 * @param owner The actual owner.
+	 * @param transferInfo The transfer info - data used to execute a transfer.
+	 */
+	MdmiUow( MdmiEngine owner, MdmiTransferInfo transferInfo ) {
+		this.owner = owner;
+		this.transferInfo = transferInfo;
+	}
 
-   @Override
-   public void run() {
-      try {
-         preProcess();
-         processInboundSourceMessage();
-         processInboundTargetMessage();
-         processConversions();
-         processOutboundTargetMessage();
-         postProcess();
-      }
-      catch( MdmiException ex ) {
-         throw ex;
-      }
-      catch( Exception ex ) {
-         throw new MdmiException(ex, "MdmiUow: Unexpected exception caught, static is {0}", toString());
-      }
-   }
+	@Override
+	public void run() {
+		try {
+			preProcess();
+			processInboundSourceMessage();
+			processInboundTargetMessage();
+			processConversions();
+			processOutboundTargetMessage();
+			postProcess();
+		}
+		catch( MdmiException ex ) {
+			throw ex;
+		}
+		catch( Exception ex ) {
+			throw new MdmiException(ex, "MdmiUow: Unexpected exception caught, static is {0}", toString());
+		}
+	}
 
-   // 0. Call the pre-processors, if any
-   void preProcess() {
-      System.out.println("");
-      System.out.println("---------- PRE-PROCESSORS START ----------");
-      Mdmi.INSTANCE.getPreProcessors().preProcess(transferInfo);
-      System.out.println("---------- PRE-PROCESSORS END ----------");
-   }
+	// 0. Call the pre-processors, if any
+	void preProcess() {
+		System.out.println("");
+		System.out.println("---------- PRE-PROCESSORS START ----------");
+		Mdmi.INSTANCE.getPreProcessors().preProcess(transferInfo);
+		System.out.println("---------- PRE-PROCESSORS END ----------");
+	}
 
 	private void serializeSemanticModel( String name, ElementValueSet semanticModel ) {
 		try {
@@ -112,94 +114,103 @@ public class MdmiUow implements Runnable {
 		}
 	}
 
-   // 1. Build the source syntax tree and semantic model
-   void processInboundSourceMessage() {
-      System.out.println("");
-      System.out.println("---------- SOURCE MESSAGE START ----------");
-      ISyntacticParser srcSynProv = getSynProv(transferInfo.getSourceMessageGroup());
-      ISemanticParser srcSemProv = getSemProv(transferInfo.getSourceMessageGroup());
-      srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
-      
-      System.out.println(transferInfo.sourceMessage);
-     System.out.println(srcSyntaxModel.toString());
-      System.out.println("");
-      srcSemanticModel = new ElementValueSet();
-      srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel,false);
-      serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
-   }
+	// 1. Build the source syntax tree and semantic model
+	void processInboundSourceMessage() {
+		System.out.println("");
+		System.out.println("---------- SOURCE MESSAGE START ----------");
+		ISyntacticParser srcSynProv = getSyntaxProvider(transferInfo.getSourceMessageGroup());
+		ISemanticParser srcSemProv = getSemanticProvider(transferInfo.getSourceMessageGroup());
+		//long ts = System.currentTimeMillis();
+		srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
+		//System.out.println("Syntax-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 
-   // 2. Build the target syntax tree and semantic model (if any)
-   void processInboundTargetMessage() {
-      trgSemanticModel = new ElementValueSet();
-      byte[] data = transferInfo.targetMessage.getData();
-      if( data == null || data.length <= 0 )
-         return;
-      ISemanticParser trgSemProv = getSemProv(transferInfo.getTargetMessageGroup());
-      ISyntacticParser trgSynProv = getSynProv(transferInfo.getTargetMessageGroup());
-      System.out.println("");
-      System.out.println("---------- TARGET MESSAGE START ----------");
-      trgSyntaxModel = (YNode)trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
-      trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel,true);
-      System.out.println("---------- TARGET MESSAGE END ----------");
-      
-      
-   }
+		System.out.println(srcSyntaxModel.toString());
+		System.out.println("");
+		//ts = System.currentTimeMillis();
+		srcSemanticModel = new ElementValueSet();
+		srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel, false);
+		//System.out.println("Semantic-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
+		System.out.println("---------- SOURCE MESSAGE END ----------");
+	}
 
-   // 3. execute the data conversions
-   void processConversions() {
-      System.out.println("");
-      System.out.println("---------- CONVERSION START ----------");
-      Conversion c = new Conversion(this);
-      c.execute();
-      System.out.println("---------- CONVERSION END ----------");
-      System.out.println("");
-      System.out.println("---------- TARGET MESSAGE START ----------");
-      serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
-//      System.out.println(trgSemanticModel.toString());
-      System.out.println("---------- TARGET MESSAGE END ----------");
-   }
+	// 2. Build the target syntax tree and semantic model (if any)
+	void processInboundTargetMessage() {
+		trgSemanticModel = new ElementValueSet();
+		byte[] data = transferInfo.targetMessage.getData();
+		if( data == null || data.length <= 0 )
+			return;
+		ISemanticParser trgSemProv = getSemanticProvider(transferInfo.getTargetMessageGroup());
+		ISyntacticParser trgSynProv = getSyntaxProvider(transferInfo.getTargetMessageGroup());
+		System.out.println("");
+		System.out.println("---------- TARGET MESSAGE START ----------");
+		//long ts = System.currentTimeMillis();
+		trgSyntaxModel = (YNode) trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
+		//System.out.println("Syntax-parsing of the target message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		//ts = System.currentTimeMillis();
+		trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel, true);
+		//System.out.println("Semantic-parsing of the target message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		System.out.println("---------- TARGET MESSAGE END ----------");
+	}
 
-   // 4. Build the target syntax tree from the target semantic model
-   void processOutboundTargetMessage() {
-      ISemanticParser trgSemProv = getSemProv(transferInfo.getTargetMessageGroup());
-      ISyntacticParser trgSynProv = getSynProv(transferInfo.getTargetMessageGroup());
-      if( trgSyntaxModel != null ) {
-    	 
-         trgSemProv.updateSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel, trgSyntaxModel);
-      }
-      else {
-         trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
-      }
-      System.out.println("");
-      System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
-      trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
-      System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");
-   }
+	// 3. execute the data conversions
+	void processConversions() {
+		System.out.println("");
+		System.out.println("---------- CONVERSION START ----------");
+		//long ts = System.currentTimeMillis();
+		Conversion c = new Conversion(this);
+		c.execute();
+		//System.out.println("Data conversion took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		System.out.println("---------- CONVERSION END ----------");
+		System.out.println("");
+		serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
+		// System.out.println(trgSemanticModel.toString());
+	}
 
-   // 5. Call the post-processors, if any
-   void postProcess() {
-      System.out.println("");
-      System.out.println("---------- POST-PROCESSORS START ----------");
-      Mdmi.INSTANCE.getPostProcessors().postProcess(transferInfo);
-      System.out.println("---------- POST-PROCESSORS END ----------");
-   }
+	// 4. Build the target syntax tree from the target semantic model
+	void processOutboundTargetMessage() {
+		System.out.println("");
+		System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
+		ISemanticParser trgSemProv = getSemanticProvider(transferInfo.getTargetMessageGroup());
+		ISyntacticParser trgSynProv = getSyntaxProvider(transferInfo.getTargetMessageGroup());
+		long ts = System.currentTimeMillis();
+		if( trgSyntaxModel != null ) {
+			trgSemProv.updateSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel, trgSyntaxModel);
+		}
+		else {
+			trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
+		}
+		//System.out.println("Serializing the target semantic model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		ts = System.currentTimeMillis();
+		trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
+		System.out.println("Serializing the target syntax model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");
+	}
 
-   private MdmiResolver resolver() {
-      return owner.getOwner().getResolver();
-   }
+	// 5. Call the post-processors, if any
+	void postProcess() {
+		System.out.println("");
+		System.out.println("---------- POST-PROCESSORS START ----------");
+		Mdmi.INSTANCE.getPostProcessors().postProcess(transferInfo);
+		System.out.println("---------- POST-PROCESSORS END ----------");
+	}
 
-   private ISyntacticParser getSynProv( MessageGroup messageGroup ) {
-      return resolver().getSyntacticParser(messageGroup.getName());
-   }
+	private MdmiResolver resolver() {
+		return owner.getOwner().getResolver();
+	}
 
-   private ISemanticParser getSemProv( MessageGroup messageGroup ) {
-      return resolver().getSemanticParser(messageGroup.getName());
-   }
+	private ISyntacticParser getSyntaxProvider( MessageGroup messageGroup ) {
+		return resolver().getSyntacticParser(messageGroup.getName());
+	}
 
-   @Override
-   public String toString() {
-      if( transferInfo == null )
-         return super.toString();
-      return transferInfo.toString();
-   }
+	private ISemanticParser getSemanticProvider( MessageGroup messageGroup ) {
+		return resolver().getSemanticParser(messageGroup.getName());
+	}
+
+	@Override
+	public String toString() {
+		if( transferInfo == null )
+			return "MdmiUoW: data is not set!";
+		return transferInfo.toString();
+	}
 } // MdmiUow

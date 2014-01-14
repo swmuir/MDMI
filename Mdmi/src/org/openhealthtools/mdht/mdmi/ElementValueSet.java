@@ -25,10 +25,10 @@ public final class ElementValueSet {
    private HashMap<String, SEVS> m_xelements = new HashMap<String, SEVS>();
 
    public HashMap<String, SEVS> getM_xelements() {
-	return m_xelements;
-}
+   	return m_xelements;
+   }
 
-/**
+   /**
     * Get all the element values in this element values set.
     * 
     * @return All the element values in this element values set.
@@ -71,6 +71,14 @@ public final class ElementValueSet {
       return values;
    }
 
+   /**
+    * Get all element values of the specified type (for the given semantic element) from this set, 
+    * which are direct children of the given element value.
+    * 
+    * @param semanticElement The semantic element to look for.
+    * @param thiz The element value at whose descendants we should look at.
+    * @return The sub-set of all element values of the specified type, which are direct descendants of thiz.
+    */
    public ArrayList<IElementValue> getDirectChildValuesByType( SemanticElement semanticElement, IElementValue thiz ) {
       if( semanticElement == null )
          throw new IllegalArgumentException("Null argument!");

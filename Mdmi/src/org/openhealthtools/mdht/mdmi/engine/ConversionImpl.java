@@ -158,7 +158,7 @@ class ConversionImpl {
 			}
 		}
 		else { // simple
-			if( src.getDatatype().isPrimitive() || src.getDatatype().isDerived() ) {
+			if( src.getDatatype().isPrimitive() || src.getDatatype().isDerived() || src.getDatatype().isExternal() ) {
 				trg.cloneValues(src);
 			}
 			else {
