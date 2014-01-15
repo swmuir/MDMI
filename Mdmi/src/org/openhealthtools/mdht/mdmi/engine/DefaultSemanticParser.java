@@ -275,9 +275,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 	private void getChoiceElement( YChoice ychoice, XElementValue owner ) {
 		SemanticElement me = ychoice.getChoice().getSemanticElement();
-		if( me == null ) {
+		if( me == null )
 			throw new IllegalArgumentException("Missing Semantic Elements for " + DefaultSyntacticParser.getNodePath(ychoice.getNode()));
-		}
 		XElementValue xe = new XElementValue(me, valueSet);
 		if( owner != null ) {
 			// set parent-child relationship
@@ -286,32 +285,36 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 		// set the value
 		MdmiDatatype dt = me.getDatatype();
-		if( !dt.isChoice() ) {
-			throw new MdmiException("Invalid mapping for node {0}, expected datatype choice, found {1}.", DefaultSyntacticParser.getNodePath(ychoice.getNode()),
-			      dt.toString());
-		}
+		if( !dt.isChoice() )
+			throw new MdmiException("Invalid mapping for node {0}, expected datatype choice, found {1}."
+					, DefaultSyntacticParser.getNodePath(ychoice.getNode()), dt.toString());
 
 		try {
 			XDataChoice xc = new XDataChoice(xe.getXValue());
 			xe.getXValue().addValue(xc);
 
 			ArrayList<YNode> yns = ychoice.getYNodes();
-			if( yns.size() > 0 ) { // otherwise its an empty choice
-				YNode yn0 = yns.get(0);
-				Node n = yn0.getNode();
+			for( YNode yn : yns ) {
+				Node n = yn.getNode();
 				if( n.getSemanticElement() != null ) {
 					// the choice has only child elements
-					for( YNode yn : yns ) {
-						getMappedElement(yn, xe);
+					for( YNode yyn : yns ) {
+						getMappedElement(yyn, xe);
 					}
+					break; // we found the choice
 				}
 				else {
 					// the choice has only fields
 					String fieldName = n.getFieldName();
-					XValue xv = xc.setXValue(fieldName);
-					for( YNode yn : yns ) {
-						getValue(yn, xv, xe);
+					if( null != fieldName ) {
+						// if fieldName is null it means it is 
+						XValue xv = xc.setXValue(fieldName);
+						for( YNode yyn : yns ) {
+							getValue(yyn, xv, xe);
+						}
+						break; // we found the choice
 					}
+					// try the next node if this was no match
 				}
 			}
 		}
@@ -322,9 +325,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 	private void getStructElement( YBag ybag, XElementValue owner ) {
 		SemanticElement me = ybag.getBag().getSemanticElement();
-		if( me == null ) {
+		if( me == null )
 			throw new IllegalArgumentException("Missing Semantic Elements for " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
-		}
 		XElementValue xe = new XElementValue(me, valueSet);
 		if( owner != null ) {
 			// set parent-child relationship
@@ -333,9 +335,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 		// set the value
 		MdmiDatatype dt = me.getDatatype();
-		if( dt == null || !dt.isStruct() ) {
+		if( dt == null || !dt.isStruct() )
 			throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
-		}
 
 		try {
 			XDataStruct xs = new XDataStruct(xe.getXValue());
@@ -351,17 +352,15 @@ public class DefaultSemanticParser implements ISemanticParser {
 				else {
 					// field
 					String fieldName = n.getFieldName();
-					if( fieldName == null ) {
-						throw new MdmiException("Field Name is Null " + DefaultSyntacticParser.getNodePath(n));
-					}
+					if( fieldName == null )
+						continue; // will ignore it for now, assuming unmapped syntax node
+						// throw new MdmiException("Field Name is Null " + DefaultSyntacticParser.getNodePath(n));
 					XValue xv = xs.getXValue(fieldName);
-					if( xv == null ) {
+					if( xv == null )
 						throw new MdmiException("Invalid mapping for node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
-					}
 					getValue(yn, xv, xe);
 				}
 			}
-
 		}
 		catch( Throwable throwable ) {
 			throw new MdmiException("Error proccessing node " + DefaultSyntacticParser.getNodePath(ybag.getNode()), throwable);
@@ -1036,7 +1035,6 @@ public class DefaultSemanticParser implements ISemanticParser {
 				}
 			}
 		}
-
 	}
 
 	private void setComputedInValue( SemanticElement se ) {
@@ -1051,13 +1049,9 @@ public class DefaultSemanticParser implements ISemanticParser {
 			}
 		}
 
-		if( valueSet.getElementValuesByType(se).size() > 0 ) {
-			for( int i = 0; i < valueSet.getElementValuesByType(se).size(); i++ ) {
-				evalRule(lang, rule, (XElementValue) valueSet.getElementValuesByType(se).get(i));
-			}
-		}
-		else {
-			evalRule(lang, rule, new XElementValue(se, valueSet));
+		ArrayList<IElementValue> axs = valueSet.getElementValuesByType(se);
+		for( int i = 0; i < axs.size(); i++ ) {
+			evalRule(lang, rule, (XElementValue)axs.get(i));
 		}
 	}
 
