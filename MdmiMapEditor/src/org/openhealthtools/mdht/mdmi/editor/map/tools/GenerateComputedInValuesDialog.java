@@ -16,6 +16,7 @@ package org.openhealthtools.mdht.mdmi.editor.map.tools;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -26,15 +27,19 @@ import java.util.Collection;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
+import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
+import org.openhealthtools.mdht.mdmi.editor.map.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.RuleLanguageSelector;
 import org.openhealthtools.mdht.mdmi.model.DTComplex;
@@ -51,16 +56,20 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 	public static final String CR_LF = "\r\n";
 	public static final String SPACES = "    ";
 
+	private static final String APPEND_NEW_RULE = "AppendNewRuleText";
 	private static final String UNDEFINED_TYPE = " - ";
 
 	/** Resource for localization */
 	protected static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.tools.Local");
 
+	private UserPreferences m_pref = null;
 	private SemanticElement m_semanticElement = null;
 	private MdmiExpression m_computedInValue = null;
 	
 	private RuleLanguageSelector m_ruleLanguageSelector = new RuleLanguageSelector();
 	private FieldList m_fieldList;
+	private JRadioButton m_appendBtn = new JRadioButton(s_res.getString("GenerateComputedInValuesDialog.append"), true);
+	private JRadioButton m_replaceBtn = new JRadioButton(s_res.getString("GenerateComputedInValuesDialog.replace"), false);
 	
 	private GenericEditor m_computedInValueEditor = null;
 
@@ -68,6 +77,9 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 		super(owner, BaseDialog.OK_CANCEL_APPLY_OPTION);
 		m_semanticElement = semanticElement;
 		m_computedInValue = computedInValue;
+		
+		String appName = SystemContext.getApplicationName();
+		m_pref = UserPreferences.getInstance(appName, null);
 		
 		buildUI();
 		setTitle(s_res.getString("GenerateComputedInValuesDialog.title"));
@@ -95,6 +107,7 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 		// | | FieldN:   [__________________]  | |
 		// |  ---------------------------------  |
 		//  -------------------------------------
+		//  (o) Append to Existing  ( ) Replace Existing
 		
 		// Populate Controls before laying out
 		MdmiDatatype dataType = m_semanticElement.getDatatype();
@@ -193,6 +206,23 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 			mainPanel.add(m_fieldList, gbc);
 		}
 		
+		// (0) Append   ( ) Replace
+		ButtonGroup group = new ButtonGroup();
+		m_appendBtn.setSelected(m_pref.getBooleanValue(APPEND_NEW_RULE, true));
+		m_replaceBtn.setSelected(!m_appendBtn.isSelected());
+		group.add(m_appendBtn);
+		group.add(m_replaceBtn);
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, Standards.LEFT_INSET, 0));
+		buttons.add(m_appendBtn);
+		buttons.add(m_replaceBtn);
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.gridwidth = 2;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		mainPanel.add(buttons, gbc);
+		
 		// Set up listeners
 		m_ruleLanguageSelector.addPropertyChangeListener(this);
 		
@@ -263,8 +293,19 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 		m_computedInValue.setLanguage(language);
 		
 		// rule
-		String rule = generateComputedInRule(language, datatype, fieldValues);
-		m_computedInValue.setExpression(rule);	// replace what's there
+		String newRule = generateComputedInRule(language, datatype, fieldValues);
+		if (m_appendBtn.isSelected()) {
+			// append new rule to existing rule
+			String rule = m_computedInValue.getExpression();
+			if (rule != null && rule.length() > 0) {
+				StringBuilder buf = new StringBuilder(rule);
+				buf.append(CR_LF).append(newRule);
+				newRule = buf.toString();
+			}
+		}
+		m_computedInValue.setExpression(newRule);
+		// remember button selection
+		m_pref.putBooleanValue(APPEND_NEW_RULE, m_appendBtn.isSelected());
 		
 		
 		// tell the object editor to fill in the data
