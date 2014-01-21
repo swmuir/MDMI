@@ -135,9 +135,9 @@ public class Conversion {
 				throw new MdmiException("Conversion: invalid target SE " + name);
 
 			ArrayList<MdmiBusinessElementReference> trgBers = getTargetBERSforSE(trgModel, target);
-			// JGK: I believe it is ok to have semantic elements that are not mapped to business elements, so I am removing this check.
-			/*if( trgBers.size() <= 0 )
-				throw new MdmiException("Conversion: invalid target BERs " + target.getName());*/
+			// JGK: I believe it is OK to have semantic elements that are not mapped to business elements
+			if( trgBers.size() <= 0 )
+				continue;
 
 			ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
 			for( int j = 0; j < trgBers.size(); j++ ) {
