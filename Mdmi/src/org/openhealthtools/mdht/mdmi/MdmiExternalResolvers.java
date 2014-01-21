@@ -64,6 +64,7 @@ public final class MdmiExternalResolvers {
             return p.getDictionaryValue(datatype, value);
          }
       }
+      Mdmi.INSTANCE.logger().warning("A resolver was not found for data type: " + datatype.getName());
       return value;
    }
    
@@ -85,6 +86,7 @@ public final class MdmiExternalResolvers {
             return p.getModelValue(datatype, value);
          }
       }
+      Mdmi.INSTANCE.logger().warning("A resolver was not found for data type: " + datatype.getName());
       return value == null ? null : value.toString();
    }
 } // MdmiExternalResolvers
