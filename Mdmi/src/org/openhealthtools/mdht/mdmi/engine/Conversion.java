@@ -33,7 +33,7 @@ import org.openhealthtools.mdht.mdmi.util.ICloneable;
 /**
  * Internal class, defines a conversion for a transfer request, within a unit of
  * work.
- * 
+ *
  * @author goancea
  */
 public class Conversion {
@@ -43,7 +43,7 @@ public class Conversion {
 
 	/**
 	 * Construct an instance from the given unit of work.
-	 * 
+	 *
 	 * @param owner
 	 *           The UoW owner.
 	 */
@@ -70,7 +70,7 @@ public class Conversion {
 	 * Construct a ConversionInfo for each element in the
 	 * m_transferInfo.targetElements. The names in the
 	 * m_transferInfo.targetElements are target BusinessElementRefecence names.
-	 * 
+	 *
 	 * @param elements
 	 *           The elements to use, a list of strings.
 	 */
@@ -118,7 +118,7 @@ public class Conversion {
 	 * Construct a ConversionInfo for each element in the
 	 * m_transferInfo.targetElements. The names in the
 	 * m_transferInfo.targetElements are target SemanticElement names.
-	 * 
+	 *
 	 * @param elements
 	 *           The elements to use, a list of strings.
 	 */
@@ -135,8 +135,9 @@ public class Conversion {
 				throw new MdmiException("Conversion: invalid target SE " + name);
 
 			ArrayList<MdmiBusinessElementReference> trgBers = getTargetBERSforSE(trgModel, target);
-			if( trgBers.size() <= 0 )
-				throw new MdmiException("Conversion: invalid target BERs " + target.getName());
+			// JGK: I believe it is ok to have semantic elements that are not mapped to business elements, so I am removing this check.
+			/*if( trgBers.size() <= 0 )
+				throw new MdmiException("Conversion: invalid target BERs " + target.getName());*/
 
 			ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
 			for( int j = 0; j < trgBers.size(); j++ ) {
@@ -425,7 +426,8 @@ public class Conversion {
 			ToMessageElement tme = itME.next();
 			if( tme != null ) {
 				a.add(tme.getBusinessElement());
-				break;
+				// JGK: This line must be a bug because one can map multiple BEs to an SE.
+				// break;
 			}
 		}
 		if( a.size() <= 0 ) {
@@ -462,7 +464,7 @@ public class Conversion {
 	/**
 	 * Each instance of this class wraps one conversion, from one source SE to
 	 * one or more target SEs, through a source and target BER.
-	 * 
+	 *
 	 * @author goancea
 	 */
 	static public class ConversionInfo implements ICloneable<ConversionInfo> {
