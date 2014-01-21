@@ -477,6 +477,8 @@ public class XslUtil {
             // e1/e2/../text()='value'
             String[] a = parseElemValue(expr);
             Node n = createNodeForPath(child, a[0], -1);
+            if( null == n )
+               throw new MdmiException("Can't handle predicate expression: " + expr);
             n.setTextContent(a[1]);
          }
          else
