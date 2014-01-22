@@ -60,6 +60,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.tree.ToMessageElementSetNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.TreeNodeIcon;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.DTComplex;
+import org.openhealthtools.mdht.mdmi.model.DTSPrimitive;
 import org.openhealthtools.mdht.mdmi.model.Field;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
@@ -754,15 +755,27 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			beDatatype = ((ToBusinessElement)theRule).getBusinessElement().getReferenceDatatype();
 			
 			srcVar = "var source = value.value();";
-			targetVar = "var target = " + ruleName + ".getValue();";
+
+			// if BE is a simple data type and SE is a complex type, just use name
+			if (!(beDatatype instanceof DTComplex) && seDatatype instanceof DTComplex) {
+				targetVar = "var target = " + ruleName + ";";
+			} else {
+				targetVar = "var target = " + ruleName + ".getValue();";
+			}
 			
 			srcFieldPath = seFieldName;
 			targetFieldPath = beFieldName;
 
 		} else {
 			beDatatype = ((ToMessageElement)theRule).getBusinessElement().getReferenceDatatype();
+
+			// if BE is a simple data type and SE is a complex type, just use name
+			if (!(beDatatype instanceof DTComplex) && seDatatype instanceof DTComplex) {
+				srcVar = "var source = " + ruleName + ";";
+			} else {
+				srcVar = "var source = " + ruleName + ".getValue();";
+			}
 			
-			srcVar = "var source = " + ruleName + ".getValue();";
 			// if BE is a complex data type and SE is a simple type, use "getXValue"
 			if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
 				targetVar = "var target = value.getXValue();";
@@ -907,6 +920,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 					// if BE is a complex data type and SE is a simple type, just use source
 					if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
 						// do nothing
+					} else if (beDatatype == DTSPrimitive.DATETIME) {
+						targetRule.append(".getDate()");
 					} else if (srcFieldName.isEmpty()) {
 						targetRule.append(".getValue()");
 					} else {
