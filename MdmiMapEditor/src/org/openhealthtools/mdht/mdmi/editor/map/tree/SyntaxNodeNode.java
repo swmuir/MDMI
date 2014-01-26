@@ -15,6 +15,7 @@
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
 import java.awt.Color;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
@@ -25,12 +26,14 @@ import java.util.Enumeration;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
+import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.ModelChangeEvent;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
@@ -45,6 +48,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IntegerField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.Comparators;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.NewNodeAndElementDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSyntaxNode;
 import org.openhealthtools.mdht.mdmi.model.Bag;
 import org.openhealthtools.mdht.mdmi.model.Choice;
@@ -400,6 +404,26 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 		}
 
 		final Node node = getSyntaxNode();
+		
+		// Add New Node and Element
+		if (node instanceof Bag || node instanceof Choice) {
+			String title = s_res.getString("SyntaxNodeNode.newNodesAndSE");
+			Icon icon =  AbstractComponentEditor.getIcon(this.getClass(),
+					s_res.getString("SyntaxNodeNode.newNodesAndSEIcon"));
+			menus.add(new JMenuItem(new AbstractAction(title, icon) {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Frame frame = SystemContext.getApplicationFrame();
+					NewNodeAndElementDialog dlg = new NewNodeAndElementDialog(frame, node);
+					dlg.centerInComponent(frame);
+					dlg.setVisible(true);
+				}
+
+			}));
+			menus.add(new JPopupMenu.Separator());
+		}
+		
 		// View Syntax Node
 		menus.add(new JMenuItem(new AbstractAction(s_res.getString("SyntaxNodeNode.viewHeirarchy")) {
 			@Override

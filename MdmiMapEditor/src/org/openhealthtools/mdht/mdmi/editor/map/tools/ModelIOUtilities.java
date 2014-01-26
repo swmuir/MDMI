@@ -394,7 +394,7 @@ public class ModelIOUtilities {
     /**
      * Add dataypes from the groups into the tree
      */
-    private static void addImportedDatatypesToTree(List<MessageGroup> newGroups, boolean copyIfExists, boolean warnIfExists) {
+    public static void addImportedDatatypesToTree(List<MessageGroup> newGroups, boolean copyIfExists, boolean warnIfExists) {
         MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
         for (MessageGroup newGroup : newGroups) {
             for (MessageGroup treeGroup : entitySelector.getMessageGroups()) {

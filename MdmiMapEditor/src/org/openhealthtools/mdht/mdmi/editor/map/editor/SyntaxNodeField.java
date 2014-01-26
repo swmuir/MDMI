@@ -30,14 +30,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
-import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
@@ -47,7 +45,6 @@ import org.openhealthtools.mdht.mdmi.editor.common.components.JTreeComboBox;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
-import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNodeRenderer;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MessageSyntaxModelNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode;
@@ -364,10 +361,10 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 
 		private JTextField m_nameField = new JTextField();
 		private JComboBox  m_choices;
-		private JTree m_tree;
+		private SyntaxNodeTree m_tree;
 		
-		private Object m_insertionPoint = null;
 		private Node m_node;
+		private Object m_insertionPoint = null;
 
 		public NewSyntaxNodeDialog(Frame owner) {
 			super(owner, BaseDialog.OK_CANCEL_OPTION);
@@ -418,9 +415,7 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 			main.add(m_choices, gbc);
 			
 			// Tree
-			DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
-			DefaultTreeModel treeModel = new DefaultTreeModel(root);
-			m_tree = new JTree(treeModel);
+			m_tree = new SyntaxNodeTree();
 			
 			gbc.gridy++;
 			gbc.gridx = 0;
@@ -433,60 +428,21 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 			gbc.fill = GridBagConstraints.BOTH;
 			main.add(new JScrollPane(m_tree), gbc);
 			
-			// Fill Tree
-			m_tree.setRootVisible(false);
-			m_tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-			fillTree(treeModel);
-
-			m_tree.setCellRenderer(new EditableObjectNodeRenderer());
+			// Fill Tree and expand to depth 4
+			m_tree.fillTree(getMessageModels(), 4);
 			
-			getContentPane().add(main);
-		}
-		
-		private void fillTree(final DefaultTreeModel treeModel) {
-			final DefaultMutableTreeNode root = (DefaultMutableTreeNode)treeModel.getRoot();
-			
-			for (MessageModel messageModel : getMessageModels()) {
-				if (messageModel.getSyntaxModel() != null) {
-					MessageSyntaxModelNode treeNode = new MessageSyntaxModelNode(messageModel.getSyntaxModel());
-					root.add(treeNode);
-				}
-			}
-			treeModel.nodeStructureChanged(root);
-			
-			// if there's only one MessageModel, and it is empty, select it
-			if (root.getChildCount() == 1 &&
-					root.getChildAt(0).isLeaf()) {
+			DefaultMutableTreeNode root = m_tree.getRoot();
+			if (root.getChildCount() == 1 && root.getChildAt(0).isLeaf()) {
+				// if there's only one MessageModel, and it is empty, select it
 				MessageSyntaxModelNode treeNode = (MessageSyntaxModelNode)root.getChildAt(0);
 				m_tree.setSelectionPath(new TreePath(treeNode.getPath()));
 				m_insertionPoint = treeNode.getUserObject();
 				setDirty(true);
 			}
 			
-			// expand first 4 levels of childrem
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					expandChildren(treeModel, root, 4, 1);
-				}
-			});
-			
-			// listen to tree selection 
-			m_tree.getSelectionModel().addTreeSelectionListener(this);
-					
+			getContentPane().add(main);
 		}
 		
-		private void expandChildren(DefaultTreeModel treeModel, TreeNode node, 
-				int maxDepth, int depth) {
-			for (int i=0; i<node.getChildCount(); i++) {
-				TreeNode child = node.getChildAt(i);
-				m_tree.expandPath(new TreePath(((DefaultMutableTreeNode)node).getPath()));
-				if (depth < maxDepth) {
-					expandChildren(treeModel, child, maxDepth, depth+1);
-				}
-			}
-		}
-
 		@Override
 		protected void okButtonAction() {
 			SelectionManager selectionManager = SelectionManager.getInstance();
@@ -570,7 +526,7 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 			}
 			// must be Bag or Choice
 			return m_insertionPoint instanceof Bag ||
-				m_insertionPoint instanceof Choice;
+					m_insertionPoint instanceof Choice;
 		}
 
 		@Override

@@ -34,18 +34,27 @@ import org.openhealthtools.mdht.mdmi.editor.common.IntegerDocumentFilter;
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 
 /** An IEdtorField that uses a TextField with a number filter to display a integer.
- * There is an optional checkbox to set the field to "unbounded" (e.g. MAX_INTEGET) */
+ * There is an optional checkbox to set the field to "unbounded" (e.g. MAX_INTEGER).
+ * A property change event, INTEGER_VALUE, will be fired when the value changes. */
 public class IntegerField extends JPanel implements IEditorField, DocumentListener, ActionListener {
 	/** Resource for localization */
 	protected static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.editor.Local");
 
-	private GenericEditor m_parentEditor;
+	// property name (for property change listeners). Value is Integer
+	public static final String INTEGER_VALUE = "IntegerValue";
+	
+	private GenericEditor m_parentEditor = null;
 
 	private IntegerDocumentFilter m_integerFilter = new IntegerDocumentFilter();
 	private JTextField m_editField = null;
 	private JCheckBox  m_unboundedBox;
 	
 	public static final int UNBOUNDED_VALUE = Integer.MAX_VALUE;
+
+	/* Create a field with no parent editor. */
+	public IntegerField(int rows) {
+		this(null, rows);
+	}
 	
 	public IntegerField(GenericEditor parentEditor, int rows) {
 		setLayout(new FlowLayout(FlowLayout.LEADING, Standards.LEFT_INSET, 0));
@@ -138,20 +147,33 @@ public class IntegerField extends JPanel implements IEditorField, DocumentListen
 	/////////////////////////////////////////
 	//    Document Listener Methods        //
 	/////////////////////////////////////////
+	private Object m_oldValue = new Integer(0);
 
 	@Override
 	public void changedUpdate(DocumentEvent e) {
-		m_parentEditor.setModified(true);
+		valueChanged();
 	}
 
 	@Override
 	public void insertUpdate(DocumentEvent e) {
-		m_parentEditor.setModified(true);
+		valueChanged();
 	}
 
 	@Override
 	public void removeUpdate(DocumentEvent e) {
-		m_parentEditor.setModified(true);
+		valueChanged();
+	}
+	
+	private void valueChanged() {
+		if (m_parentEditor != null) {
+			m_parentEditor.setModified(true);
+		}
+		Object value = null;
+		try {
+			value = getValue();
+		} catch (DataFormatException ex) {
+		}
+		firePropertyChange(INTEGER_VALUE, m_oldValue, value);
 	}
 
 	@Override
@@ -163,7 +185,6 @@ public class IntegerField extends JPanel implements IEditorField, DocumentListen
 		} else {
 			m_editField.setEditable(true);
 		}
-		m_parentEditor.setModified(true);
-		
+		valueChanged();
 	}
 }
