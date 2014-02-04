@@ -73,4 +73,14 @@ public class Bag extends Node {
          node.toString(out, indent);
       }
    }
+   
+	@Override
+   public void addField(String fieldName,String fieldLocation,String expressionLanguage) {
+		Node e = new LeafSyntaxTranslator();
+		e.setFieldName(fieldName);
+		e.setLocation(fieldLocation);
+		e.setLocationExpressionLanguage(expressionLanguage);
+		e.setParentNode(this);	
+		m_nodes.add(e);
+   }
 } // Bag

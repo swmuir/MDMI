@@ -142,4 +142,11 @@ public abstract class Node {
       if( m_fieldName != null && m_fieldName.length() > 0 )
          out.append(indent + "field name: " + m_fieldName + "\r\n");
    }
+   
+ 
+
+	public void addField( String fieldName, String fieldLocation, String expressionLanguage ) {
+	   // TODO Auto-generated method stub
+	   
+   }
 } // Node

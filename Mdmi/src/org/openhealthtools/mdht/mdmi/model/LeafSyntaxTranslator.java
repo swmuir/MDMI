@@ -56,4 +56,6 @@ public class LeafSyntaxTranslator extends Node {
 
       System.out.println("Superclass: " + LeafSyntaxTranslator.class.getSuperclass().getName());
    }
+   
+ 
 } // LeafSyntaxTranslator

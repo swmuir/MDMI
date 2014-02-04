@@ -124,6 +124,11 @@ public interface IValue {
     */
    public void addValue( Object value, int index );
 
+   
+   
+   public void addValue( String field, Object value);
+   
+   
    /**
     * Remove the given value, if found.
     * 
