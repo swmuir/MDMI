@@ -229,6 +229,9 @@ public final class XValue implements IValue {
 	@Override
 	public void addValue( String field, Object value ) {
 
+		if (this.m_values.isEmpty()) {
+			this.intializeStructs();
+		}
 		for( Object object : m_values ) {
 			if( object instanceof XDataStruct ) {
 				XDataStruct xds = (XDataStruct) object;
