@@ -386,18 +386,19 @@ public class AddRowToTableViewerDialog extends BaseDialog implements TreeSelecti
 		// add semantic element to selection tree
 		EditableObjectNode messageGroupNode = (EditableObjectNode)entitySelector.findNode(messageGroup);
 		if (messageGroupNode != null) {
-			SemanticElementNode seNode = new SemanticElementNode(semanticElement);
 			// find SemanticElementSetNode
 			for (Enumeration<?> en = messageGroupNode.depthFirstEnumeration(); en != null
 					&& en.hasMoreElements();) {
 				TreeNode node = (TreeNode) en.nextElement();
 				// found where to place it
 				if (node instanceof SemanticElementSetNode) {
-					SemanticElementSet set = (SemanticElementSet)((SemanticElementSetNode)node).getUserObject();
+					SemanticElementSetNode seSetNode = (SemanticElementSetNode)node;
+					SemanticElementSet set = (SemanticElementSet)seSetNode.getUserObject();
 					set.addSemanticElement(semanticElement);
 					semanticElement.setElementSet(set);
 
-					((SemanticElementSetNode)node).addSorted(seNode);
+					SemanticElementNode seNode = new SemanticElementNode(semanticElement, seSetNode.isHierarchical());
+					seSetNode.addSorted(seNode);
 					treeModel.nodeStructureChanged(node);
 					break;
 				}

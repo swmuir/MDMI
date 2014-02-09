@@ -29,6 +29,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
@@ -56,57 +57,78 @@ import org.openhealthtools.mdht.mdmi.model.MdmiExpression;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 
 public class SemanticElementNode extends EditableObjectNode {
+	private Collection<NewObjectInfo> m_newObjectInfo = null;
+	
 	/* -->  right arrow */
 	public static final char RIGHT_ARROW  = '\u2192';
 	/* <--  left arrow */
 	public static final char LEFT_ARROW   = '\u2190';
 	/* <--> double arrow */
 	public static final char DOUBLE_ARROW = '\u2194';
-	/* ... elipses */
+	/* ... Ellipses */
 	public static final char DASHES = '-';
 
 	// need to save parent element in case user changes it
 	private SemanticElement m_parentElement = null;
+	private boolean m_isHierarchical = false;
 
-
-	public SemanticElementNode(SemanticElement elem) {
+	
+	public SemanticElementNode(SemanticElement elem, boolean isHierarchical) {
+		this(elem, isHierarchical, true);
+	}
+	
+	public SemanticElementNode(SemanticElement elem, boolean isHierarchical, boolean showRules) {
 		super(elem);
 		setNodeIcon(TreeNodeIcon.SemanticElementIcon);
 		
-		loadChildren(elem);
+		m_isHierarchical = isHierarchical;
+		loadChildren(elem, showRules);
 		m_parentElement = elem.getParent();
 	}
 	
-	private void loadChildren(SemanticElement elem) {
-		
-		// Data Rules
-		DefaultMutableTreeNode dataRulesNode = new DataRuleSetNode(elem);
-		add(dataRulesNode);
+	private void loadChildren(SemanticElement elem, boolean showRules) {
+		EditableObjectNode topNode = this;
 
-		// Business Elements
-		DefaultMutableTreeNode bizElemsTitleNode = new ToBusinessElementSetNode(elem);
-		add(bizElemsTitleNode);
+		if (showRules) {
+			// if hierarchical, use an intermediate node for the rules
+			if (isHierarchical()) {
+				topNode = new SemanticElementRuleSetNode(elem);
+				add(topNode);
+			}
 		
-		// Message Elements
-		DefaultMutableTreeNode msgElemsTitleNode = new ToMessageElementSetNode(elem);
-		add(msgElemsTitleNode);
-		
-		// Relationships
-		DefaultMutableTreeNode relationshipsNode = new SemanticElementRelationshipSetNode(elem);
-		add(relationshipsNode);
-		
-		// Later...
-//		// Business Rules
-//		DefaultMutableTreeNode bizRulesNode = new SemanticElementBusinessRuleSetNode(elem);
-//		add(bizRulesNode);
+			// Data Rules
+			DefaultMutableTreeNode dataRulesNode = new DataRuleSetNode(elem);
+			topNode.add(dataRulesNode);
+
+			// Business Elements
+			DefaultMutableTreeNode bizElemsTitleNode = new ToBusinessElementSetNode(elem);
+			topNode.add(bizElemsTitleNode);
+
+			// Message Elements
+			DefaultMutableTreeNode msgElemsTitleNode = new ToMessageElementSetNode(elem);
+			topNode.add(msgElemsTitleNode);
+
+			// Relationships
+			DefaultMutableTreeNode relationshipsNode = new SemanticElementRelationshipSetNode(elem);
+			topNode.add(relationshipsNode);
+
+			// Later...
+			//		// Business Rules
+			//		DefaultMutableTreeNode bizRulesNode = new SemanticElementBusinessRuleSetNode(elem);
+			//		topNode.add(bizRulesNode);
+		}
 		
 	}
 	
 	@Override
 	public void setUserObject(Object userObject) {
 		super.setUserObject(userObject);
+		
+		MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
+		DefaultTreeModel treeModel = (DefaultTreeModel)entitySelector.getMessageElementsTree().getModel();
 
 		SemanticElement element = (SemanticElement)userObject;
 		SemanticElement parentElement = element.getParent();
@@ -123,6 +145,21 @@ public class SemanticElementNode extends EditableObjectNode {
 				parentElement.addChild(element);
 			}
 
+			// we'll need to change the tree too
+			if (isHierarchical()) {
+				// remove from old node
+				EditableObjectNode oldParentNode = (EditableObjectNode)getParent();
+				oldParentNode.remove(this);
+				treeModel.nodeStructureChanged(oldParentNode);
+				
+				// add to new node
+				DefaultMutableTreeNode newParentNode = entitySelector.findNode(parentElement);
+				if (newParentNode instanceof EditableObjectNode) {
+					((EditableObjectNode)newParentNode).addSorted(this);
+					treeModel.nodeStructureChanged(newParentNode);
+				}
+			}
+
 			m_parentElement = parentElement;	
 		}
 
@@ -135,11 +172,9 @@ public class SemanticElementNode extends EditableObjectNode {
 				syntaxNode.setSemanticElement(element);
 				
 				// update node display(s) to reflect semantic element
-				MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
-				DefaultTreeModel model = (DefaultTreeModel)entitySelector.getMessageElementsTree().getModel();
 				DefaultMutableTreeNode syntaxNodeNode = entitySelector.findNode(syntaxNode);
 				if (syntaxNodeNode != null) {
-					model.nodeChanged(syntaxNodeNode);
+					treeModel.nodeChanged(syntaxNodeNode);
 				}
 
 				StatusPanel statusPanel = SelectionManager.getInstance().getStatusPanel();
@@ -224,6 +259,20 @@ public class SemanticElementNode extends EditableObjectNode {
 	public String getToolTipText() {
 		return getSemanticElement().getDescription();
 	}
+	
+	//Get the parent SemanticElementSetNode
+	SemanticElementSetNode getSemanticElementSetNode() {
+		TreeNode parent = getParent();
+		if (parent instanceof SemanticElementSetNode) {
+			// got it
+			return (SemanticElementSetNode)parent;
+		} else if (parent instanceof SemanticElementNode) {
+			// walk up the tree
+			return ((SemanticElementNode)parent).getSemanticElementSetNode();
+		}
+		
+		return null;
+	}
 
 	
 	@Override
@@ -272,6 +321,84 @@ public class SemanticElementNode extends EditableObjectNode {
 	}
 
 	@Override
+	public void deleteChild(MutableTreeNode child) {
+		// remove from parent model
+		Object childObject = ((DefaultMutableTreeNode)child).getUserObject();
+		if (childObject instanceof SemanticElement) {
+			SemanticElement se = (SemanticElement)childObject;
+			// remove from element Set
+			se.getElementSet().getSemanticElements().remove(se);
+			// remove from parent SE too
+			if (se.getParent() != null) {
+				se.getParent().getChildren().remove(se);
+			}
+		}
+		
+		
+		super.remove(child);
+	}
+	
+	/** What new items can be created */
+	@Override
+	public Collection<NewObjectInfo> getNewObjectInformation(boolean changeType) {
+		if (isHierarchical()) {
+			if (m_newObjectInfo == null) {
+				m_newObjectInfo = super.getNewObjectInformation(changeType);
+				m_newObjectInfo.add(new NewSemanticElement());
+			}
+		} else {
+			m_newObjectInfo = null;
+		}
+
+		return m_newObjectInfo;
+	}
+
+
+	public boolean isHierarchical() {
+		return m_isHierarchical;
+	}
+
+	//////////////////////////////////////////////////////////////////
+	//    Custom Classes
+	//////////////////////////////////////////////////////////////
+	
+	public class NewSemanticElement extends NewObjectInfo {
+
+		@Override
+		public EditableObjectNode addNewChild(Object childObject) {
+			SemanticElement parentElement = getSemanticElement();
+			SemanticElementSet elementSet = parentElement.getElementSet();
+			
+			SemanticElement childElement = (SemanticElement)childObject;
+			
+			// Add to SemanticElementSet
+			elementSet.addSemanticElement(childElement);
+			childElement.setElementSet(elementSet);
+			
+			// Add to SemanticElement
+			parentElement.addChild(childElement);
+			childElement.setParent(parentElement);
+			
+			return new SemanticElementNode(childElement, isHierarchical());
+		}
+
+		@Override
+		public Class<?> getChildClass() {
+			return SemanticElement.class;
+		}
+
+		@Override
+		public String getChildName(Object childObject) {
+			return ((SemanticElement)childObject).getName();
+		}
+
+		@Override
+		public void setChildName(Object childObject, String newName) {
+			((SemanticElement)childObject).setName(newName);
+		}
+	}
+
+	@Override
 	public AbstractComponentEditor getEditorForNode() {
 		return new CustomEditor(getMessageGroup(), getUserObject().getClass());
 	}
@@ -286,7 +413,8 @@ public class SemanticElementNode extends EditableObjectNode {
 			if (nodeAt_i instanceof ToBusinessElementSetNode ||
 					nodeAt_i instanceof ToMessageElementSetNode ||
 					nodeAt_i instanceof SemanticElementRelationshipSetNode ||
-					nodeAt_i instanceof SemanticElementBusinessRuleSetNode) {
+					nodeAt_i instanceof SemanticElementBusinessRuleSetNode ||
+					nodeAt_i instanceof SemanticElementRuleSetNode) {
 				// skip over these
 				continue;
 			}
@@ -474,7 +602,7 @@ public class SemanticElementNode extends EditableObjectNode {
 	protected class SemanticElementSelector extends SemanticElementField {
 
 		public SemanticElementSelector(GenericEditor parentEditor) {
-			super(parentEditor);
+			super(parentEditor, getSemanticElement());
 		}
 
 		@Override

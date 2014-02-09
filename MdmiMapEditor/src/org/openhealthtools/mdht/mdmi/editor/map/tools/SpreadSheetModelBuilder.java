@@ -132,12 +132,12 @@ public class SpreadSheetModelBuilder {
 	}
 
 	// check whether each string in the list is empty
-	private static boolean isEmptyList(List<String> list) {
+	public static boolean isEmptyList(List<String> list) {
 		return isEmptyList(list, 0);
 	}
 	
 	// check whether each string in the list is empty, starting with the i'th element
-	private static boolean isEmptyList(List<String> list, int idx) {
+	public static boolean isEmptyList(List<String> list, int idx) {
 		boolean isEmpty = true;
 		for (int i=idx; i<list.size(); i++) {
 			if (list.get(i).length() > 0) {
@@ -150,7 +150,7 @@ public class SpreadSheetModelBuilder {
 	
 	// get the i'th string in a list. If the list is shorter than 
 	// needed, return an empty string
-	private static String getString(List<String>list, int idx)
+	public static String getString(List<String>list, int idx)
 	{
 		String s = "";
 		if (list != null && idx < list.size()) {
@@ -1281,7 +1281,7 @@ public class SpreadSheetModelBuilder {
 	}
 
 	// used for error handling
-	private static String FileAndLine(File file, int lineNo)
+	public static String FileAndLine(File file, int lineNo)
 	{
 		String fileAndLine = file.getName() + " : " + lineNo + " - ";
 		return fileAndLine;

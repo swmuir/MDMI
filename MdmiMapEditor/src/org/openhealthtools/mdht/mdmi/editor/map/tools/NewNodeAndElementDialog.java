@@ -7,15 +7,19 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -25,6 +29,7 @@ import javax.swing.tree.DefaultTreeModel;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
+import org.openhealthtools.mdht.mdmi.editor.common.components.CheckBoxListPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataFormatException;
@@ -33,6 +38,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.MdmiDatatypeField;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SemanticElementNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.SemanticElementSetNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode;
 import org.openhealthtools.mdht.mdmi.model.Bag;
 import org.openhealthtools.mdht.mdmi.model.Choice;
@@ -57,6 +63,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 	// Syntax Node fields
 	private JTextField  m_nodeName  = new JTextField();
 	private JComboBox<ChildNodeWrapper> m_nodeTypes = new JComboBox<ChildNodeWrapper>();
+	private JTextField  m_formatExpressionLanguage  = new JTextField();
 	private JTextField  m_location  = new JTextField();
 	private IntegerField  m_maxOccurs = new IntegerField(8);
 
@@ -65,6 +72,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 	private JTextField  m_seName  = new JTextField();
 	private JComboBox<SemanticElementType> m_seTypes = new JComboBox<SemanticElementType>();
 	private JComboBox<Object> m_datatypes = new JComboBox<Object>();
+	private CheckBoxListPanel m_fieldSelectionPanel = new CheckBoxListPanel();
 	
 	// [] Append '@' to Attribute
 	private JCheckBox m_attrBox = new JCheckBox(s_res.getString("NewNodeAndElementDialog.attrButton"));
@@ -84,12 +92,13 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		// | Node Name:  [________]              |
 		// | Type:       [__________|v]          |
 		// | Location:   [________]              |
+		// | Language:   [________]              |
 		// | Max Occurs: [________] [x]Unbounded |
 		//  -------------------------------------
 		//  - Semantic Element ------------------
 		// | Name:       [____________________]  |
-		// | Datatype:   [__________________|v]  |
 		// | SE Type:    [__________________|v]  |
+		// | Datatype:   [__________________|v]  |
 		//  -------------------------------------
 		//  [x] Prepend '@' to Attribute
 
@@ -140,6 +149,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 	// | Node Name:  [________]              |
 	// | Type:       [__________|v]          |
 	// | Location:   [________]              |
+	// | Language:   [________]              |
 	// | Max Occurs: [________] [x]Unbounded |
 	//  -------------------------------------
 	private JPanel createSyntaxNodePanel() {
@@ -155,7 +165,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.NORTHWEST;
 		gbc.weightx = 0;
-		gbc.weighty = 0;
+		gbc.weighty = 1;
 
 		// Node Name: 
 		gbc.weightx = 0;
@@ -164,9 +174,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets.left = 0;
 		syntaxNodePanel.add(m_nodeName, gbc);
-		gbc.insets.left = Standards.LEFT_INSET;
 
 		// Type: 
 		gbc.gridx = 0;
@@ -177,9 +185,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		//gbc.insets.left = 0;
 		syntaxNodePanel.add(m_nodeTypes, gbc);
-		//gbc.insets.left = Standards.LEFT_INSET;
 
 		// Location: 
 		gbc.gridx = 0;
@@ -190,9 +196,18 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets.left = 0;
 		syntaxNodePanel.add(m_location, gbc);
-		gbc.insets.left = Standards.LEFT_INSET;
+		
+		// Format Expression Language: 
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		syntaxNodePanel.add(new JLabel(s_res.getString("NewNodeAndElementDialog.formatExpressionLanguage")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		syntaxNodePanel.add(m_formatExpressionLanguage, gbc);
 		
 		// Max Occurs:
 		gbc.gridx = 0;
@@ -219,8 +234,13 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 
 	//  - Semantic Element ------------------
 	// | Name:       [____________________]  |
-	// | Datatype:   [__________________|v]  |
 	// | SE Type:    [__________________|v]  |
+	// | Datatype:   [__________________|v]  |
+	// |  - Fields------------------------   |
+	// | |  [x] Field 1                   |  |
+	// | |  [x] Field 2                   |  |
+	// | |  [x] Field 3                   |  |
+	// |  --------------------------------   |
 	//  -------------------------------------
 	private JPanel createSemanticElementPanel() {
 		JPanel semanticElementPanel = new JPanel(new GridBagLayout());
@@ -259,9 +279,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 			gbc.gridx++;
 			gbc.weightx = 1;
 			gbc.fill = GridBagConstraints.HORIZONTAL;
-			gbc.insets.left = 0;
 			semanticElementPanel.add(m_models, gbc);
-			gbc.insets.left = Standards.LEFT_INSET;
 
 			gbc.gridx = 0;
 			gbc.gridy++;
@@ -274,11 +292,9 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets.left = 0;
 		semanticElementPanel.add(m_seName, gbc);
-		gbc.insets.left = Standards.LEFT_INSET;
 
-		// Data Type: 
+		// SE Type: 
 		gbc.gridx = 0;
 		gbc.gridy++;
 		gbc.weightx = 0;
@@ -287,9 +303,7 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets.left = 0;
 		semanticElementPanel.add(m_seTypes, gbc);
-		gbc.insets.left = Standards.LEFT_INSET;
 
 		// Data Type: 
 		gbc.gridx = 0;
@@ -300,11 +314,36 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets.left = 0;
 		semanticElementPanel.add(m_datatypes, gbc);
-		gbc.insets.left = Standards.LEFT_INSET;
+		
+		// Fields
+		JScrollPane scroller = new JScrollPane(m_fieldSelectionPanel);
+		scroller.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), 
+				s_res.getString("NewNodeAndElementDialog.fields")));
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.weightx = 1;
+		gbc.weighty = 1;	// gets all the weight
+		gbc.gridwidth = 2;
+		gbc.fill = GridBagConstraints.BOTH;
+		semanticElementPanel.add(scroller, gbc);
+		gbc.gridwidth = 1;
 		
 		return semanticElementPanel;
+	}
+
+
+	// fill in the Field Selection
+	private void fillFieldSelectionList() {
+		DefaultListModel<?> listModel = m_fieldSelectionPanel.getModel();
+		listModel.removeAllElements();
+		
+		MdmiDatatype datatype = getDatatype();
+		if (datatype instanceof DTComplex) {
+			for (Field field : ((DTComplex)datatype).getFields()) {
+				m_fieldSelectionPanel.addCheckBox(new FieldCheckBox(field));
+			}
+		}
 	}
 
 	@Override
@@ -382,9 +421,33 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 
 	@Override
 	protected void okButtonAction() {
+		String nodeName = getNodeName();
+		String semanticElementName = getSemanticElementName();
 		int maxOccurs = getMaxOccurs();
 		MdmiDatatype datatype = getDatatype();
 		
+		// Check uniqueness
+		MessageModel msgModel = getMessageModel();
+		SemanticElementSet semanticElementSet = msgModel.getElementSet();
+		SemanticElement matchingSE = findSemanticElementByName(semanticElementSet, semanticElementName);
+		Node matchingNode = findNodeByName(m_parentNode, nodeName);
+		if (matchingNode != null) {
+			// warn and quit
+			String message = m_parentNode.getName() + " already contains a Syntax Node named '" + matchingNode.getName();
+			message += "'\nPlease select a different name.";
+			JOptionPane.showMessageDialog(SelectionManager.getInstance().getEntityEditor(), message,
+					"Duplicate Name", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		if (matchingSE != null) {
+			// warn and quit
+			String message = "There is already a Semantic Element named '" + matchingSE.getName();
+			message += "'\nPlease select a different name.";
+			JOptionPane.showMessageDialog(SelectionManager.getInstance().getEntityEditor(), message,
+					"Duplicate Name", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
 		// 1. Create Node
 		Node node = null;
 		ChildNodeWrapper nodeType = (ChildNodeWrapper)m_nodeTypes.getSelectedItem();
@@ -394,8 +457,9 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 			node = new Choice();
 		} else {
 			node = new LeafSyntaxTranslator();
+			((LeafSyntaxTranslator)node).setFormatExpressionLanguage(m_formatExpressionLanguage.getText().trim());
 		}
-		node.setName(getNodeName());
+		node.setName(nodeName);
 		node.setLocation(m_location.getText().trim());
 		node.setMinOccurs(0);
 		node.setMaxOccurs(maxOccurs);
@@ -404,13 +468,12 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		
 		////////////////////////////////////////////////
 		// 2. Create Semantic Element
-		MessageModel msgModel = getMessageModel();
-		SemanticElementSet semanticElementSet = msgModel.getElementSet();
 		SemanticElement semanticElement = new SemanticElement();
 		
-		semanticElement.setName(getSemanticElementName());
+		semanticElement.setName(semanticElementName);
 		semanticElement.setDatatype(datatype);
 		semanticElement.setMultipleInstances(maxOccurs > 1);
+		semanticElement.setSemanticElementType((SemanticElementType)m_seTypes.getSelectedItem());
 		
 		semanticElementSet.addSemanticElement(semanticElement);
 		semanticElement.setElementSet(semanticElementSet);
@@ -423,7 +486,13 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		////////////////////////////////////////////////////
 		// 4. Generate children
 		if (datatype instanceof DTComplex && (node instanceof Bag || node instanceof Choice)) {
-			generateChildren(node, (DTComplex)datatype);
+			for (JCheckBox checkBox : m_fieldSelectionPanel.getCheckBoxes()) {
+
+		      	if (checkBox.isSelected()) {
+		      		Field field = ((FieldCheckBox)checkBox).field;
+		      		generateChildren(node, field);
+		      	}
+			}
 		}
 		
 		///////////////////////////////////////////////////////
@@ -437,6 +506,39 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 
 		
 		super.okButtonAction();
+	}
+
+	private Node findNodeByName(Node parent, String nodeName) {
+		Node matching = null;
+		
+		ArrayList<Node> nodeList = null;
+		if (m_parentNode instanceof Choice) {
+			nodeList = ((Choice)m_parentNode).getNodes();
+		} else if (m_parentNode instanceof Bag){
+			nodeList = ((Bag)m_parentNode).getNodes();
+		}
+		if (nodeList != null) {
+			for (Node other : nodeList) {
+				if (nodeName.equalsIgnoreCase(other.getName())) {
+					matching = other;
+					return matching;
+				}
+			}
+		}
+		
+		return null;
+	}
+
+	private SemanticElement findSemanticElementByName(SemanticElementSet semanticElementSet, String semanticElementName) {
+		SemanticElement matching = null;
+		
+		for (SemanticElement other : semanticElementSet.getSemanticElements()) {
+			if (semanticElementName.equalsIgnoreCase(other.getName())) {
+				matching = other;
+				return matching;
+			}
+		}
+		return null;
 	}
 
 	// Add the new node to the tree
@@ -455,21 +557,16 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 			((EditableObjectNode)parentTreeNode).addSorted(syntaxTreeNode);
 			treeModel.nodeStructureChanged(parentTreeNode);
 			treeModel.nodeStructureChanged(syntaxTreeNode);
-
-		} else {
-			// TODO
 		}
 		
 		// SE
 		SemanticElementSet seSet = se.getElementSet();
 		parentTreeNode = entitySelector.findNode(seSet);
 		
-		if (parentTreeNode instanceof EditableObjectNode) {
-			((EditableObjectNode)parentTreeNode).addSorted(new SemanticElementNode(se));
+		if (parentTreeNode instanceof SemanticElementSetNode) {
+			SemanticElementSetNode setNode = (SemanticElementSetNode)parentTreeNode;
+			setNode.addSorted(new SemanticElementNode(se, setNode.isHierarchical(), true));
 			treeModel.nodeStructureChanged(parentTreeNode);
-
-		} else {
-			// TODO
 		}
 		
 		// open the Node
@@ -486,36 +583,39 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		}
 	}
 
-	// generate children nodes for all fields in the datatype
-	private void generateChildren(Node parentNode, DTComplex complexType) {
-		for (Field field : complexType.getFields()) {
-			String fieldName = field.getName();
-			
-			if (field.getDatatype() instanceof DTComplex) {
-				Bag childNode = new Bag();
-				
-				childNode.setName(fieldName);
-				addNodeToParent(parentNode, childNode);
-				
-				// keep going
-				generateChildren(childNode, (DTComplex)field.getDatatype());
-			} else {
-				LeafSyntaxTranslator childNode = new LeafSyntaxTranslator();
-				childNode.setFieldName(fieldName);
-				childNode.setMinOccurs(parentNode.getMinOccurs());
-				childNode.setMaxOccurs(parentNode.getMaxOccurs());
-				String location = fieldName;
-				if (m_attrBox.isSelected()) {
-					location = "@" + fieldName;
-				}
-				childNode.setLocation(location);
+	// generate node(s) for this field
+	private void generateChildren(Node parentNode, Field field) {
 
-				
-				childNode.setName(fieldName);
-				addNodeToParent(parentNode, childNode);
+		String fieldName = field.getName();
+		
+		if (field.getDatatype() instanceof DTComplex) {
+			Bag childNode = new Bag();
+			
+			childNode.setName(fieldName);
+			addNodeToParent(parentNode, childNode);
+			
+			// repeat for all children
+			DTComplex dataType = (DTComplex)field.getDatatype();
+			for (Field childField : dataType.getFields()) {
+				generateChildren(childNode, childField);
 			}
+		} else {
+			LeafSyntaxTranslator childNode = new LeafSyntaxTranslator();
+			childNode.setFieldName(fieldName);
+			childNode.setMinOccurs(parentNode.getMinOccurs());
+			childNode.setMaxOccurs(parentNode.getMaxOccurs());
+			String location = fieldName;
+			if (m_attrBox.isSelected()) {
+				location = "@" + fieldName;
+			}
+			childNode.setLocation(location);
+			childNode.setFormatExpressionLanguage(m_formatExpressionLanguage.getText().trim());
+			
+			childNode.setName(fieldName);
+			addNodeToParent(parentNode, childNode);
 		}
 	}
+	
 
 	///////////////////////////////////////////
 	//  Intermediate Classes
@@ -551,6 +651,16 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 			return messageModel.getMessageModelName();
 		}
 	}
+
+	/** Wrapper for JCheckBox created from a Field */
+	public static class FieldCheckBox extends JCheckBox {
+		public Field field;
+		public FieldCheckBox(Field field) {
+			super.setText(field.getName());
+			this.field = field;
+		}
+	}
+
 	
 	
 	///////////////////////////////////////////
@@ -589,6 +699,10 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == m_datatypes) {
+			// fill Field list
+			fillFieldSelectionList();
+		}
 		setDirty(true);
 	}
 	

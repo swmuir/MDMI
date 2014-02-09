@@ -304,7 +304,7 @@ public abstract class EditableObjectNode extends DefaultMutableTreeNode {
 	public boolean canCreateNewChild() {
 		Collection<NewObjectInfo> newOperations = getNewObjectInformation(false);
 		// need one, and only one, child
-		if (newOperations.size() == 1) {
+		if (newOperations != null && newOperations.size() == 1) {
 			return true;
 		}
 		return false;

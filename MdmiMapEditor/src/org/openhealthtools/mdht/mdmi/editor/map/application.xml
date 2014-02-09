@@ -24,14 +24,16 @@
 		<!-- File Menu -->
 		<action name="file" class="org.openhealthtools.mdht.mdmi.editor.common.actions.FileMenuAction"/>
 		<action name="newModel" class="org.openhealthtools.mdht.mdmi.editor.map.actions.NewMDMIModelAction"/>
-      <action name="openFile" class="org.openhealthtools.mdht.mdmi.editor.map.actions.OpenFileAction"/>
-      <action name="loadDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.LoadDatatypesAction"/>
-      <action name="importDictionary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportDomainDictionaryAction"/>
+		<action name="openFile" class="org.openhealthtools.mdht.mdmi.editor.map.actions.OpenFileAction"/>
+		<action name="loadDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.LoadDatatypesAction"/>
+		<action name="importDictionary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportDomainDictionaryAction"/>
+		<action name="reviseRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ReviseReferentIndexAction"/>
+		<action name="exportRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExportReferentIndexAction"/>
 		
-      <action name="exit" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExitAction"/>
-      <action name="accept" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptChangesAction"/>
-      <action name="acceptAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptAllChangesAction"/>
-      <action name="save" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SaveChangesAction"/>
+		<action name="exit" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExitAction"/>
+		<action name="accept" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptChangesAction"/>
+		<action name="acceptAll" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptAllChangesAction"/>
+		<action name="save" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SaveChangesAction"/>
 		
 		
 		<!-- New Menu -->
@@ -101,6 +103,10 @@
          <separator/>
          <item action="loadDatatypes"/>
          <item action="importDictionary"/>
+         
+         <separator/>
+         <item action="reviseRefIndex"/>
+         <item action="exportRefIndex"/>
 		     
          <separator/>
          <item action="accept"/>

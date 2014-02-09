@@ -14,6 +14,7 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.editor;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -35,14 +36,21 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JTree;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
+import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
+import org.openhealthtools.mdht.mdmi.editor.common.components.JTreeComboBox;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.console.ReferenceLink;
@@ -50,6 +58,8 @@ import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.NewObjectInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SemanticElementNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.SemanticElementSetNode;
+import org.openhealthtools.mdht.mdmi.editor.map.tree.TreeNodeIcon;
 import org.openhealthtools.mdht.mdmi.model.MessageModel;
 import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
 import org.openhealthtools.mdht.mdmi.model.Node;
@@ -59,32 +69,64 @@ import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 /** An IEditorField that shows SemanticElement values in a ComboBox */
 public class SemanticElementField extends AdvancedSelectionField {
 	
+	// flat/hierarchy key
+    public static final String SHOW_SE_HIERARCHY = "showSEhierachy";
+
+	private static final String s_blankText = s_res.getString("SemanticElementField.blankText");
+	private static final Icon s_blankIcon = TreeNodeIcon.getIcon(s_res.getString("SemanticElementField.blankIcon"));
+	private static final DefaultMutableTreeNode s_blankNode = new DefaultMutableTreeNode(BLANK_ENTRY);
+	
 	public static final String FLAT = s_res.getString("SemanticElementField.flatPresentation");
 	public static final String HIERARCHICAL = s_res.getString("SemanticElementField.hierarchicalPresentation");
 
-	private JComboBox   m_presentationBox;
+	private JComboBox<String>   m_presentationBox;
 	private boolean m_showHierarchy = false;
 	
 	private Node m_node = null;
 	private MessageModel m_messageModel = null;
 	
+	private SemanticElement m_excludeElement = null;
+	
 	public SemanticElementField(GenericEditor parentEditor) {
+		this(parentEditor, null);
+	}
+	
+	public SemanticElementField(GenericEditor parentEditor, SemanticElement excludeElement) {
 		super(parentEditor);
-		m_showHierarchy = false;	// for now
+		m_excludeElement = excludeElement;
+
+        UserPreferences preferences = UserPreferences.getInstance(SystemContext.getApplicationName(), null);
+        m_showHierarchy = preferences.getBooleanValue(SHOW_SE_HIERARCHY, false);
+		
 		// show the "create" button, but disable it until a node is set
 		showCreateButton(true);
 		getCreateButton().setEnabled(false);
+	}
+	
+	
+	
+	@Override
+	protected void buildUI(GenericEditor parentEditor) {
+		super.buildUI(parentEditor);
+		
+		if (m_messageModel != null && getCreateButton().isVisible())
+		{
+			getCreateButton().setEnabled(true);
+		}
 		
 		//  add presentation box
-		m_presentationBox = new JComboBox();
+		m_presentationBox = new JComboBox<String>();
 		m_presentationBox.addItem(FLAT);
 		m_presentationBox.addItem(HIERARCHICAL);
+		m_presentationBox.setSelectedItem(m_showHierarchy ? HIERARCHICAL : FLAT);
 
 		GridBagConstraints gbc = GetGridBagConstraints();
 		gbc.gridx++;
 		add(m_presentationBox, gbc);
 	}
-	
+
+
+
 	/** Define node context */
 	public void setNode(Node node) {
 		m_node = node;
@@ -111,16 +153,50 @@ public class SemanticElementField extends AdvancedSelectionField {
 		super.setReadOnly();
 	}
 
-	// toggle the showHierarchy flag for output
-	public void setShowHierarchy(boolean show) {
-		m_showHierarchy = show;
-		m_presentationBox.setSelectedItem(show ? HIERARCHICAL : FLAT);
+	
+	@Override
+	protected void loadComboBox() {
+		if (m_showHierarchy) {
+			getComboBox().removeAllItems();
+			((SemanticElementTreeCombo)getComboBox()).fillComboBox(getMessageModels());
+		} else {
+			super.loadComboBox();
+		}
 	}
 
 
+	public Collection<MessageModel> getMessageModels() {
+		Collection<MessageModel> models;
+		if (m_messageModel != null) {
+			models = new ArrayList<MessageModel>();
+			models.add(m_messageModel);
+		} else {
+			models = getParentEditor().getMessageGroup().getModels();
+		}
+		return models;
+	}
+	
+	@Override
+	protected JComboBox createComboBox() {
+		if (m_showHierarchy) {
+			JTreeComboBox comboBox = new SemanticElementTreeCombo();
+			JTree tree = comboBox.getTree();
+			tree.setRootVisible(false);
+			tree.setCellRenderer(new SemanticElementTreeRenderer(tree));
+
+			Dimension pref = comboBox.getPreferredSize();
+			comboBox.setPreferredSize(new Dimension(2*pref.width, pref.height));
+			return comboBox;
+		} else {
+			return super.createComboBox();
+		}
+	}
+
 	@Override
 	protected Collection<? extends Object> getComboBoxData() {
-		// Find all the semantic elements
+		// only used if showHierarchy is false
+		
+		// Find all the semantic elements 
 		ArrayList<SemanticElement> elements = new ArrayList<SemanticElement>();
 		List<DefaultMutableTreeNode> semanticElementNodes = 
 			SelectionManager.getInstance().getEntitySelector().getNodesOfType(SemanticElementNode.class);
@@ -128,7 +204,9 @@ public class SemanticElementField extends AdvancedSelectionField {
 		for (DefaultMutableTreeNode treeNode : semanticElementNodes) {
 			SemanticElement element = (SemanticElement)treeNode.getUserObject();
 			if (element.getName() != null && element.getName().length() > 0) {
-				elements.add(element);
+				if (element != m_excludeElement) {
+					elements.add(element);
+				}
 			}
 		}
 
@@ -136,9 +214,9 @@ public class SemanticElementField extends AdvancedSelectionField {
 		Collections.sort(elements, new Comparator<SemanticElement>() {
 			@Override
 			public int compare(SemanticElement o1, SemanticElement o2) {
-				// sort by name (including parent)
-				String v1 = makeString(o1, m_showHierarchy);
-				String v2 = makeString(o2, m_showHierarchy);
+				// sort by name
+				String v1 = makeString(o1);
+				String v2 = makeString(o2);
 				int c = v1.compareToIgnoreCase(v2);
 				return c;
 			}
@@ -287,7 +365,7 @@ public class SemanticElementField extends AdvancedSelectionField {
 	@Override
 	protected String toString(Object listObject) {
 		if (listObject instanceof SemanticElement) {
-			return makeString((SemanticElement)listObject, m_showHierarchy);
+			return makeString((SemanticElement)listObject);
 		}
 		return listObject.toString();
 	}
@@ -312,7 +390,22 @@ public class SemanticElementField extends AdvancedSelectionField {
 		
 		if (m_showHierarchy != showHierarchy) {
 			m_showHierarchy = showHierarchy;
-			refreshSelections();
+
+			// save it
+	        UserPreferences preferences = UserPreferences.getInstance(SystemContext.getApplicationName(), null);
+	        preferences.putBooleanValue(SHOW_SE_HIERARCHY, m_showHierarchy);
+			
+			//  we need to replace the combo box, so we have to redo everything
+			Object selectedItem = getValue();
+
+			GenericEditor parentEditor = getParentEditor();
+			removeAll();
+			removeNotify();
+			
+			buildUI(parentEditor);
+			setDisplayValue(selectedItem);
+			
+			addNotify();
 		}
 	}
 	
@@ -327,7 +420,7 @@ public class SemanticElementField extends AdvancedSelectionField {
 	
 	private class PresentationBoxRenderer extends DefaultListCellRenderer {
 		@Override
-		public Component getListCellRendererComponent(JList list, Object value,
+		public Component getListCellRendererComponent(JList<?> list, Object value,
 				int index, boolean isSelected, boolean cellHasFocus) {
 
 			Icon icon = AbstractComponentEditor.getIcon(PresentationBoxRenderer.class,
@@ -342,7 +435,119 @@ public class SemanticElementField extends AdvancedSelectionField {
 			return c;
 		}
 	};
+
 	
+	/** Combo box that uses a tree model */
+	public class SemanticElementTreeCombo extends JTreeComboBox {
+
+		public SemanticElementTreeCombo() {
+			super( new DefaultTreeModel(new DefaultMutableTreeNode("root")));
+		}
+		
+		public void fillComboBox(Collection<MessageModel> messageModels) {
+
+			JTree tree = getTree();
+			DefaultTreeModel treeModel = (DefaultTreeModel)tree.getModel();
+			DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode)treeModel.getRoot();
+			treeRoot.removeAllChildren();
+						
+			treeRoot.add(s_blankNode);
+			
+			for (MessageModel messageModel : messageModels)
+			{
+				if (messageModel.getElementSet() != null) {
+					// this will load them parent/child
+					 
+					SemanticElementSetNode seSetNode = new SemanticElementSetNode(messageModel.getElementSet(), true, false);
+					// we don't want the SESet
+					for (int i=seSetNode.getChildCount()-1; i>=0; i--)
+					{
+						MutableTreeNode child = (MutableTreeNode)seSetNode.getChildAt(i);
+						seSetNode.remove(i);
+						treeRoot.insert(child, 1);	// add it after the blank node
+					}
+					if (m_excludeElement != null) {
+						// remove the excluded node
+						DefaultMutableTreeNode exclNode = MdmiModelTree.findNode(treeRoot, m_excludeElement);
+						if (exclNode != null) {
+							DefaultMutableTreeNode parent = (DefaultMutableTreeNode)exclNode.getParent();
+							parent.remove(exclNode);
+						}
+					}
+				}
+			}
+			
+			// expand first level children
+			for (int i=0; i<treeRoot.getChildCount(); i++) {
+				TreeNode child = treeRoot.getChildAt(i);
+				tree.expandPath(new TreePath(((DefaultMutableTreeNode)child).getPath()));
+			}
+			
+			treeModel.nodeStructureChanged(treeRoot);
+
+		}
+
+		@Override
+		public Object getSelectedItem() {
+			// JTreeComboBox selection is a tree node, need to get user object
+			Object selected = super.getSelectedItem();
+			if (selected instanceof DefaultMutableTreeNode) {
+				selected = ((DefaultMutableTreeNode)selected).getUserObject();
+			}
+			return selected;
+		}
+		
+	}
+
+
+	/** Tree Renderer for SemanticElementTreeCombo */
+	public class SemanticElementTreeRenderer extends JTreeComboBox.CustomTreeRenderer {
+
+		public SemanticElementTreeRenderer(JTree tree) {
+			super(tree);
+		}
+
+		@Override
+		public Component getTreeCellRendererComponent(JTree tree, Object value,
+				boolean isSelected, boolean isExpanded, boolean isLeaf, int row,
+				boolean hasFocus) {
+
+			Icon icon = null;
+			
+			JLabel label = (JLabel)super.getTreeCellRendererComponent(tree, value, isSelected, isExpanded,
+					isLeaf, row, hasFocus);
+			if (value == s_blankNode) {
+				// display as "(not set)"
+				label.setText(s_blankText);
+				icon = s_blankIcon;
+			}
+			if (value instanceof SemanticElementNode) {
+				icon = ((SemanticElementNode)value).getNodeIcon();
+			}
+
+			
+			if (icon != null) {
+				label.setIcon(icon);
+			}
+
+
+			// change color of invalid value
+			if (value instanceof SemanticElementNode &&
+					((SemanticElementNode)value).getUserObject() == m_invalidValue) {
+				Color background = label.getBackground();
+				if (background == m_selectedBackground) {
+					// change selection background
+					label.setBackground(Color.red.darker());
+				} else {
+					// change foreground 
+					label.setForeground(Color.red);
+				}
+			}
+			return label;
+		}
+		
+	}
+
 	// dialog to get information for creating a new semantic element
 	private class NewSemanticElementDialog extends BaseDialog implements DocumentListener {
 

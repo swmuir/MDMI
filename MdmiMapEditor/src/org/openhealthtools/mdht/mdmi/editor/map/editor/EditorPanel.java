@@ -274,6 +274,11 @@ public class EditorPanel extends JPanel {
 		return false;
 	}
 	
+	/** Is any entity open */
+	public boolean isAnyEntityOpen() {
+		return !m_entityMap.isEmpty();
+	}
+	
 	/** Get the selected tab
 	 * @return
 	 */

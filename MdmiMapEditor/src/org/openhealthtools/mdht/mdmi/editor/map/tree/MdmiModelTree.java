@@ -417,7 +417,7 @@ public class MdmiModelTree extends JPanel {
 	 * @param theClass
 	 * @return
 	 */
-	public DefaultMutableTreeNode findNode(DefaultMutableTreeNode parentNode,
+	public static DefaultMutableTreeNode findNode(DefaultMutableTreeNode parentNode,
 			Object userObject) {
 		DefaultMutableTreeNode foundNode = null;
 
@@ -426,8 +426,7 @@ public class MdmiModelTree extends JPanel {
 				continue;
 			}
 
-			DefaultMutableTreeNode child = (DefaultMutableTreeNode) parentNode
-					.getChildAt(c);
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode) parentNode.getChildAt(c);
 			if (child.getUserObject().equals(userObject)) {
 				foundNode = child;
 
@@ -489,7 +488,7 @@ public class MdmiModelTree extends JPanel {
 
 				// New
 				Collection<NewObjectInfo> newOperations = edNode.getNewObjectInformation(false);
-				if (newOperations.size() > 0) {
+				if (newOperations != null && newOperations.size() > 0) {
 					addSeparator(popupMenu);
 					JMenu newMenu = new JMenu(Actions.getActionInstance(Actions.NEW_MENU_ACTION));
 					if (newOperations.size() > 1) {

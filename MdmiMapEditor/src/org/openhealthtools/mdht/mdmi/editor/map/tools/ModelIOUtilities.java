@@ -123,45 +123,7 @@ public class ModelIOUtilities {
 
         // get the file
         Frame applicationFrame = SystemContext.getApplicationFrame();
-        File file = null;
-        while (file == null) {
-            // pre-set
-            if (lastFileName != null) {
-                File lastFile = new File(lastFileName);
-                if (lastFile.exists()) {
-                    chooser.setSelectedFile(lastFile);
-                }
-            }
-
-            // prompt
-            int opt = chooser.showSaveDialog(applicationFrame);
-            if (opt == JFileChooser.APPROVE_OPTION) {
-                file = chooser.getSelectedFile();
-            } else {
-                // quit out of chooser dialog
-                break;
-            }
-
-            // check
-            if (file.exists() && !file.getAbsolutePath().equals(lastFileName)) {
-                // File already exists, do you want to replace it
-                opt = JOptionPane.showConfirmDialog(applicationFrame,
-                        MessageFormat.format(s_res.getString("ModelIOUtilities.fileExists"), file.getName()),
-                        s_res.getString("ModelIOUtilities.writeTitle"), JOptionPane.YES_NO_CANCEL_OPTION
-                );
-
-                if (opt == JOptionPane.CANCEL_OPTION) {
-                    // quit
-                    return false;
-                } else if (opt == JOptionPane.YES_OPTION) {
-                    // keep going
-                } else {
-                    // prompt again
-                    file = null;
-                }
-            }
-
-        }
+        File file = getFileToWriteTo(lastFileName, chooser);
 
         if (file != null) {
             List<MessageGroup> groups = SelectionManager.getInstance().getEntitySelector().getMessageGroups();
@@ -191,7 +153,7 @@ public class ModelIOUtilities {
                 preferences.putValue(LAST_FILE_OPENED, lastFileName);
 
                 // change name on title
-                ((MapEditor) SystemContext.getApplicationFrame()).updateTitle(lastFileName);
+                ((MapEditor)applicationFrame).updateTitle(lastFileName);
 
                 SelectionManager.getInstance().writeToConsole(MessageFormat.format(s_res.getString("ModelIOUtilities.writeSucceededFormat"),
                         lastFileName));
@@ -206,11 +168,59 @@ public class ModelIOUtilities {
         return false;
     }
 
+    /** Find a file that can be written to. If the selected file exists, the user will be prompted to overwrite */
+	public static File getFileToWriteTo(String lastFileName, JFileChooser chooser) {
+
+        Frame applicationFrame = SystemContext.getApplicationFrame();
+        
+		File file = null;
+        while (file == null) {
+            // pre-set
+            if (lastFileName != null) {
+                File lastFile = new File(lastFileName);
+                if (lastFile.exists()) {
+                    chooser.setSelectedFile(lastFile);
+                }
+            }
+
+            // prompt
+            int opt = chooser.showSaveDialog(applicationFrame);
+            if (opt == JFileChooser.APPROVE_OPTION) {
+                file = chooser.getSelectedFile();
+            } else {
+                // quit out of chooser dialog
+                break;
+            }
+
+            // check
+            if (file.exists() && !file.getAbsolutePath().equals(lastFileName)) {
+                // File already exists, do you want to replace it
+                opt = JOptionPane.showConfirmDialog(applicationFrame,
+                        MessageFormat.format(s_res.getString("ModelIOUtilities.fileExists"), file.getName()),
+                        s_res.getString("ModelIOUtilities.writeTitle"), JOptionPane.YES_NO_CANCEL_OPTION
+                );
+
+                if (opt == JOptionPane.CANCEL_OPTION) {
+                    // quit
+                    return null;
+                } else if (opt == JOptionPane.YES_OPTION) {
+                    // keep going
+                } else {
+                    // prompt again
+                    file = null;
+                }
+            }
+        }
+        
+		return file;
+	}
+
     /**
      * Load the model data from a file or directory of files
      */
     public static void loadModelFromFile() {
         Frame applicationFrame = SystemContext.getApplicationFrame();
+        SelectionManager.getInstance().getStatusPanel().clearErrors();
         // set cursor
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
@@ -259,7 +269,6 @@ public class ModelIOUtilities {
                 }
 
                 // show errors
-                SelectionManager.getInstance().getStatusPanel().clearErrors();
                 for (ModelInfo errorMsg : results.getErrors()) {
                     SelectionManager.getInstance().getStatusPanel().writeValidationErrorMsg("",
                             errorMsg);

@@ -87,38 +87,14 @@ public class SyntaxNodeField extends AdvancedSelectionField {
 	
 	@Override
 	protected Collection<? extends Object> getComboBoxData() {
+		// normally called by AdvancedSelectionField.loadComboBox().
 		// not used
 		return null;
 	}
 	
 	@Override
 	protected void loadComboBox() {
-
 		((SyntaxNodeComboBox)getComboBox()).fillComboBox(getMessageModels());
-		
-//		JTree tree = ((JTreeComboBox)getComboBox()).getTree();
-//		DefaultTreeModel treeModel = (DefaultTreeModel)tree.getModel();
-//		DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode)treeModel.getRoot();
-//		treeRoot.removeAllChildren();
-//		
-//		treeRoot.add(s_blankNode);
-//		for (MessageModel messageModel : getMessageModels()) {
-//			if (messageModel.getSyntaxModel() != null 
-//					&& messageModel.getSyntaxModel().getRoot() != null) {
-//				Node syntaxRoot = messageModel.getSyntaxModel().getRoot();
-//				SyntaxNodeNode treeNode = SyntaxNodeNode.createSyntaxNode(syntaxRoot);
-//				treeRoot.add(treeNode);
-//			}
-//		}
-//		
-//		// expand first level children
-//		for (int i=0; i<treeRoot.getChildCount(); i++) {
-//			TreeNode child = treeRoot.getChildAt(i);
-//			tree.expandPath(new TreePath(((DefaultMutableTreeNode)child).getPath()));
-//		}
-//		
-//		treeModel.nodeStructureChanged(treeRoot);
-		
 	}
 
 	public Collection<MessageModel> getMessageModels() {
