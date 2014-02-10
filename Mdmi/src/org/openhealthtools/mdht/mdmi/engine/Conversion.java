@@ -225,7 +225,7 @@ public class Conversion {
 			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
-				System.out.println("Conversion: " + ci.toString());
+				System.out.println(" Conversion: " + ci.toString());
 				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					SemanticElement seParent = source.getParent();
@@ -233,7 +233,8 @@ public class Conversion {
 					ArrayList<IElementValue> srcs = null;
 					// if the owner SE is not the same as the source parent SE, use all elements, otherwise get only children
 					if( seParent != seParentOwner ) {
-						srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
+						continue;
+						//srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
 					}
 					else {
 						srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);

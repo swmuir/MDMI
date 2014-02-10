@@ -131,6 +131,7 @@ public class MdmiUow implements Runnable {
 		srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel, false);
 		//System.out.println("Semantic-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
+      //System.out.println(srcSemanticModel.toString());
 		System.out.println("---------- SOURCE MESSAGE END ----------");
 	}
 
@@ -146,10 +147,12 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- TARGET MESSAGE START ----------");
 		//long ts = System.currentTimeMillis();
 		trgSyntaxModel = (YNode) trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
+		System.out.println(trgSyntaxModel.toString());
 		//System.out.println("Syntax-parsing of the target message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		//ts = System.currentTimeMillis();
 		trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel, true);
 		//System.out.println("Semantic-parsing of the target message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+      //System.out.println(trgSemanticModel.toString());
 		System.out.println("---------- TARGET MESSAGE END ----------");
 	}
 
@@ -164,7 +167,9 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- CONVERSION END ----------");
 		System.out.println("");
 		serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
-		// System.out.println(trgSemanticModel.toString());
+      //System.out.println("---------- TARGET MESSAGE START ----------");
+      //System.out.println(trgSemanticModel.toString());
+      //System.out.println("---------- TARGET MESSAGE END ----------");
 	}
 
 	// 4. Build the target syntax tree from the target semantic model
@@ -173,7 +178,7 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
 		ISemanticParser trgSemProv = getSemanticProvider(transferInfo.getTargetMessageGroup());
 		ISyntacticParser trgSynProv = getSyntaxProvider(transferInfo.getTargetMessageGroup());
-		long ts = System.currentTimeMillis();
+		//long ts = System.currentTimeMillis();
 		if( trgSyntaxModel != null ) {
 			trgSemProv.updateSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel, trgSyntaxModel);
 		}
@@ -181,9 +186,10 @@ public class MdmiUow implements Runnable {
 			trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
 		}
 		//System.out.println("Serializing the target semantic model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-		ts = System.currentTimeMillis();
+		//ts = System.currentTimeMillis();
+      //System.out.println(trgSyntaxModel.toString());
 		trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
-		System.out.println("Serializing the target syntax model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		//System.out.println("Serializing the target syntax model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");
 	}
 
