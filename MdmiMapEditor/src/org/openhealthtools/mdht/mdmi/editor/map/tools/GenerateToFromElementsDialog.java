@@ -42,6 +42,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
@@ -542,12 +543,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				childNode = new ToBusinessElementNode((ToBusinessElement) conversionRule);
 				
 				// Find the parent node
-				for (int i=0; i<seNode.getChildCount(); i++) {
-					if (seNode.getChildAt(i) instanceof ToBusinessElementSetNode) {
-						parentNode = (ToBusinessElementSetNode)seNode.getChildAt(i);
-						break;
-					}
-				}
+				parentNode = (EditableObjectNode)findNodeOfType(seNode, ToBusinessElementSetNode.class);
 			}
 						
 		} else {
@@ -570,13 +566,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				// create the tree node
 				childNode = new ToMessageElementNode((ToMessageElement) conversionRule);
 				
-				// Find the parent node
-				for (int i=0; i<seNode.getChildCount(); i++) {
-					if (seNode.getChildAt(i) instanceof ToMessageElementSetNode) {
-						parentNode = (ToMessageElementSetNode)seNode.getChildAt(i);
-						break;
-					}
-				}
+				// Find the parent ToMessageElementSetNode node
+				parentNode = (EditableObjectNode)findNodeOfType(seNode, ToMessageElementSetNode.class);
 			}
 			
 		}
@@ -613,6 +604,22 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 		
 		return true;
+	}
+
+	// find a child node of the specified type
+	private TreeNode findNodeOfType(TreeNode node, Class<?> nodeType) {
+		TreeNode foundNode = null;
+		for (int i=0; i<node.getChildCount(); i++) {
+			TreeNode child = node.getChildAt(i);
+			if (nodeType.isAssignableFrom(child.getClass())) {
+				foundNode = child;
+			} else {
+				foundNode = findNodeOfType(child, nodeType);
+			}
+			
+			if (foundNode != null) break;
+		}
+		return foundNode;
 	}
 	
 	public static String generateRuleText(String language, ConversionRule theRule, String seFieldName, String beFieldName) {

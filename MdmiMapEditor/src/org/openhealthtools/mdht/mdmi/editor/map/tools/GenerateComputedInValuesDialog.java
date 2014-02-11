@@ -378,7 +378,7 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 		StringBuilder buf = new StringBuilder();
 		// Per Ken: 
 		// for each field of a complex type
-		//    value.value().setValue('<attrName>', '<inputValue>');
+		//    value.getXValue().addValue('<attrName>', '<inputValue>');
 		// for simple data type
 		//    value.getXValue().setValue('<inputValue>');
 		for (FieldValue fieldValue : fieldValues) {
@@ -390,7 +390,7 @@ public class GenerateComputedInValuesDialog extends BaseDialog implements Proper
 			}
 
 			if (dataType instanceof DTComplex) {
-				buf.append("value.value().setValue('").append(fieldValue.attrName).append("', '");
+				buf.append("value.getXValue().addValue('").append(fieldValue.attrName).append("', '");
 				buf.append(fieldValue.inputValue).append("');");
 			} else {
 				buf.append("value.getXValue().setValue('");

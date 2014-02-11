@@ -47,7 +47,7 @@ public class SemanticElementSetNode extends EditableObjectNode {
 	public SemanticElementSetNode(SemanticElementSet elemSet) {
 		this(elemSet,
 				UserPreferences.getInstance(SystemContext.getApplicationName(), null).getBooleanValue(SHOW_HIERARCHY, false),
-				false);
+				true);
 	}
 
     
