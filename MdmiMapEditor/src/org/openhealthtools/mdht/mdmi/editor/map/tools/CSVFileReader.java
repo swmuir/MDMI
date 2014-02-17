@@ -31,6 +31,8 @@ public class CSVFileReader {
 	private DataInputStream m_in = null;
 	private BufferedReader m_br = null;
 	
+	private String m_token = COMMA;
+	
 	// create a file reader
 	public CSVFileReader(File file) throws FileNotFoundException {
 		FileInputStream fstream = new FileInputStream(file);
@@ -40,13 +42,18 @@ public class CSVFileReader {
 		m_br = new BufferedReader(new InputStreamReader(m_in));
 	}
 	
+	/** Define the token used to delimit fields. The default is a comma */
+	public void setSeparatorToken(char token) {
+		m_token = "" + token;
+	}
+	
 	// get next line, as a list of string
 	public List<String> getNextLine() throws IOException {
 		String strLine;
 		if ((strLine = m_br.readLine()) != null) {
 			// comma-separated
 			List<String> strings = new ArrayList<String>();
-			StringTokenizer strTok = new StringTokenizer(strLine, COMMA, true);
+			StringTokenizer strTok = new StringTokenizer(strLine, m_token, true);
 			// add each string - treat consecutive commas as a blank
 			// A,B,C -> A and B and C
 			// A,, -> A and blank and blank
@@ -54,7 +61,7 @@ public class CSVFileReader {
 			boolean prevString = false;
 			while (strTok.hasMoreTokens()) {
 				String tok = strTok.nextToken().trim();
-				if (COMMA.equals(tok)) {
+				if (m_token.equals(tok)) {
 					// add a blank for two consecutive commas
 					if (!prevString) {
 						strings.add(new String());

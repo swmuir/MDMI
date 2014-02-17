@@ -1,6 +1,12 @@
 package org.openhealthtools.mdht.mdmi.editor.map.tools;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -11,13 +17,22 @@ import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
+import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.EditorPanel;
@@ -40,6 +55,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
      * last csv file used
      */
     public static final String LAST_CSV_FILE = "lastCSVfile";
+    public static final String CSV_SEPARATOR = "CSVSeparator";
 
     public ReferentIndexToCSV() {
 		super(null);
@@ -54,13 +70,12 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     /**
      * Export Referent Indices to a spread sheet
      */
-    public void exportReferentIndex() {
+    public void exportReferentIndex(char separator) {
         Frame applicationFrame = SystemContext.getApplicationFrame();
         // set cursor
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
         try {
-            // TODO
        		// tell user to close edits
     		EditorPanel editor = SelectionManager.getInstance().getEntityEditor();
     		if (editor.isAnyEntityOpen()) {
@@ -86,7 +101,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
             if (file != null) {
                 lastFileName = file.getAbsolutePath();
             	
-            	exportReferentIndex(file);
+            	exportReferentIndex(file, separator);
 
     			// save file name
     			preferences.putValue(LAST_CSV_FILE, lastFileName);
@@ -101,7 +116,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
         }
     }
     
-    public void reviseReferentIndex() {
+    public void reviseReferentIndex(char sep) {
     	Frame applicationFrame = SystemContext.getApplicationFrame();
     	// set cursor
     	CursorManager cm = CursorManager.getInstance(applicationFrame);
@@ -134,7 +149,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     			lastFileName = file.getAbsolutePath();
 
 
-    			ModelValidationResults valResults = reviseReferentIndex(file);
+    			ModelValidationResults valResults = reviseReferentIndex(file, sep);
 
                 // show errors
                 for (ModelInfo errorMsg : valResults.getErrors()) {
@@ -155,11 +170,12 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     	}
     }
     
-    public ModelValidationResults reviseReferentIndex(File file) throws IOException {
+    public ModelValidationResults reviseReferentIndex(File file, char sep) throws IOException {
 
         SelectionManager selectionManager = SelectionManager.getInstance();
         MdmiModelTree entitySelector = selectionManager.getEntitySelector();
 		CSVFileReader reader = new CSVFileReader(file);
+		reader.setSeparatorToken(sep);
 
 		// error information -  File and Line number
 		String errorLine = new String();
@@ -250,8 +266,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     }
 
     // Export to CSV as BER Name, Description
-	public void exportReferentIndex(File file) throws IOException {
-		// TODO
+	public void exportReferentIndex(File file, char separator) throws IOException {
 		FileOutputStream fstream = new FileOutputStream(file);
 		
 		// Write File Line By Line
@@ -262,8 +277,10 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		MdmiModelTree entitySelector = selectionManager.getEntitySelector();
         // 1. write header
         br.write("BER Name");
-        br.write(",");
+        br.write(separator);
         br.write("Description");
+        br.write(separator);
+        br.write("UID");
         br.newLine();
         
         // 2. Loop
@@ -272,9 +289,13 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 				for (MdmiBusinessElementReference ber : group.getDomainDictionary().getBusinessElements()) {
 					if (ber.getName() != null) {
 						br.write(ber.getName());
-						br.write(",");
+						br.write(separator);
 						if (ber.getDescription() != null) {
 							br.write(ber.getDescription());
+						}
+						br.write(separator);
+						if (ber.getUniqueIdentifier() != null) {
+							br.write(ber.getUniqueIdentifier());
 						}
 						br.newLine();
 					}
@@ -313,5 +334,139 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
         public String getDescription() {
             return "CSV Files (.csv)";
         }
+    }
+    
+    public static class TokenSelector extends BaseDialog implements ActionListener, DocumentListener {
+    	private JRadioButton m_commaButton = new JRadioButton("Comma (,)", false);
+    	private JRadioButton m_pipeButton = new JRadioButton("Pipe (|)", false);
+    	private JRadioButton m_otherButton = new JRadioButton("Other", false);
+    	private JTextField m_otherText = new JTextField(2);
+    	
+		public TokenSelector(Frame owner) {
+			super(owner, BaseDialog.OK_CANCEL_OPTION);
+			setTitle("Select Separator");
+			buildUI();
+			
+			pack(new Dimension(200,200));
+		}
+		
+		@Override
+		public void dispose() {
+			m_commaButton.removeActionListener(this);
+			m_pipeButton.removeActionListener(this);
+			m_otherButton.removeActionListener(this);
+			m_otherText.getDocument().removeDocumentListener(this);
+			super.dispose();
+		}
+		
+		public char getToken() {
+			if (m_commaButton.isSelected()) {
+				return ',';
+			} else if (m_pipeButton.isSelected()) {
+				return '|';
+			} else {
+				String text = m_otherText.getText().trim();
+				if (text.length() > 0) {
+					return text.charAt(0);
+				}
+			}
+			return ',';
+		}
+
+		@Override
+		public boolean isDataValid() {
+			if (m_otherButton.isSelected()) {
+				String text = m_otherText.getText().trim();
+				return text.length() == 1;
+			}
+			return true;
+		}
+    	
+		private void buildUI() {
+			JPanel main = new JPanel(new GridBagLayout());
+			add(main, BorderLayout.CENTER);
+			GridBagConstraints gbc = new GridBagConstraints();
+			// Please select the separator character
+			//  (o) Comma (,)
+			//  ( ) Pipe (|)
+			//  ( ) Other [______]
+			gbc.insets = Standards.getInsets();
+			gbc.anchor = GridBagConstraints.NORTHWEST;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.gridwidth = 2;
+			gbc.weightx = 0;
+			gbc.weighty = 0;
+			
+			String sep = getUserPreferences().getValue(CSV_SEPARATOR, ",");
+			if (",".equals(sep)) {
+				m_commaButton.setSelected(true);
+			} else if ("|".equals(sep)) {
+				m_pipeButton.setSelected(true);
+			} else {
+				m_otherButton.setSelected(true);
+				m_otherText.setText(sep);
+			}
+
+			ButtonGroup buttons = new ButtonGroup();
+			buttons.add(m_commaButton);
+			buttons.add(m_pipeButton);
+			buttons.add(m_otherButton);
+			
+			m_commaButton.addActionListener(this);
+			m_pipeButton.addActionListener(this);
+			m_otherButton.addActionListener(this);
+			m_otherText.getDocument().addDocumentListener(this);
+			
+			main.add(new JLabel("Please select the separator character"), gbc);
+			
+			gbc.gridy++;
+			gbc.insets.bottom = 0;
+			main.add(m_commaButton, gbc);
+			
+			gbc.gridy++;
+			main.add(m_pipeButton, gbc);
+			
+			gbc.gridy++;
+			gbc.weighty = 1;
+			gbc.gridwidth = 1;
+			main.add(m_otherButton, gbc);
+			gbc.gridx++;
+			gbc.weightx = 1;
+			gbc.insets.left = 0;
+			main.add(m_otherText, gbc);
+
+			setDirty(true);
+		}
+
+		@Override
+		protected void okButtonAction() {
+			// seave selection
+			String sep = "" + getToken();
+			getUserPreferences().putValue(CSV_SEPARATOR, sep);
+			super.okButtonAction();
+		}
+
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			setDirty(true);
+			
+		}
+
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			setDirty(true);
+			
+		}
+
+		@Override
+		public void changedUpdate(DocumentEvent e) {
+			setDirty(true);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			setDirty(true);
+		}
     }
 }
