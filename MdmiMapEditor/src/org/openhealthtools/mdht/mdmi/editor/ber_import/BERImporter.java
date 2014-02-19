@@ -381,7 +381,7 @@ public class BERImporter extends JFrame {
         importer.setVisible(true);
         
         // prompt for input
-        ArrayList<MessageGroup> groups = ModelIOUtilities.promptAndReadModel();
+        ArrayList<MessageGroup> groups = ModelIOUtilities.promptAndReadModel(ModelIOUtilities.LAST_FILE_IMPORTED);
         if (groups != null) {
         	for (MessageGroup group : groups) {
         		// wipe out stuff we dont need

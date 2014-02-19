@@ -39,7 +39,7 @@ public class ImportDatatypesAction extends AbstractMenuAction {
 	public void execute(ActionEvent actionEvent) {
 
 		// prompt for input
-		ArrayList<MessageGroup> groups = ModelIOUtilities.promptAndReadModel();
+		ArrayList<MessageGroup> groups = ModelIOUtilities.promptAndReadModel(ModelIOUtilities.LAST_FILE_IMPORTED);
 
 		if (groups != null) {
 			List<MdmiDatatype> dataTypes = new ArrayList<MdmiDatatype>();

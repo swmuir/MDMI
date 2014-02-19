@@ -14,12 +14,9 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.actions;
 
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 
-import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.actions.AbstractMenuAction;
-import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ReferentIndexToCSV;
 
 public class ExportReferentIndexAction extends AbstractMenuAction implements Runnable {
@@ -33,13 +30,8 @@ public class ExportReferentIndexAction extends AbstractMenuAction implements Run
 
 	@Override
 	public void run() {
-		Frame frame = SystemContext.getApplicationFrame();
-		ReferentIndexToCSV.TokenSelector sel = new ReferentIndexToCSV.TokenSelector(frame);
-		int rc = sel.display(frame);
-		if (rc == BaseDialog.OK_BUTTON_OPTION) {
-			ReferentIndexToCSV importer = new ReferentIndexToCSV();
-			importer.exportReferentIndex(sel.getToken());
-		}
+		ReferentIndexToCSV importer = new ReferentIndexToCSV();
+		importer.exportReferentIndex();
 	}
 
 	

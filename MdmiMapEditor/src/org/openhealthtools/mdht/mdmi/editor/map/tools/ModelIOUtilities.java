@@ -75,6 +75,7 @@ public class ModelIOUtilities {
      * last directory used
      */
     public static final String LAST_FILE_OPENED = "openFileDir";
+    public static final String LAST_FILE_IMPORTED = "importFileDir";
 
     public static final String XMI_Extension = ".xmi";
     public static final String CSV_Extension = ".csv";
@@ -230,7 +231,7 @@ public class ModelIOUtilities {
             List<MessageGroup> groups = new ArrayList<MessageGroup>();
 
             // fill in the groups
-            String fileName = readModel(groups, results);
+            String fileName = readModel(groups, results, LAST_FILE_OPENED);
 
             if (fileName != null) {
                 // update title
@@ -305,11 +306,11 @@ public class ModelIOUtilities {
     /**
      * Prompt the user for a file and read the data
      */
-    private static String readModel(List<MessageGroup> groups, ModelValidationResults results) {
+    private static String readModel(List<MessageGroup> groups, ModelValidationResults results, String lastFileKey) {
 
         // open preferences to re-use directory name
         UserPreferences preferences = getUserPreferences();
-        String lastFileName = preferences.getValue(LAST_FILE_OPENED, null);
+        String lastFileName = preferences.getValue(lastFileKey, null);
 
         // create a file chooser
         JFileChooser chooser = new JFileChooser(lastFileName == null ? "." : lastFileName);
@@ -355,7 +356,7 @@ public class ModelIOUtilities {
             }
 
             // save file name
-            preferences.putValue(LAST_FILE_OPENED, lastFileName);
+            preferences.putValue(lastFileKey, lastFileName);
 
             return lastFileName;
         }
@@ -364,11 +365,11 @@ public class ModelIOUtilities {
     }
     
     /** Prompt the user for a file and read it */
-    public static ArrayList<MessageGroup> promptAndReadModel() {
+    public static ArrayList<MessageGroup> promptAndReadModel(String lastFileKey) {
     	ModelValidationResults results = new ModelValidationResults();
         ArrayList<MessageGroup> newGroups = new ArrayList<MessageGroup>();
 
-        String fileName = readModel(newGroups, results);
+        String fileName = readModel(newGroups, results, lastFileKey);
         
         if (fileName != null) {
             // return groups
@@ -388,7 +389,7 @@ public class ModelIOUtilities {
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
         try {
-            List<MessageGroup> newGroups = promptAndReadModel();
+            List<MessageGroup> newGroups = promptAndReadModel(LAST_FILE_IMPORTED);
 
             if (newGroups != null) {
                 // update tree (warn if datatype is already in tree)
@@ -534,7 +535,7 @@ public class ModelIOUtilities {
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
         try {
-            List<MessageGroup> newGroups = promptAndReadModel();
+            List<MessageGroup> newGroups = promptAndReadModel(LAST_FILE_IMPORTED);
 
             if (newGroups != null) {
                 // update tree - overwrite and warn if reference exists
@@ -629,8 +630,8 @@ public class ModelIOUtilities {
                 Collection<MdmiBusinessElementReference> references = newGroup.getDomainDictionary().getBusinessElements();
                 for (MdmiBusinessElementReference newBizElemRef : references) {
                     //search for element with same name
-                    MdmiBusinessElementReference found = findBusinessElementReference(treeGroup.getDomainDictionary().getBusinessElements(),
-                            newBizElemRef.getName());
+                    MdmiBusinessElementReference found = findBusinessElementReferenceByUIDorName(treeGroup.getDomainDictionary().getBusinessElements(),
+                            newBizElemRef.getUniqueIdentifier(), newBizElemRef.getName());
 
                     if (found == null) {
 
@@ -685,10 +686,16 @@ public class ModelIOUtilities {
         }
     }
 
-    private static MdmiBusinessElementReference findBusinessElementReference(
-            Collection<MdmiBusinessElementReference> businessElements, String name) {
+    // find by uid. If not found, find by name
+    private static MdmiBusinessElementReference findBusinessElementReferenceByUIDorName(
+            Collection<MdmiBusinessElementReference> businessElements, String uid, String name) {
         for (MdmiBusinessElementReference reference : businessElements) {
-            if (reference.getName().equals(name)) {
+            if (reference.getUniqueIdentifier() != null && reference.getUniqueIdentifier().equals(uid)) {
+                return reference;
+            }
+        }
+        for (MdmiBusinessElementReference reference : businessElements) {
+            if (reference.getName() != null && reference.getName().equals(name)) {
                 return reference;
             }
         }

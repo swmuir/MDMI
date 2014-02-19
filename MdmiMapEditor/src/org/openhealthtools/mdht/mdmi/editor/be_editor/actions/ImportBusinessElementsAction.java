@@ -40,7 +40,7 @@ public class ImportBusinessElementsAction extends AbstractMenuAction {
 		final BEEditor editor = BEEditor.getInstance();
 		final BEDisplayPanel displayPanel = editor.getBEDisplayPanel();
 
-		ArrayList<MessageGroup> groups = ModelIOUtilities.promptAndReadModel();
+		ArrayList<MessageGroup> groups = ModelIOUtilities.promptAndReadModel(ModelIOUtilities.LAST_FILE_IMPORTED);
 		if (groups == null) {
 			return;
 		}

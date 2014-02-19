@@ -46,6 +46,15 @@ import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 // Utility for reading/writing Referent Index in CSV form
 public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 
+
+	private static final String BER_NAME = "BER Name";
+	private static final String DESCRIPTION = "Description";
+	private static final String READ_ONLY = "Read Only";
+	private static final String UID = "UID";
+	private static final String URI = "URI";
+	private static final String DATA_TYPE = "Data Type";
+
+
 	/**
      * Resource for localization
      */
@@ -70,8 +79,17 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     /**
      * Export Referent Indices to a spread sheet
      */
-    public void exportReferentIndex(char separator) {
+    public void exportReferentIndex() {
         Frame applicationFrame = SystemContext.getApplicationFrame();
+
+        // prompt for separator 
+		ReferentIndexToCSV.TokenSelector sel = new ReferentIndexToCSV.TokenSelector(applicationFrame);
+		int rc = sel.display(applicationFrame);
+		if (rc != BaseDialog.OK_BUTTON_OPTION) {
+			return;
+		}
+		char separator = sel.getToken();
+		
         // set cursor
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
@@ -271,33 +289,56 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		
 		// Write File Line By Line
 		DataOutputStream out = new DataOutputStream(fstream);
-		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(out));
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
 
         SelectionManager selectionManager = SelectionManager.getInstance();
 		MdmiModelTree entitySelector = selectionManager.getEntitySelector();
         // 1. write header
-        br.write("BER Name");
-        br.write(separator);
-        br.write("Description");
-        br.write(separator);
-        br.write("UID");
-        br.newLine();
+        writer.write(BER_NAME);
+        writer.write(separator);
+        writer.write(DESCRIPTION);
+        writer.write(separator);
+        writer.write(READ_ONLY);
+        writer.write(separator);
+        writer.write(UID);
+        writer.write(separator);
+        writer.write(URI);
+        writer.write(separator);
+        writer.write(DATA_TYPE);
+        writer.newLine();
         
         // 2. Loop
 		for (MessageGroup group : entitySelector.getMessageGroups()) {
 			if (group.getDomainDictionary() != null) {
 				for (MdmiBusinessElementReference ber : group.getDomainDictionary().getBusinessElements()) {
 					if (ber.getName() != null) {
-						br.write(ber.getName());
-						br.write(separator);
+						// name
+						writer.write(ber.getName());
+						writer.write(separator);
+						// description
 						if (ber.getDescription() != null) {
-							br.write(ber.getDescription());
+							writer.write(ber.getDescription());
 						}
-						br.write(separator);
+						// read-only
+						writer.write(separator);
+						writer.write(Boolean.toString(ber.isReadonly()));
+						// UID
+						writer.write(separator);
 						if (ber.getUniqueIdentifier() != null) {
-							br.write(ber.getUniqueIdentifier());
+							writer.write(ber.getUniqueIdentifier());
 						}
-						br.newLine();
+						// URI
+						writer.write(separator);
+						if (ber.getReference() != null) {
+							writer.write(ber.getReference().toString());
+						}
+						// Data Type
+						writer.write(separator);
+						if (ber.getReferenceDatatype() != null && ber.getReferenceDatatype().getTypeName() != null) {
+							writer.write(ber.getReferenceDatatype().getTypeName());
+						}
+						
+						writer.newLine();
 					}
 				}
 			}
@@ -441,7 +482,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 
 		@Override
 		protected void okButtonAction() {
-			// seave selection
+			// save selection
 			String sep = "" + getToken();
 			getUserPreferences().putValue(CSV_SEPARATOR, sep);
 			super.okButtonAction();
