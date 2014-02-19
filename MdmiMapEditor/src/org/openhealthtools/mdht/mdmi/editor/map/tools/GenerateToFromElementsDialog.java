@@ -85,29 +85,29 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 	private SemanticElement m_semanticElement = null;
 
-	private JComboBox<Object> m_businessElementSelector  = new JComboBox<Object>();
-	private JComboBox<Object> m_SEfieldNameSelector  = new JComboBox<Object>();
-	private JComboBox<Object> m_BEfieldNameSelector  = new JComboBox<Object>();
-	
-	private RuleLanguageSelector m_ruleLanguageSelector = new RuleLanguageSelector();
+	private final JComboBox<Object> m_businessElementSelector  = new JComboBox<Object>();
+	private final JComboBox<Object> m_SEfieldNameSelector  = new JComboBox<Object>();
+	private final JComboBox<Object> m_BEfieldNameSelector  = new JComboBox<Object>();
 
-	private JRadioButton m_isoButton     = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.isomorphic"));
-	private JRadioButton m_fromBERButton = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toMdmi"));
-	private JRadioButton m_toBERButton   = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toBE"));
+	private final RuleLanguageSelector m_ruleLanguageSelector = new RuleLanguageSelector();
 
-	private ButtonGroup  m_directionGroup = new ButtonGroup();
-	
-	private JCheckBox m_filterByDatatypeButton   = new JCheckBox(s_res.getString("GenerateToFromElementsDialog.filterByDataType"));
+	private final JRadioButton m_isoButton     = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.isomorphic"));
+	private final JRadioButton m_fromBERButton = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toMdmi"));
+	private final JRadioButton m_toBERButton   = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.toBE"));
 
-	
-	private JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
-	private JTextField  m_name = new JTextField();
+	private final ButtonGroup  m_directionGroup = new ButtonGroup();
 
-	private FieldNameComboBoxItemRenderer m_fieldNameRenderer = new FieldNameComboBoxItemRenderer();
-	
-	private ActionListener m_businessElementListener = new BusinessElementListener();
-	private ActionListener m_directionListener = new DirectionListener();
-	
+	private final JCheckBox m_filterByDatatypeButton   = new JCheckBox(s_res.getString("GenerateToFromElementsDialog.filterByDataType"));
+
+
+	private final JLabel		m_beDatatype = new JLabel(UNDEFINED_TYPE);
+	private final JTextField  m_name = new JTextField();
+
+	private final FieldNameComboBoxItemRenderer m_fieldNameRenderer = new FieldNameComboBoxItemRenderer();
+
+	private final ActionListener m_businessElementListener = new BusinessElementListener();
+	private final ActionListener m_directionListener = new DirectionListener();
+
 	private JRadioButton m_prevButton = null;
 
 	public GenerateToFromElementsDialog(Frame owner, SemanticElement semanticElement) {
@@ -118,10 +118,10 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		pack(new Dimension(400,300));
 	}
 
-	
+
 	private void buildUI() {
-		// Select Language:      (o) Java Script   ( ) NRL 
-		//                             
+		// Select Language:      (o) Java Script   ( ) NRL
+		//
 		// Direction:            ( ) Iso   ( ) From   ( ) To
 		// Business Element:     [x] Filter by Data Type
 		//                       [_______________________|v]
@@ -134,10 +134,10 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		// | Data Type:         text                    |
 		// | Field Name:       [__________________|v]   |
 		//  --------------------------------------------
-		
+
 		// Populate Controls before laying out
 		MdmiDatatype dataType = m_semanticElement.getDatatype();
-		
+
 //		// for now - don't use group's language
 //		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
 //		m_ruleLanguageSelector.setLanguage(group.getDefaultRuleExprLang());
@@ -145,9 +145,9 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		m_isoButton.setSelected(true);
 		m_fromBERButton.setSelected(false);
 		m_toBERButton.setSelected(false);
-		m_filterByDatatypeButton.setSelected(true);	// start out checked 
+		m_filterByDatatypeButton.setSelected(true);	// start out checked
 		m_prevButton = m_isoButton;
-		
+
 		m_directionGroup.add(m_isoButton);
 		m_directionGroup.add(m_fromBERButton);
 		m_directionGroup.add(m_toBERButton);
@@ -158,8 +158,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 		// get all business elements in the group
 		populateBusinessElements();
-		
-		
+
+
 		JPanel mainPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.insets = Standards.getInsets();
@@ -170,7 +170,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		gbc.anchor = GridBagConstraints.WEST;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		
+
 		// Language
 		gbc.weightx = 0;
 		gbc.fill = GridBagConstraints.NONE;
@@ -183,7 +183,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		mainPanel.add(m_ruleLanguageSelector, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
 
-		// Direction 
+		// Direction
 		gbc.gridx = 0;
 		gbc.gridy++;
 		gbc.weightx = 1;
@@ -201,7 +201,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		buttons.add(m_toBERButton);
 		mainPanel.add(buttons, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
-		
+
 		// Filter by BE
 		gbc.gridx = 0;
 		gbc.gridy++;
@@ -216,7 +216,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		mainPanel.add(m_filterByDatatypeButton, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
 		gbc.insets.bottom = 2*Standards.BOTTOM_INSET;
-		
+
 
 		// Business Element List
 		gbc.gridx = 0;
@@ -232,8 +232,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		mainPanel.add(m_businessElementSelector, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
 		gbc.insets.top = Standards.TOP_INSET;
-		
-		
+
+
 		// Name
 		gbc.gridx = 0;
 		gbc.gridy++;
@@ -246,7 +246,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		gbc.insets.left = 0;
 		mainPanel.add(m_name, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
-		
+
 		//////////////////////////////////////////
 		//  Semantic Element Data
 		//////////////////////////////////////////
@@ -265,7 +265,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		mainPanel.add(pSE, gbc);
 		gbc.gridwidth = 1;
 
-		
+
 		//////////////////////////////////////////
 		//  Business Element Data
 		//////////////////////////////////////////
@@ -279,7 +279,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		mainPanel.add(pBE, gbc);
 		gbc.gridwidth = 1;
 
-		
+
 		// Set up listeners and renderers
 		m_ruleLanguageSelector.addPropertyChangeListener(this);
 		m_isoButton.addActionListener(m_directionListener);
@@ -291,23 +291,23 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		m_SEfieldNameSelector.setRenderer(m_fieldNameRenderer);
 		m_BEfieldNameSelector.addActionListener(this);
 		m_BEfieldNameSelector.setRenderer(m_fieldNameRenderer);
-		
+
 //		m_businessElementSelector.setRenderer(m_businessElementRenderer);
 		m_businessElementSelector.addActionListener(m_businessElementListener);
-		
-		
+
+
 		setDirty(true);	// allow OK button
-		
+
 		getContentPane().add(mainPanel, BorderLayout.CENTER);
 	}
 
 
 	private void populateBusinessElements() {
 		m_businessElementSelector.removeAllItems();
-		
+
 		// Find all the BusinessElementReferences
 		ArrayList<MdmiBusinessElementReference> elements = new ArrayList<MdmiBusinessElementReference>();
-		
+
 		MessageGroup group =  m_semanticElement.getElementSet().getModel().getGroup();
 		for (MdmiBusinessElementReference element : group.getDomainDictionary().getBusinessElements()) {
 			if (element.getName() != null && element.getName().length() > 0) {
@@ -325,13 +325,13 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 		// sort by name
 		Collections.sort(elements, new Comparators.BusinessElementReferenceComparator());
-		
+
 		// wrap, and add to combo box
 		m_businessElementSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
 		for (MdmiBusinessElementReference bizElem : elements) {
 			m_businessElementSelector.addItem(new BusinessElementReferenceWrapper(bizElem));
 		}
-		
+
 		// we can pre-fill the datatype
 		if (m_isoButton.isSelected()) {
 			selectDataType(m_semanticElement.getDatatype());
@@ -341,11 +341,11 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 	/** Wrapper for items in the combo box */
 	public class BusinessElementReferenceWrapper {
 		public MdmiBusinessElementReference m_ber;
-		
+
 		public BusinessElementReferenceWrapper(MdmiBusinessElementReference object) {
 			m_ber = object;
 		}
-		
+
 		@Override
 		public String toString() {
 			if (m_ber.getName() == null || "".equals(m_ber.getName())) {
@@ -353,20 +353,20 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			}
 			return m_ber.getName();
 		}
-		
+
 		@Override
 		public boolean equals(Object otherObject) {
 			if (otherObject instanceof BusinessElementReferenceWrapper) {
 				return equals(((BusinessElementReferenceWrapper)otherObject).m_ber);
 			}
-			
+
 			// compare objects
 			return m_ber.equals(otherObject);
 		}
-		
+
 	}
-	
-	
+
+
 	private JPanel createDataTypePanel(String label, JLabel datatypeLabel, JComboBox<Object> fieldSelector) {
 		//  -- label ---------------------
 		// |  Datatype:   xxxxxx          |
@@ -381,10 +381,10 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		gbc.anchor = GridBagConstraints.WEST;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		
-		panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), 
+
+		panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
 				label));
-		
+
 
 		// Data type
 		gbc.weightx = 0;
@@ -394,8 +394,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		gbc.insets.left = 0;
 		panel.add(datatypeLabel, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
-		
-		// Field Name 
+
+		// Field Name
 		gbc.gridx = 0;
 		gbc.gridy++;
 		gbc.weightx = 0;
@@ -407,7 +407,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		gbc.insets.left = 0;
 		panel.add(fieldSelector, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
-		
+
 		return panel;
 	}
 
@@ -423,7 +423,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		m_filterByDatatypeButton.removeActionListener(m_directionListener);
 		m_BEfieldNameSelector.removeActionListener(this);
 		m_SEfieldNameSelector.removeActionListener(this);
-		
+
 //		m_businessElementSelector.setRenderer(null);
 		m_BEfieldNameSelector.setRenderer(null);
 		m_SEfieldNameSelector.setRenderer(null);
@@ -444,7 +444,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 		return false;
 	}
-	
+
 	// get the selected business element
 	public MdmiBusinessElementReference getMdmiBusinessElementReference() {
 		Object item = m_businessElementSelector.getSelectedItem();
@@ -453,22 +453,22 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 		return null;
 	}
-	
+
 	@Override
 	protected void applyButtonAction() {
 		if (createToFromElements()) {
 			super.applyButtonAction();
-			
+
 		} else {
 			return;
 		}
 	}
-	
+
 	@Override
 	protected void okButtonAction() {
 		if (createToFromElements()) {
 			super.okButtonAction();
-			
+
 		} else {
 			return;
 		}
@@ -478,7 +478,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 	private boolean createToFromElements() {
 		boolean created = false;
 		String ruleName = m_name.getText().trim();
-		
+
 		if (m_isoButton.isSelected()) {
 			// both
 			created = createToFromElements(true, "To_" + ruleName) &&
@@ -488,8 +488,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 		return created;
 	}
-	
-	
+
+
 	/** Create the To and/or From Elements */
 	private boolean createToFromElements(boolean toBER, String ruleName) {
 		// create data
@@ -498,7 +498,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			// shouldn't be here anyway
 			return false;
 		}
-		
+
 
 		MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
 		DefaultMutableTreeNode treeNode = entitySelector.findNode(m_semanticElement);
@@ -508,19 +508,19 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			return false;
 		}
 		SemanticElementNode seNode = (SemanticElementNode)treeNode;
-		
+
 
 		// parent of the node we'll be creating
 		EditableObjectNode parentNode = null;
 		ConversionRuleNode childNode = null;
-		
+
 		boolean existingRule = false;
-		
+
 		String beFieldName = m_BEfieldNameSelector.getSelectedItem().toString().trim();
 		String seFieldName = m_SEfieldNameSelector.getSelectedItem().toString().trim();
-		
+
 		ConversionRule conversionRule = null;
-		
+
 		if (toBER) {
 			// check if it exists already
 			for (ToBusinessElement existing : m_semanticElement.getFromMdmi()) {
@@ -530,7 +530,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 					break;
 				}
 			}
-			
+
 			if (conversionRule == null) {
 				// Create a new ToBusinessElement
 				conversionRule = new ToBusinessElement();
@@ -538,14 +538,14 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				m_semanticElement.addFromMdmi((ToBusinessElement) conversionRule);
 				conversionRule.setOwner(m_semanticElement);
 				conversionRule.setName(ruleName);	// need to set name before creating node
-				
+
 				// create the tree node
 				childNode = new ToBusinessElementNode((ToBusinessElement) conversionRule);
-				
+
 				// Find the parent node
 				parentNode = (EditableObjectNode)findNodeOfType(seNode, ToBusinessElementSetNode.class);
 			}
-						
+
 		} else {
 			// check if it exists already
 			for (ToMessageElement existing : m_semanticElement.getToMdmi()) {
@@ -565,11 +565,11 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 				// create the tree node
 				childNode = new ToMessageElementNode((ToMessageElement) conversionRule);
-				
+
 				// Find the parent ToMessageElementSetNode node
 				parentNode = (EditableObjectNode)findNodeOfType(seNode, ToMessageElementSetNode.class);
 			}
-			
+
 		}
 
 		// if Isomorphic, the rule should be left blank
@@ -587,22 +587,22 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			}
 			conversionRule.setRule(newRule);
 		}
-		
 
-		
+
+
 		if (!existingRule) {
 			entitySelector.insertAndOpen(parentNode, childNode);
 		} else {
 			// if open - close
 			SelectionManager.getInstance().getEntityEditor().stopEditing(conversionRule);
-			
+
 			//open it
 			childNode = (ConversionRuleNode) entitySelector.findNode(conversionRule);
 
 			entitySelector.selectNode(childNode);
 			SelectionManager.getInstance().editItem(childNode);
 		}
-		
+
 		return true;
 	}
 
@@ -616,14 +616,14 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			} else {
 				foundNode = findNodeOfType(child, nodeType);
 			}
-			
+
 			if (foundNode != null) break;
 		}
 		return foundNode;
 	}
-	
+
 	public static String generateRuleText(String language, ConversionRule theRule, String seFieldName, String beFieldName) {
-		
+
 		String ruleText = null;
 		if (RuleLanguageSelector.NRL.equals(language)) {
 			ruleText = generateNRLRuleText(theRule, seFieldName, beFieldName);
@@ -631,19 +631,19 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			// default is Java Script
 			ruleText = generateJSRuleText(theRule, seFieldName, beFieldName);
 		}
-		
+
 		return ruleText;
 	}
 
 	// NRL Rule will be of the form: Set <target> to <source>
 	public static String generateNRLRuleText(ConversionRule theRule, String seFieldName, String beFieldName) {
-		
+
 		String ruleName = theRule.getName();
-		
+
 		StringBuilder newRule = new StringBuilder();
 		String target = "value";
 		String source = "value";
-		
+
 		if (theRule instanceof ToBusinessElement) {
 			//  Set <ruleName>[.BEfieldName] to value
 			// or
@@ -655,7 +655,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			if (seFieldName.length() > 0) {
 				source = seFieldName;
 			}
-			
+
 		} else {
 			//  Set value to <ruleName>[.BEfieldName]
 			// or
@@ -663,21 +663,21 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			if (seFieldName.length() > 0) {
 				target = seFieldName;
 			}
-			
+
 			source = ruleName;
 			if (beFieldName.length() > 0) {
 				source += "." + beFieldName;
 			}
-			
+
 		}
-		
-		
+
+
 		// Set <target> to <source>
 		newRule.append("set ").append(target).append(" to ").append(source);
-		
+
 		return newRule.toString();
 	}
-	
+
 	// Get indentation (4 spaces per level)
 	public static String getIndent(int level) {
 		StringBuilder buf = new StringBuilder();
@@ -694,7 +694,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 	//		- BE is a complex data type and SE is a simple type (e.g., String):
 	//		var source = From_PatientID.getValue();
 	//		var target = value.getXValue();
-	//		target.setValue(source.getValue(’name-of-field’));
+	//		target.setValue(source.getValue('name-of-field'));
 	//
 	//
 	//		Generating SE to BE rule:
@@ -705,62 +705,62 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 	//		var target = To_ProblemCode.getValue();
 	//		target.setValue('code', source);
 	//
-	// JSP Rule will be of the form: 
+	// JSP Rule will be of the form:
 	//          target.setValue('<targetAttr>', source.getValue('<srcAttribute>'))
-	//  Assign source: s1.s2.s3 to target t1.t2.t3.t4:		
-	//		var s1 = source.getXValue(‘s1’).getValue();
-	//		
+	//  Assign source: s1.s2.s3 to target t1.t2.t3.t4:
+	//		var s1 = source.getXValue('s1').getValue();
+	//
 	//		if (null != s1) {
 	//			// work our way down
-	//			var s2 = s1.getXValue(‘s2’).getValue();
+	//			var s2 = s1.getXValue('s2').getValue();
 	//			if (null != s2) {
-	//				
-	//				// target(s) 
-	//				var t1 = target.getXValue(‘t1’).getValue();
+	//
+	//				// target(s)
+	//				var t1 = target.getXValue('t1').getValue();
 	//				if (null == t1) {
 	//					// create T1
 	//				}
-	//				
-	//				var t2 = t1.getXValue(‘t2’).getValue();
+	//
+	//				var t2 = t1.getXValue('t2').getValue();
 	//				if (null == t2) {
 	//					// create T2
 	//				}
-	//				
-	//				var t3 = t2.getXValue(‘t3’).getValue();
+	//
+	//				var t3 = t2.getXValue('t3').getValue();
 	//				if (null == t3) {
 	//					// create T3
 	//				}
-	//				
+	//
 	//				// finally
-	//				t3.setValue(‘t4’, s2.getValue(‘s3’));
-	//			} 
+	//				t3.setValue('t4', s2.getValue('s3'));
+	//			}
 	//
 	//		}
 	public static String generateJSRuleText(ConversionRule theRule, String seFieldName, String beFieldName) {
-		
+
 		String ruleName = theRule.getName();
-		
+
 		StringBuilder newRule = new StringBuilder();
-		
+
 		MdmiDatatype seDatatype = theRule.getOwner().getDatatype();
 		MdmiDatatype beDatatype = null;
-		
+
 		String srcVar;
 		String targetVar;
-		
+
 		String srcFieldPath;
 		String targetFieldPath;
-		
+
 		// create variables and fields
 		//   To BE                                 To ME
 		//   var source = value.value();           var source = ruleName.getValue();
 		//   var target = ruleName.getValue();     var target = value.value();
 		//                                            or if BE is a complex data type and SE is a simple type
 		//		                                   var target = value.getXValue();
-	
+
 		if (theRule instanceof ToBusinessElement) {
 			beDatatype = ((ToBusinessElement)theRule).getBusinessElement().getReferenceDatatype();
-			
+
 			srcVar = "var source = value.value();";
 
 			// if BE is a simple data type and SE is a complex type, just use name
@@ -769,7 +769,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			} else {
 				targetVar = "var target = " + ruleName + ".getValue();";
 			}
-			
+
 			srcFieldPath = seFieldName;
 			targetFieldPath = beFieldName;
 
@@ -782,19 +782,19 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			} else {
 				srcVar = "var source = " + ruleName + ".getValue();";
 			}
-			
+
 			// if BE is a complex data type and SE is a simple type, use "getXValue"
 			if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
 				targetVar = "var target = value.getXValue();";
 			} else {
 				targetVar = "var target = value.value();";
 			}
-			
-			
+
+
 			srcFieldPath = beFieldName;
 			targetFieldPath = seFieldName;
 		}
-		// easy case - 
+		// easy case -
 		// Same datatypes: No code needed.
 		if (beDatatype == seDatatype) {
 			return newRule.toString();
@@ -812,7 +812,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				newRule.append(targetVar).append(CR_LF);
 			}
 		}
-		
+
 		// parse field names on "." separator
 		// (an empty string will result in an array of length 1, with one empty value)
 		String[] srcFieldNames = srcFieldPath.split("\\.");
@@ -827,7 +827,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			newRule.append("{").append(CR_LF);
 			depth++;
 		}
-		
+
 		String indent = getIndent(depth);
 		for (int s=0; s<srcFieldNames.length; s++) {
 
@@ -836,7 +836,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 			// we need to walk intermediate fields
 			if (s < srcFieldNames.length-1) {
-				//		var s2 = s1.getXValue(‘s2’).getValue();
+				//		var s2 = s1.getXValue('s2').getValue();
 				//	    if (null != s2) {
 				if (s > 0) newRule.append(CR_LF);
 				newRule.append(indent).append("var ").append(srcVarName).append(" = ")
@@ -845,7 +845,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				newRule.append(indent).append("if (").append(srcVarName).append(" != null) {").append(CR_LF);
 
 			} else {
-				newRule.append( buildTargetJSInfo(depth, seDatatype, beDatatype, 
+				newRule.append( buildTargetJSInfo(depth, seDatatype, beDatatype,
 						prevSrcVarName, srcFieldName, targetFieldNames) );
 			}
 
@@ -858,7 +858,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		for (int l=depth-1; l>0; l--) {
 			newRule.append(getIndent(l-1)).append("}").append(CR_LF);
 		}
-		
+
 		// trim CR/LF at end of line
 		String newRuleString = newRule.toString();
 		if (newRule.toString().endsWith(CR_LF)) {
@@ -867,19 +867,19 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 		return newRuleString;
 	}
-	
+
 	// JavaScript rule target assignment
 	private static String buildTargetJSInfo(int indentLevel, MdmiDatatype seDatatype, MdmiDatatype beDatatype,
 			String prevSrcVarName, String srcFieldName, String[] targetFieldNames) {
-		
+
 		String indent = getIndent(indentLevel);
 		StringBuilder targetRule = new StringBuilder();
-		
+
 		String prevTargetVarName = "target";
-		// last field - do targets 
+		// last field - do targets
 		if (targetFieldNames.length == 0 || (targetFieldNames.length == 1 && targetFieldNames[0].length() == 0)) {
 			// no target fields
-			//		target.setValue(s2.getValue(‘s3’));
+			//		target.setValue(s2.getValue('s3'));
 			targetRule.append(indent).append(prevTargetVarName).append(".setValue(").append(prevSrcVarName);
 			if (srcFieldName.isEmpty()) {
 				targetRule.append(".getValue()");
@@ -895,7 +895,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 				if (t < targetFieldNames.length-1) {
 					// create intermediate variables
-					//	var t2 = t1.getXValue(‘t2’).getValue();
+					//	var t2 = t1.getXValue('t2').getValue();
 					//  if (t2 == null) {
 					//     var t2x = t1.getXValue('t2');
 					//     t2 = new XDataStruct(t2x);
@@ -919,11 +919,11 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				} else {
 					// finally - do the assignment
 					//      t3.setValue('t4', s2); or
-					//		t3.setValue(‘t4’, s2.getValue()); or
-					//		t3.setValue(‘t4’, s2.getValue(‘s3’));
+					//		t3.setValue('t4', s2.getValue()); or
+					//		t3.setValue('t4', s2.getValue('s3'));
 					targetRule.append(indent).append(prevTargetVarName).append(".setValue('")
 						.append(targetFieldName).append("', ").append(prevSrcVarName);
-					
+
 					// if BE is a complex data type and SE is a simple type, just use source
 					if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
 						// do nothing
@@ -940,10 +940,10 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				prevTargetVarName = targetVarName;
 			}
 		}
-		
+
 		return targetRule.toString();
 	}
-	
+
 	// auto-fill the name
 	private void fillInName() {
 		String name = "";
@@ -960,13 +960,13 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 		m_name.setText(name);
 	}
-	
+
 	/** Fill in the Data Type and Field Type fields */
 	private void selectDataType(MdmiDatatype dataType) {
 		// empty field list
 		m_BEfieldNameSelector.removeAllItems();
 		m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
-		
+
 		if (dataType != null) {
 			m_beDatatype.setText(dataType.getName());
 		} else {
@@ -987,11 +987,11 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			m_path = path;
 			m_field = field;
 		}
-		
+
 		public Field getField() {
 			return m_field;
 		}
-		
+
 		/** return <path>.fieldName */
 		public String getPath() {
 			StringBuilder fieldPath = new StringBuilder();
@@ -1001,13 +1001,13 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			fieldPath.append(m_field.getName());
 			return fieldPath.toString();
 		}
-		
+
 		/** return the path */
 		@Override
 		public String toString() {
 			return getPath();
 		}
-		
+
 	}
 
 	/** populate the combo box with the fields from the datatype */
@@ -1015,9 +1015,9 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		if (dataType instanceof DTComplex) {
 			for (Field field : ((DTComplex)dataType).getFields()) {
 				MdmiDatatype fieldDataType = field.getDatatype();
-				
+
 				// check for recursion
-				if (fieldDataType instanceof DTComplex) { 
+				if (fieldDataType instanceof DTComplex) {
 					if (fieldsInCombobox(comboBox, (DTComplex)fieldDataType)) {
 						// warn and continue
 						String message = "The field '" + field.getName() + "' of data type '" + dataType.getName() +
@@ -1025,24 +1025,24 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 						JOptionPane.showMessageDialog(SelectionManager.getInstance().getEntityEditor(), message,
 								"Recursive Data Types",
 								JOptionPane.WARNING_MESSAGE);
-					
+
 						continue;
 					}
 				}
-				
+
 				// add field to combo box
 				FieldNameComboBoxItem item = new FieldNameComboBoxItem(path, field);
 				comboBox.addItem(item);
 
 				// if field is a complex type, go further
-				if (fieldDataType instanceof DTComplex) { 
+				if (fieldDataType instanceof DTComplex) {
 					populateFieldNames(comboBox, fieldDataType, item.getPath());
 				}
-				
+
 			}
 		}
 	}
-	
+
 	/** Look for recursion by checking if the fields of this data type are already in the combo box */
 	private static boolean fieldsInCombobox(JComboBox<Object> fieldNameComboBox, DTComplex dataType) {
 
@@ -1059,7 +1059,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 	}
 
 	////////////////////////////////
-	
+
 	// Isomorphic/To BER/From BER change - change name text
 	private class DirectionListener implements ActionListener {
 		@Override
@@ -1069,26 +1069,26 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			Object source = e.getSource();
 			// if Iso button was checked or un-checked, we need to repopulate
 			if (source instanceof JRadioButton) {
-				
+
 				// disable/deselect filterByDatatypeButton if not ISO
 				m_filterByDatatypeButton.setEnabled(source == m_isoButton);
 				m_filterByDatatypeButton.setSelected(source == m_isoButton);
-					
+
 				if (source == m_isoButton || m_prevButton == m_isoButton) {
 					// filtering has changed, so repopulate
 					populateBusinessElements();
 				}
-				
+
 				m_prevButton = (JRadioButton) source;
 
 			} else if (source == m_filterByDatatypeButton) {
 				populateBusinessElements();
 			}
-			
+
 			setDirty(true);
 		}
 	}
-	
+
 	// General purpose ActionListener - enable Apply/Save
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -1106,29 +1106,29 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			fillInName();
-			
+
 			// fill data type name
 			MdmiDatatype dataType = null;
 			MdmiBusinessElementReference businessElement = getMdmiBusinessElementReference();
 			if (businessElement != null) {
 				dataType = businessElement.getReferenceDatatype();
 			}
-			
+
 			selectDataType(dataType);
-			
+
 			setDirty(true);	// enable/disable OK button
 		}
 	}
-	
+
 	/** FieldNameComboBoxItem renderer */
 	public static class FieldNameComboBoxItemRenderer extends DefaultListCellRenderer {
 
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value,
 				int index, boolean isSelected, boolean cellHasFocus) {
-			
+
 			Icon icon = null;
-			
+
 			// append datatype
 			if (value instanceof FieldNameComboBoxItem) {
 				FieldNameComboBoxItem item = (FieldNameComboBoxItem)value;
@@ -1140,13 +1140,13 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 					icon = TreeNodeIcon.getTreeIcon(field.getDatatype().getClass());
 				}
 				value = text;
-				
+
 			}
 
 			Component comp = super.getListCellRendererComponent(list, value, index, isSelected,
 					cellHasFocus);
 
-			
+
 			setIcon(icon);
 			return comp;
 		}
