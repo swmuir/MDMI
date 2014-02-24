@@ -22,6 +22,8 @@ import java.util.*;
 public abstract class DTComplex extends MdmiDatatype {
    protected ArrayList<Field> m_fields = new ArrayList<Field>();
 
+   private HashMap<String,Field> m_hashFields = new HashMap<String,Field>();
+   
    public ArrayList<Field> getFields() {
       return m_fields;
    }
@@ -30,15 +32,14 @@ public abstract class DTComplex extends MdmiDatatype {
       m_fields = fields;
    }
 
-   public Field getField( String name ) {
-      if( name == null || name.length() <= 0 )
-         return null;
-      for( Field f : m_fields ) {
-         if( f.getName().equals(name) )
-            return f;
-      }
-      return null;
-   }
+	public Field getField( String name ) {
+		if( m_hashFields.isEmpty() ) {
+			for( Field field : m_fields ) {
+				m_hashFields.put(field.getName(), field);
+			}
+		}
+		return m_hashFields.get(name);
+	}
 
    @Override
    public boolean isSimple() {
