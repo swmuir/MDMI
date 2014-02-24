@@ -123,6 +123,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 			public void characters( char[] ch, int start, int length ) throws SAXException {
 				if( isParsing && builder != null ) {
 					builder.append(new String(ch, start, length));
+				} else {
+//					System.out.println("dropped values"+new String(ch, start, length));
 				}
 			}
 
@@ -148,7 +150,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 			private String getCurrentRelativePath( Bag bag ) {
 				Stack<String> currentPath = getRelativePath(bag);
 
-				if( currentPath != null ) {
+				if( currentPath != null && !currentPath.isEmpty()) {
 
 					String str = "";
 
@@ -198,6 +200,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 			private boolean isMatch( String currentRelativeXPath, String nodeXPathLocation ) {
 
+			
 				if( currentRelativeXPath.equals(nodeXPathLocation) ) {
 					return true;
 				}
@@ -217,6 +220,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 				if( currentRelativeXPath.equals(path[0]) ) {
 					return true;
 				}
+				
+//				System.out.println(currentRelativeXPath + " <> " + nodeXPathLocation);
 				return false;
 
 			}
