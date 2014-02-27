@@ -21,6 +21,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -72,10 +73,15 @@ public class ModelIOUtilities {
     private static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.tools.Local");
 
     /**
-     * last directory used
+     * last directory used - persistent
      */
     public static final String LAST_FILE_OPENED = "openFileDir";
     public static final String LAST_FILE_IMPORTED = "importFileDir";
+    
+    /**
+     *  Last directory used - instance
+     */
+    private static final HashMap<String, String> s_lastDirectoryMap = new HashMap<String, String>();
 
     public static final String XMI_Extension = ".xmi";
     public static final String CSV_Extension = ".csv";
@@ -104,14 +110,39 @@ public class ModelIOUtilities {
         UserPreferences preferences = UserPreferences.getInstance(appName, null);
         return preferences;
     }
+    
+    /** get the name of the directory for this key. If not found locally, search in the user preferences */
+    private static String getLastDirectory(String key) {
+    	String dir = s_lastDirectoryMap.get(key);
+    	if (dir == null) {
+    		// look in user preferences
+            UserPreferences preferences = getUserPreferences();
+    		dir = preferences.getValue(key, null);
+    	}
+    	if (dir == null) {
+    		dir = ".";
+    	}
+    	return dir;
+    }
+    
+    /** persist any directory data */
+    public static void persistDirectoryData() {
+        UserPreferences preferences = getUserPreferences();
+    	for (String key : s_lastDirectoryMap.keySet()) {
+    		preferences.putValue(key, s_lastDirectoryMap.get(key));
+    	}
+    }
+    
+    private static void saveLastDirectory(String key, String dirName) {
+    	s_lastDirectoryMap.put(key, dirName);
+    }
 
     /**
      * Save the model data to a file
      */
     public static boolean writeModelToFile() {
-        // open preferences to re-use directory name
-        UserPreferences preferences = getUserPreferences();
-        String lastFileName = preferences.getValue(LAST_FILE_OPENED, ".");
+        //  re-use directory name
+        String lastFileName = getLastDirectory(LAST_FILE_OPENED);
 
         // create a file chooser
         JFileChooser chooser = new JFileChooser(lastFileName);
@@ -151,7 +182,7 @@ public class ModelIOUtilities {
 
                 // save file name
                 lastFileName = file.getAbsolutePath();
-                preferences.putValue(LAST_FILE_OPENED, lastFileName);
+                saveLastDirectory(LAST_FILE_OPENED, lastFileName);
 
                 // change name on title
                 ((MapEditor)applicationFrame).updateTitle(lastFileName);
@@ -221,7 +252,8 @@ public class ModelIOUtilities {
      */
     public static void loadModelFromFile() {
         Frame applicationFrame = SystemContext.getApplicationFrame();
-        SelectionManager.getInstance().getStatusPanel().clearErrors();
+        SelectionManager selectionManager = SelectionManager.getInstance();
+		selectionManager.getStatusPanel().clearErrors();
         // set cursor
         CursorManager cm = CursorManager.getInstance(applicationFrame);
         cm.setWaitCursor();
@@ -237,7 +269,7 @@ public class ModelIOUtilities {
                 // update title
                 ((MapEditor) SystemContext.getApplicationFrame()).updateTitle(fileName);
 
-                MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
+                MdmiModelTree entitySelector = selectionManager.getEntitySelector();
 
                 // check for imported nodes - save them
                 List<MessageGroup> savedGroups = null;
@@ -271,7 +303,7 @@ public class ModelIOUtilities {
 
                 // show errors
                 for (ModelInfo errorMsg : results.getErrors()) {
-                    SelectionManager.getInstance().getStatusPanel().writeValidationErrorMsg("",
+                    selectionManager.getStatusPanel().writeValidationErrorMsg("",
                             errorMsg);
                 }
             }
@@ -308,9 +340,8 @@ public class ModelIOUtilities {
      */
     private static String readModel(List<MessageGroup> groups, ModelValidationResults results, String lastFileKey) {
 
-        // open preferences to re-use directory name
-        UserPreferences preferences = getUserPreferences();
-        String lastFileName = preferences.getValue(lastFileKey, null);
+        // re-use directory name
+        String lastFileName = getLastDirectory(lastFileKey);
 
         // create a file chooser
         JFileChooser chooser = new JFileChooser(lastFileName == null ? "." : lastFileName);
@@ -356,7 +387,7 @@ public class ModelIOUtilities {
             }
 
             // save file name
-            preferences.putValue(lastFileKey, lastFileName);
+            saveLastDirectory(lastFileKey, lastFileName);
 
             return lastFileName;
         }
@@ -556,8 +587,7 @@ public class ModelIOUtilities {
         cm.setWaitCursor();
         try {
             // open preferences to re-use directory name
-            UserPreferences preferences = getUserPreferences();
-            String lastFileName = preferences.getValue(LAST_FILE_OPENED, null);
+            String lastFileName = getLastDirectory(LAST_FILE_OPENED);
 
             // create a file chooser
             JFileChooser chooser = new JFileChooser(lastFileName == null ? "." : lastFileName);
@@ -605,7 +635,7 @@ public class ModelIOUtilities {
                 }
 
                 // save file name
-                preferences.putValue(LAST_FILE_OPENED, lastFileName);
+                saveLastDirectory(LAST_FILE_OPENED, lastFileName);
             }
         } finally {
             cm.restoreCursor();
@@ -629,8 +659,8 @@ public class ModelIOUtilities {
                 // add all dictionary elements that aren't in the tree yet
                 Collection<MdmiBusinessElementReference> references = newGroup.getDomainDictionary().getBusinessElements();
                 for (MdmiBusinessElementReference newBizElemRef : references) {
-                    //search for element with same name
-                    MdmiBusinessElementReference found = findBusinessElementReferenceByUIDorName(treeGroup.getDomainDictionary().getBusinessElements(),
+                    //search for element with same name or UID
+                	MdmiBusinessElementReference found = findBusinessElementReferenceByUIDorName(treeGroup.getDomainDictionary().getBusinessElements(),
                             newBizElemRef.getUniqueIdentifier(), newBizElemRef.getName());
 
                     if (found == null) {

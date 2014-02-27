@@ -21,6 +21,7 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import org.openhealthtools.mdht.mdmi.model.DTSDerived;
 import org.openhealthtools.mdht.mdmi.model.DTSPrimitive;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
+import org.openhealthtools.mdht.mdmi.model.Node;
 
 /** Node for simple data types. Complex and Enumeration types are handled in their own class */
 public class DataTypeNode extends EditableObjectNode {
@@ -105,6 +107,18 @@ public class DataTypeNode extends EditableObjectNode {
 			return false;
 		}
 		return super.canChangeType();
+	}
+	
+	
+	@Override
+	public Object copyUserObject() throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Object userObjectCopy = super.copyUserObject();
+
+		// clear read-only flag in the copy
+		MdmiDatatype dataType = (MdmiDatatype)userObjectCopy;
+		dataType.setReadonly(false);
+		
+		return userObjectCopy;
 	}
 
 	/** Add a menu to show the datatype in a new view */

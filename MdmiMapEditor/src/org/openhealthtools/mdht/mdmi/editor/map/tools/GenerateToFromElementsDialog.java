@@ -115,7 +115,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		m_semanticElement = semanticElement;
 		buildUI();
 		setTitle(s_res.getString("GenerateToFromElementsDialog.title"));
-		pack(new Dimension(400,300));
+		pack(new Dimension(450,300));
 	}
 
 
@@ -258,7 +258,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 		JLabel seDatatypeLabel = new JLabel(UNDEFINED_TYPE);
 		if (dataType != null) {
-			seDatatypeLabel.setText(dataType.getName());
+			seDatatypeLabel.setText(dataType.getTypeName());
 		}
 		JPanel pSE = createDataTypePanel(s_res.getString("GenerateToFromElementsDialog.semanticElement"),
 				seDatatypeLabel, m_SEfieldNameSelector);
@@ -764,7 +764,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			srcVar = "var source = value.value();";
 
 			// if BE is a simple data type and SE is a complex type, just use name
-			if (!(beDatatype instanceof DTComplex) && seDatatype instanceof DTComplex) {
+			if (!isComplex(beDatatype) && isComplex(seDatatype)) {
 				targetVar = "var target = " + ruleName + ";";
 			} else {
 				targetVar = "var target = " + ruleName + ".getValue();";
@@ -777,14 +777,14 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			beDatatype = ((ToMessageElement)theRule).getBusinessElement().getReferenceDatatype();
 
 			// if BE is a simple data type and SE is a complex type, just use name
-			if (!(beDatatype instanceof DTComplex) && seDatatype instanceof DTComplex) {
+			if (!isComplex(beDatatype) && isComplex(seDatatype)) {
 				srcVar = "var source = " + ruleName + ";";
 			} else {
 				srcVar = "var source = " + ruleName + ".getValue();";
 			}
 
 			// if BE is a complex data type and SE is a simple type, use "getXValue"
-			if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
+			if (isComplex(beDatatype) && !isComplex(seDatatype)) {
 				targetVar = "var target = value.getXValue();";
 			} else {
 				targetVar = "var target = value.value();";
@@ -925,7 +925,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 						.append(targetFieldName).append("', ").append(prevSrcVarName);
 
 					// if BE is a complex data type and SE is a simple type, just use source
-					if (beDatatype instanceof DTComplex && !(seDatatype instanceof DTComplex)) {
+					if (isComplex(beDatatype) && !isComplex(seDatatype)) {
 						// do nothing
 					} else if (beDatatype == DTSPrimitive.DATETIME) {
 						targetRule.append(".getDate()");
@@ -968,7 +968,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		m_BEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
 
 		if (dataType != null) {
-			m_beDatatype.setText(dataType.getName());
+			m_beDatatype.setText(dataType.getTypeName());
 		} else {
 			m_beDatatype.setText(UNDEFINED_TYPE);
 		}
@@ -1009,6 +1009,14 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		}
 
 	}
+	
+	/** Is this data type complex for the purpose of creating the rule? DateTime is considered complex */
+	public static boolean isComplex(MdmiDatatype dataType) {
+		if (dataType instanceof DTComplex || dataType == DTSPrimitive.DATETIME) {
+			return true;
+		}
+		return false;
+	}
 
 	/** populate the combo box with the fields from the datatype */
 	public static void populateFieldNames(JComboBox<Object> comboBox, MdmiDatatype dataType, String path) {
@@ -1020,7 +1028,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				if (fieldDataType instanceof DTComplex) {
 					if (fieldsInCombobox(comboBox, (DTComplex)fieldDataType)) {
 						// warn and continue
-						String message = "The field '" + field.getName() + "' of data type '" + dataType.getName() +
+						String message = "The field '" + field.getName() + "' of data type '" + dataType.getTypeName() +
 								"' is recursive. It cannot be used for this operation.";
 						JOptionPane.showMessageDialog(SelectionManager.getInstance().getEntityEditor(), message,
 								"Recursive Data Types",
@@ -1136,7 +1144,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				// show as "<path> : <datatype>"
 				Field field = item.getField();
 				if (field.getDatatype() != null) {
-					text.append(" : ").append(field.getDatatype().getName());
+					text.append(" : ").append(field.getDatatype().getTypeName());
 					icon = TreeNodeIcon.getTreeIcon(field.getDatatype().getClass());
 				}
 				value = text;

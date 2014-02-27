@@ -18,6 +18,7 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +40,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.StringField;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
+import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 import org.openhealthtools.mdht.mdmi.model.SemanticElementRelationship;
@@ -104,6 +106,19 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		}
 
 		 super.setImported(imported);
+	}
+	
+	
+	@Override
+	public Object copyUserObject() throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Object userObjectCopy = super.copyUserObject();
+
+		// clear read-only flag, and UID in the copy
+		MdmiBusinessElementReference ber = (MdmiBusinessElementReference)userObjectCopy;
+		ber.setReadonly(false);
+		ber.setUniqueIdentifier(null);
+		
+		return userObjectCopy;
 	}
 	
 	///////////////////////////////////////////////////////////////

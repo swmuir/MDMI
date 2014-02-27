@@ -23,6 +23,7 @@ import javax.swing.JOptionPane;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.actions.AbstractMenuAction;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.ModelIOUtilities;
 
 public class ExitAction extends AbstractMenuAction {
 	private static final long serialVersionUID = -1;
@@ -58,6 +59,8 @@ public class ExitAction extends AbstractMenuAction {
 			
 		} else {
 			// nothing to worry about
+			// persist any local files
+			ModelIOUtilities.persistDirectoryData();
 			return true;
 		}
 
@@ -103,7 +106,10 @@ public class ExitAction extends AbstractMenuAction {
 			okToExit = false;
 		}
 		
-		
+		if (okToExit) {
+			// persist any local files
+			ModelIOUtilities.persistDirectoryData();
+		}
 		return okToExit;
 	}
 
