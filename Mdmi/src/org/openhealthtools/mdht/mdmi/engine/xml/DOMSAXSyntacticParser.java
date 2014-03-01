@@ -124,7 +124,6 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 				if( isParsing && builder != null ) {
 					builder.append(new String(ch, start, length));
 				} else {
-//					System.out.println("dropped values"+new String(ch, start, length));
 				}
 			}
 
@@ -220,8 +219,6 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 				if( currentRelativeXPath.equals(path[0]) ) {
 					return true;
 				}
-				
-//				System.out.println(currentRelativeXPath + " <> " + nodeXPathLocation);
 				return false;
 
 			}
@@ -251,10 +248,13 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 			private Node lookForMatch( final String qName ) {
 
+				NodePredicate matches = null;
+				
 				for( Bag currentBag : Lists.reverse(syntaxNodes) ) {
 
-					NodePredicate matches = new NodePredicate(currentBag, qName);
-
+					if (matches==null) {
+						matches = new NodePredicate(currentBag, qName);
+					}
 					Iterable<Node> matchingNodes = Iterables.filter(currentBag.getNodes(), matches);
 					int numberOfmatches = Iterables.size(matchingNodes);
 
@@ -286,7 +286,6 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 						}
 					}
-
 					matches.pushNode(currentBag);
 				}
 				return null;
@@ -356,11 +355,14 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 					}
 					if( matchingSyntaxNode instanceof LeafSyntaxTranslator ) {
 						if( matchingSyntaxNode.getLocation().contains("@") ) {
-							String attributeValue = getAttributeValue(attributes, matchingSyntaxNode.getLocation().substring(1));
+							String[] locationSegments = matchingSyntaxNode.getLocation().split("/@");
+							if (locationSegments.length > 1) {
+							String attributeValue = getAttributeValue(attributes, locationSegments[1]);
 							if( attributeValue != null ) {
 								YLeaf aLeaf = new YLeaf((LeafSyntaxTranslator) matchingSyntaxNode, parentYBag);
 								aLeaf.setValue(attributeValue);
 								parentYBag.addYNode(aLeaf);
+							}
 							}
 						}
 						else {
@@ -375,7 +377,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 				}
 				else {
 					pushXPath(syntaxNodes.peek(), qName);
-
+					// TODO Log this versus System.out
 					System.out.println("Not processing " + getCurrentXPath() + "/" + getCurrentRelativePath(syntaxNodes.peek()));
 					endTags.push(notFoundEndTagProcessor);
 				}
@@ -486,7 +488,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 			yroot = new YBag((Bag) node, null);
 			long l = System.currentTimeMillis();
 			this.saxParse((YBag) yroot, data);
-			System.out.println(System.currentTimeMillis() - l);
+			System.out.println("------ Parse Inbound Message took " + (System.currentTimeMillis() - l) / 1000 + " Seconds ----");
 		}
 		catch( MdmiException ex ) {
 			throw ex;

@@ -124,8 +124,7 @@ public class MdmiUow implements Runnable {
 		srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
 		//System.out.println("Syntax-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 
-		System.out.println(srcSyntaxModel.toString());
-		System.out.println("");
+	
 		//ts = System.currentTimeMillis();
 		srcSemanticModel = new ElementValueSet();
 		srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel, false);
@@ -145,14 +144,8 @@ public class MdmiUow implements Runnable {
 		ISyntacticParser trgSynProv = getSyntaxProvider(transferInfo.getTargetMessageGroup());
 		System.out.println("");
 		System.out.println("---------- TARGET MESSAGE START ----------");
-		//long ts = System.currentTimeMillis();
 		trgSyntaxModel = (YNode) trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
-		System.out.println(trgSyntaxModel.toString());
-		//System.out.println("Syntax-parsing of the target message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-		//ts = System.currentTimeMillis();
 		trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel, true);
-		//System.out.println("Semantic-parsing of the target message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-      //System.out.println(trgSemanticModel.toString());
 		System.out.println("---------- TARGET MESSAGE END ----------");
 	}
 

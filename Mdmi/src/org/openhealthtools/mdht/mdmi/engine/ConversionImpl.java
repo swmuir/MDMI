@@ -106,7 +106,6 @@ class ConversionImpl {
 		}
 		else {
             if (trg.getXValue().getValues().size() == 0 && (trg.getXValue().getDatatype() instanceof DTCStructured)) {
-                System.out.println("test: "+trg.getXValue());
                 XDataStruct xs = new XDataStruct(trg.getXValue());
 				trg.getXValue().addValue(xs);
 			}

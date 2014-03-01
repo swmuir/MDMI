@@ -171,13 +171,12 @@ public class Conversion {
 			ArrayList<ConversionInfo> cis = getTopLevelCis();
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
-				System.out.println("Conversion[" + i + "]: " + ci.toString());
 				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
-					System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
+
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getElementValuesByType(ci.target);
-					System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
+
 					if( ci.target.isMultipleInstances() ) {
 						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
@@ -225,7 +224,6 @@ public class Conversion {
 			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
-				System.out.println(" Conversion: " + ci.toString());
 				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					SemanticElement seParent = source.getParent();
@@ -239,9 +237,9 @@ public class Conversion {
 					else {
 						srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
 					}
-					System.out.println("  source: " + source.getName() + ", count = " + srcs.size());
+
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
-					System.out.println("  target: " + ci.target.getName() + ", count = " + trgs.size());
+
 					if( ci.target.isMultipleInstances() ) {
 						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);

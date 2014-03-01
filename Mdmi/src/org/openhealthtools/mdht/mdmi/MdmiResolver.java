@@ -28,7 +28,7 @@ import org.openhealthtools.mdht.mdmi.util.*;
  * implementation caches all message groups.
  */
 public class MdmiResolver {
-   protected static final ISyntacticParser DEFAULT_SYN_PARSER = new DefaultSyntacticParser();
+   protected static final ISyntacticParser DEFAULT_SYN_PARSER = new org.openhealthtools.mdht.mdmi.engine.xml.DOMSAXSyntacticParser();
    protected static final ISemanticParser  DEFAULT_SEM_PARSER = new DefaultSemanticParser();
 
    protected HashMap<String, MI>           m_maps             = new HashMap<String, MI>();
