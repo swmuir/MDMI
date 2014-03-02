@@ -97,8 +97,8 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
        		// tell user to close edits
     		EditorPanel editor = SelectionManager.getInstance().getEntityEditor();
     		if (editor.isAnyEntityOpen()) {
-    			JOptionPane.showMessageDialog(applicationFrame, s_res.getString("ReferentIndexToCSV.closeMessage"),
-    					s_res.getString("ReferentIndexToCSV.closeTitle"), JOptionPane.INFORMATION_MESSAGE);
+    			JOptionPane.showMessageDialog(applicationFrame, s_res.getString("ReferentIndexToCSV.saveMessage"),
+    					s_res.getString("ReferentIndexToCSV.saveTitle"), JOptionPane.INFORMATION_MESSAGE);
     			return;
     		}
     		
@@ -306,6 +306,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
         writer.write(separator);
         writer.write(DATA_TYPE);
         writer.newLine();
+		writer.flush();
         
         // 2. Loop
 		for (MessageGroup group : entitySelector.getMessageGroups()) {
@@ -339,6 +340,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 						}
 						
 						writer.newLine();
+						writer.flush();
 					}
 				}
 			}
