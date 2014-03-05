@@ -364,14 +364,20 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 								parentYBag.addYNode(aLeaf);
 							}
 							}
+							
+							pushXPath(syntaxNodes.peek(), qName);
+							// TODO Log this versus System.out
+//							System.out.println("Not processing " + getCurrentXPath() + "/" + getCurrentRelativePath(syntaxNodes.peek()));
+							endTags.push(notFoundEndTagProcessor);
 						}
 						else {
 							currentYLeaf = new YLeaf((LeafSyntaxTranslator) matchingSyntaxNode, parentYBag);
 							parentYBag.addYNode(currentYLeaf);
 							isParsing = true;
 							builder = new StringBuilder();
+							endTags.push(leafEndTagProcessor);
 						}
-						endTags.push(leafEndTagProcessor);
+					
 					}
 
 				}
