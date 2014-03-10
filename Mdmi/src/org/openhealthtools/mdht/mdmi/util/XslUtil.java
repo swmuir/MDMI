@@ -305,7 +305,7 @@ public class XslUtil {
       return createNodeForPathNoAxes((Element)node, sp + sAxeRestOfPath, ordinalIndex);
    }
 
-   private static Node createNodeForPathNoAxes( Element parent, String path, int ordinalIndex ) {
+   public static Node createNodeForPathNoAxes( Element parent, String path, int ordinalIndex ) {
       if( parent == null || path == null || path.length() <= 0 )
          throw new IllegalArgumentException("Null or empty arguments!");
       ordinalIndex = ordinalIndex < 0 ? 0 : ordinalIndex;
