@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 Firestar Software, Inc.
+ * Copyright (c) 2014 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     Firestar Software, Inc. - initial API and implementation
+ *     Semantix Software, Inc. - Updated for performance
  *
  * Author:
  *     Wency Chingcuangco
@@ -24,6 +25,8 @@ public class JsAdapter implements IExpressionInterpreter  {
    private ElementValueSet m_eset;
    private String          m_name;
    private XValue          m_value;
+   final static ScriptEngineManager factory = new ScriptEngineManager();
+   final static ScriptEngine engine = factory.getEngineByName("JavaScript");
    
    public JsAdapter( ElementValueSet eset, String name, XValue value ) {
       initialize(eset, null, name, value);
@@ -78,8 +81,6 @@ public class JsAdapter implements IExpressionInterpreter  {
       rule = addPackages(rule);
       boolean returnValue = false;
       try {
-         ScriptEngineManager factory = new ScriptEngineManager();
-         ScriptEngine engine = factory.getEngineByName("JavaScript");
          engine.put("value", context);
          if( null != m_name && 0 < m_name.length() )
             engine.put(m_name, m_value);
