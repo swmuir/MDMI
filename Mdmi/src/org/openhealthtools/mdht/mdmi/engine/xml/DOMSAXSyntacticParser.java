@@ -18,6 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Stack;
@@ -365,10 +367,11 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 							}
 							}
 							
-							pushXPath(syntaxNodes.peek(), qName);
-							// TODO Log this versus System.out
-//							System.out.println("Not processing " + getCurrentXPath() + "/" + getCurrentRelativePath(syntaxNodes.peek()));
-							endTags.push(notFoundEndTagProcessor);
+					
+								pushXPath(syntaxNodes.peek(), qName);
+								endTags.push(notFoundEndTagProcessor);
+						
+						
 						}
 						else {
 							currentYLeaf = new YLeaf((LeafSyntaxTranslator) matchingSyntaxNode, parentYBag);
@@ -557,6 +560,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 		}
 	}
 
+	
+	
 	/**
 	 * Serialize a YBag to the given root element.
 	 * 
@@ -566,26 +571,45 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 	 *           The node to store it into.
 	 */
 	private void serializeBag( YBag yroot, Element root ) {
+		
+	
 		Bag rootBag = yroot.getBag();
 		ArrayList<Node> nodes = rootBag.getNodes();
-		for( int i = 0; i < nodes.size(); i++ ) {
-			Node node = nodes.get(i);
-			String xpath = location(node);
+
+		for( Node node : nodes) {
+			
 			ArrayList<YNode> ynodes = yroot.getYNodesForNode(node);
-			for( int j = 0; j < ynodes.size(); j++ ) {
-				if( node instanceof LeafSyntaxTranslator ) {
-					YLeaf y = (YLeaf) ynodes.get(j);
-					setValue(root, xpath, y, j);
+			int yctr = 0;
+			
+			for (YNode ynode : ynodes) {
+			
+				if (ynode.isBag()) {
+					org.w3c.dom.Node xmlNode = XslUtil.createNodeForPathNoAxes(root, node.getLocation(), yctr);
+					
+					serializeBag((YBag) ynode,  (Element) xmlNode );
+				} else if (ynode.isLeaf()) {
+					YLeaf yleaf = (YLeaf) ynode;
+					String value = yleaf.getValue();
+					org.w3c.dom.Node xmlNode = XslUtil.createNodeForPathNoAxes(root,node.getLocation(), yctr);
+
+					if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
+						Attr o = (Attr) xmlNode;
+						o.setTextContent(value);
+					}
+					else if( xmlNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE ) {
+						Element o = (Element) xmlNode;
+						if (value != null) {
+						XmlUtil.setText(o, value);
+						}
+					}
+					else if( xmlNode.getNodeType() == org.w3c.dom.Node.TEXT_NODE ) {
+						Text o = (Text) xmlNode;
+						o.setTextContent(value);
+					}
 				}
-				else if( node instanceof Bag ) {
-					YBag y = (YBag) ynodes.get(j);
-					setBag(root, xpath, y, j);
-				}
-				else if( node instanceof Choice ) {
-					YChoice y = (YChoice) ynodes.get(j);
-					setChoice(root, xpath, y, j);
-				}
+				yctr++;
 			}
+			
 		}
 	}
 
@@ -700,6 +724,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 	 */
 	private void setValue( Element root, String xpath, YLeaf yleaf, int yindex ) {
 		String value = yleaf.getValue();
+		System.out.println("Create for "+root.getNodeName() + "  --- "+xpath );
 		org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
 
 		if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
