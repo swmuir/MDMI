@@ -80,12 +80,11 @@ public final class MdmiExternalResolvers {
    public String getModelValue( DTExternal datatype, Object value ) {
       if( datatype == null )
          throw new IllegalArgumentException("Datatype is null");
-      for( int i = 0; i < m_resolvers.size(); i++ ) {
-         IExternalResolver p = m_resolvers.get(i);
+      for(  IExternalResolver p : m_resolvers ) {
          if( p.canHandle(datatype) ) {
             return p.getModelValue(datatype, value);
          }
-      }
+      } 
       Mdmi.INSTANCE.logger().warning("A resolver was not found for data type: " + datatype.getName());
       return value == null ? null : value.toString();
    }
