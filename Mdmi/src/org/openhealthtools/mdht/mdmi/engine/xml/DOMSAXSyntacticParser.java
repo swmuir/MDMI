@@ -590,8 +590,13 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 				} else if (ynode.isLeaf()) {
 					YLeaf yleaf = (YLeaf) ynode;
 					String value = yleaf.getValue();
-					org.w3c.dom.Node xmlNode = XslUtil.createNodeForPathNoAxes(root,node.getLocation(), yctr);
-
+					
+					org.w3c.dom.Node xmlNode =null;
+					if (".".equals(node.getLocation())) {
+						xmlNode = root;
+					} else {
+						 xmlNode = XslUtil.createNodeForPathNoAxes(root,node.getLocation(), yctr);
+					}
 					if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
 						Attr o = (Attr) xmlNode;
 						o.setTextContent(value);
