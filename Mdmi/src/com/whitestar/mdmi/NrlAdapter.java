@@ -430,9 +430,8 @@ public class NrlAdapter implements IRuntimeModelAdapter, IExpressionInterpreter 
                   xdt = new XDataStruct(v);
                   v.setValue(xdt);
                }
-               int pos = xdt.setXValue(xchild);
-               if( pos < 0 )
-                  throw new IllegalArgumentException("Invalid set parent: structure mismatch!");
+                xdt.setXValue(xchild);
+         
             }
             else if( v.getDatatype().isChoice() ) {
                XDataChoice xdc = (XDataChoice)v.getValue();
@@ -458,9 +457,8 @@ public class NrlAdapter implements IRuntimeModelAdapter, IExpressionInterpreter 
                   xdt = new XDataStruct(xparent);
                   xparent.setValue(xdt);
                }
-               int pos = xdt.setXValue(xchild);
-               if( pos < 0 )
-                  throw new IllegalArgumentException("Invalid set parent: structure mismatch!");
+                xdt.setXValue(xchild);
+              
             }
             else if( xparent.getDatatype().isChoice() ) {
                XDataChoice xdc = (XDataChoice)xparent.getValue();
@@ -540,9 +538,8 @@ public class NrlAdapter implements IRuntimeModelAdapter, IExpressionInterpreter 
          ArrayList<Object> xvs = xv.getValues();
          for( int i = 0; i < xvs.size(); i++ ) {
             XDataStruct xs = (XDataStruct)xvs.get(i);
-            ArrayList<XValue> vs = xs.getXValues();
-            for( int j = 0; j < vs.size(); j++ ) {
-               XValue v = vs.get(j);
+            Collection<XValue> vs = xs.getXValues();
+            for( XValue v : vs ) {
                if( name == null || name.equalsIgnoreCase(v.getName()) ) {
                   a.add(v);
                   if( breakAtFirst )
