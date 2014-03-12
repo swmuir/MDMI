@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -118,14 +119,21 @@ class ConversionImpl {
 		if( src == null || trg == null ) {
 			throw new IllegalArgumentException("Null argument!");
 		}
-		ArrayList<XValue> values = trg.getXValues();
-		for( int i = 0; i < values.size(); i++ ) {
-			XValue t = values.get(i);
+		Collection<XValue> values = trg.getXValues();
+		for (XValue t : values) {
 			XValue s = src.getXValue(t.getName());
 			if( s != null ) {
 				cloneValue(s, t, fromSrc);
 			}
 		}
+		
+//		for( int i = 0; i < values.size(); i++ ) {
+//			XValue t = values.get(i);
+//			XValue s = src.getXValue(t.getName());
+//			if( s != null ) {
+//				cloneValue(s, t, fromSrc);
+//			}
+//		}
 	}
 
 	private void cloneChoice( XDataChoice src, XDataChoice trg, boolean fromSrc ) {
