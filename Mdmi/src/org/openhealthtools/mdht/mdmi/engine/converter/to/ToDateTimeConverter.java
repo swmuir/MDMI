@@ -23,6 +23,7 @@ import org.openhealthtools.mdht.mdmi.util.*;
 
 public class ToDateTimeConverter implements IConvertToString {
 
+	HashMap <String,SimpleDateFormat> formats = new HashMap<String,SimpleDateFormat>();
     @Override
     public String convertToString(Object obj, String format) {
         if (!((obj instanceof Date) || obj instanceof DateWrapper))
@@ -51,8 +52,10 @@ public class ToDateTimeConverter implements IConvertToString {
 
     private String convert(Object obj, String format) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(format);
-            return sdf.format((Date) obj);
+      	  if (!formats.containsKey(format)) {
+      		  formats.put(format, new SimpleDateFormat(format));
+      	  }
+            formats.get(format).format((Date) obj);
         } catch (IllegalArgumentException ignored) {
         }
         return null;
