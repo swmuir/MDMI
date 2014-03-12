@@ -14,12 +14,16 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
+import java.util.Map;
+
 import org.openhealthtools.mdht.mdmi.MdmiException;
 import org.openhealthtools.mdht.mdmi.engine.converter.from.ConvertFromFactory;
 import org.openhealthtools.mdht.mdmi.engine.converter.from.IConvertFromString;
 import org.openhealthtools.mdht.mdmi.engine.converter.to.ConvertToFactory;
 import org.openhealthtools.mdht.mdmi.engine.converter.to.IConvertToString;
 import org.openhealthtools.mdht.mdmi.model.DTSPrimitive;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Xml Data Types enumeration.
@@ -76,6 +80,75 @@ public enum XDT {
    UNSIGNEDSHORT       ,
    UNSIGNEDBYTE        ;
 
+   
+  static Map<String, XDT> stringFormatters = null;
+  
+  static Map<DTSPrimitive,XDT> primitiveFormatters =  null;
+  
+  static {
+	  stringFormatters =  new ImmutableMap.Builder<String,XDT>()
+		     .put("NONE"              ,NONE               )
+		     .put("ANYTYPE"           ,ANYTYPE            )
+		     .put("ANYSIMPLETYPE"     ,ANYSIMPLETYPE      )
+		     .put("DURATION"          ,DURATION           )
+		     .put("DATETIME"          ,DATETIME           )
+		     .put("TIME"              ,TIME               )
+		     .put("DATE"              ,DATE               )
+		     .put("GYEARMONTH"        ,GYEARMONTH         )
+		     .put("GYEAR"             ,GYEAR              )
+		     .put("GMONTHDAY"         ,GMONTHDAY          )
+		     .put("GDAY"              ,GDAY               )
+		     .put("GMONTH"            ,GMONTH             )
+		     .put("BOOLEAN"           ,BOOLEAN            )
+		     .put("BASE64BINARY"      ,BASE64BINARY       )
+		     .put("HEXBINARY"         ,HEXBINARY          )
+		     .put("FLOAT"             ,FLOAT              )
+		     .put("DOUBLE"            ,DOUBLE             )
+		     .put("ANYURI"            ,ANYURI             )
+		     .put("QNAME"             ,QNAME              )
+		     .put("NOTATION"          ,NOTATION           )
+		     .put("STRING"            ,STRING             )
+		     .put("NORMALIZEDSTRING"  ,NORMALIZEDSTRING   )
+		     .put("TOKEN"             ,TOKEN              )
+		     .put("LANGUAGE"          ,LANGUAGE           )
+		     .put("NAME"              ,NAME               )
+		     .put("NCNAME"            ,NCNAME             )
+		     .put("ID"                ,ID                 )
+		     .put("IDREF"             ,IDREF              )
+		     .put("IDREFS"            ,IDREFS             )
+		     .put("ENTITY"            ,ENTITY             )
+		     .put("ENTITIES"          ,ENTITIES           )
+		     .put("NMTOKEN"           ,NMTOKEN            )
+		     .put("NMTOKENS"          ,NMTOKENS           )
+		     .put("DECIMAL"           ,DECIMAL            )
+		     .put("INTEGER"           ,INTEGER            )
+		     .put("NONPOSITIVEINTEGER",NONPOSITIVEINTEGER )
+		     .put("NEGATIVEINTEGER"   ,NEGATIVEINTEGER    )
+		     .put("LONG"              ,LONG               )
+		     .put("INT"               ,INT                )
+		     .put("SHORT"             ,SHORT              )
+		     .put("BYTE"              ,BYTE               )
+		     .put("NONNEGATIVEINTEGER",NONNEGATIVEINTEGER )
+		     .put("POSITIVEINTEGER"   ,POSITIVEINTEGER    )
+		     .put("UNSIGNEDLONG"      ,UNSIGNEDLONG       )
+		     .put("UNSIGNEDINT"       ,UNSIGNEDINT        )
+		     .put("UNSIGNEDSHORT"     ,UNSIGNEDSHORT      )
+		     .put("UNSIGNEDBYTE"      ,UNSIGNEDBYTE       ).build();
+	  
+	  primitiveFormatters =  new ImmutableMap.Builder<DTSPrimitive,XDT>()
+	   .put( DTSPrimitive.BINARY,HEXBINARY)
+	  .put(DTSPrimitive.BOOLEAN ,BOOLEAN  )
+	  .put(DTSPrimitive.DATETIME, DATETIME )
+	  .put( DTSPrimitive.DECIMAL , DECIMAL  )
+	  .put(DTSPrimitive.INTEGER , INTEGER  )
+	  .put(DTSPrimitive.STRING  , STRING   ).build();
+		      
+  }
+   
+//   Map<String,DTSPrimitive> primitiveFormatters =  ImmutableMap.of("k1", "v1", "k2", "v2");
+   
+   
+ 
    /**
     * Construct one from a string with the same name as the enum literal.
     * 
@@ -84,55 +157,56 @@ public enum XDT {
     */
    public static XDT fromString( String v ) {
       if( v == null ) return null;
-      v = v.toUpperCase();
-      if( v.equals("NONE"               ) ) return NONE               ;
-      if( v.equals("ANYTYPE"            ) ) return ANYTYPE            ;
-      if( v.equals("ANYSIMPLETYPE"      ) ) return ANYSIMPLETYPE      ;
-      if( v.equals("DURATION"           ) ) return DURATION           ;
-      if( v.equals("DATETIME"           ) ) return DATETIME           ;
-      if( v.equals("TIME"               ) ) return TIME               ;
-      if( v.equals("DATE"               ) ) return DATE               ;
-      if( v.equals("GYEARMONTH"         ) ) return GYEARMONTH         ;
-      if( v.equals("GYEAR"              ) ) return GYEAR              ;
-      if( v.equals("GMONTHDAY"          ) ) return GMONTHDAY          ;
-      if( v.equals("GDAY"               ) ) return GDAY               ;
-      if( v.equals("GMONTH"             ) ) return GMONTH             ;
-      if( v.equals("BOOLEAN"            ) ) return BOOLEAN            ;
-      if( v.equals("BASE64BINARY"       ) ) return BASE64BINARY       ;
-      if( v.equals("HEXBINARY"          ) ) return HEXBINARY          ;
-      if( v.equals("FLOAT"              ) ) return FLOAT              ;
-      if( v.equals("DOUBLE"             ) ) return DOUBLE             ;
-      if( v.equals("ANYURI"             ) ) return ANYURI             ;
-      if( v.equals("QNAME"              ) ) return QNAME              ;
-      if( v.equals("NOTATION"           ) ) return NOTATION           ;
-      if( v.equals("STRING"             ) ) return STRING             ;
-      if( v.equals("NORMALIZEDSTRING"   ) ) return NORMALIZEDSTRING   ;
-      if( v.equals("TOKEN"              ) ) return TOKEN              ;
-      if( v.equals("LANGUAGE"           ) ) return LANGUAGE           ;
-      if( v.equals("NAME"               ) ) return NAME               ;
-      if( v.equals("NCNAME"             ) ) return NCNAME             ;
-      if( v.equals("ID"                 ) ) return ID                 ;
-      if( v.equals("IDREF"              ) ) return IDREF              ;
-      if( v.equals("IDREFS"             ) ) return IDREFS             ;
-      if( v.equals("ENTITY"             ) ) return ENTITY             ;
-      if( v.equals("ENTITIES"           ) ) return ENTITIES           ;
-      if( v.equals("NMTOKEN"            ) ) return NMTOKEN            ;
-      if( v.equals("NMTOKENS"           ) ) return NMTOKENS           ;
-      if( v.equals("DECIMAL"            ) ) return DECIMAL            ;
-      if( v.equals("INTEGER"            ) ) return INTEGER            ;
-      if( v.equals("NONPOSITIVEINTEGER" ) ) return NONPOSITIVEINTEGER ;
-      if( v.equals("NEGATIVEINTEGER"    ) ) return NEGATIVEINTEGER    ;
-      if( v.equals("LONG"               ) ) return LONG               ;
-      if( v.equals("INT"                ) ) return INT                ;
-      if( v.equals("SHORT"              ) ) return SHORT              ;
-      if( v.equals("BYTE"               ) ) return BYTE               ;
-      if( v.equals("NONNEGATIVEINTEGER" ) ) return NONNEGATIVEINTEGER ;
-      if( v.equals("POSITIVEINTEGER"    ) ) return POSITIVEINTEGER    ;
-      if( v.equals("UNSIGNEDLONG"       ) ) return UNSIGNEDLONG       ;
-      if( v.equals("UNSIGNEDINT"        ) ) return UNSIGNEDINT        ;
-      if( v.equals("UNSIGNEDSHORT"      ) ) return UNSIGNEDSHORT      ;
-      if( v.equals("UNSIGNEDBYTE"       ) ) return UNSIGNEDBYTE       ;
-      return null;
+      return stringFormatters.get(v.toUpperCase());
+//      v = v.toUpperCase();
+//      if( v.equals("NONE"               ) ) return NONE               ;
+//      if( v.equals("ANYTYPE"            ) ) return ANYTYPE            ;
+//      if( v.equals("ANYSIMPLETYPE"      ) ) return ANYSIMPLETYPE      ;
+//      if( v.equals("DURATION"           ) ) return DURATION           ;
+//      if( v.equals("DATETIME"           ) ) return DATETIME           ;
+//      if( v.equals("TIME"               ) ) return TIME               ;
+//      if( v.equals("DATE"               ) ) return DATE               ;
+//      if( v.equals("GYEARMONTH"         ) ) return GYEARMONTH         ;
+//      if( v.equals("GYEAR"              ) ) return GYEAR              ;
+//      if( v.equals("GMONTHDAY"          ) ) return GMONTHDAY          ;
+//      if( v.equals("GDAY"               ) ) return GDAY               ;
+//      if( v.equals("GMONTH"             ) ) return GMONTH             ;
+//      if( v.equals("BOOLEAN"            ) ) return BOOLEAN            ;
+//      if( v.equals("BASE64BINARY"       ) ) return BASE64BINARY       ;
+//      if( v.equals("HEXBINARY"          ) ) return HEXBINARY          ;
+//      if( v.equals("FLOAT"              ) ) return FLOAT              ;
+//      if( v.equals("DOUBLE"             ) ) return DOUBLE             ;
+//      if( v.equals("ANYURI"             ) ) return ANYURI             ;
+//      if( v.equals("QNAME"              ) ) return QNAME              ;
+//      if( v.equals("NOTATION"           ) ) return NOTATION           ;
+//      if( v.equals("STRING"             ) ) return STRING             ;
+//      if( v.equals("NORMALIZEDSTRING"   ) ) return NORMALIZEDSTRING   ;
+//      if( v.equals("TOKEN"              ) ) return TOKEN              ;
+//      if( v.equals("LANGUAGE"           ) ) return LANGUAGE           ;
+//      if( v.equals("NAME"               ) ) return NAME               ;
+//      if( v.equals("NCNAME"             ) ) return NCNAME             ;
+//      if( v.equals("ID"                 ) ) return ID                 ;
+//      if( v.equals("IDREF"              ) ) return IDREF              ;
+//      if( v.equals("IDREFS"             ) ) return IDREFS             ;
+//      if( v.equals("ENTITY"             ) ) return ENTITY             ;
+//      if( v.equals("ENTITIES"           ) ) return ENTITIES           ;
+//      if( v.equals("NMTOKEN"            ) ) return NMTOKEN            ;
+//      if( v.equals("NMTOKENS"           ) ) return NMTOKENS           ;
+//      if( v.equals("DECIMAL"            ) ) return DECIMAL            ;
+//      if( v.equals("INTEGER"            ) ) return INTEGER            ;
+//      if( v.equals("NONPOSITIVEINTEGER" ) ) return NONPOSITIVEINTEGER ;
+//      if( v.equals("NEGATIVEINTEGER"    ) ) return NEGATIVEINTEGER    ;
+//      if( v.equals("LONG"               ) ) return LONG               ;
+//      if( v.equals("INT"                ) ) return INT                ;
+//      if( v.equals("SHORT"              ) ) return SHORT              ;
+//      if( v.equals("BYTE"               ) ) return BYTE               ;
+//      if( v.equals("NONNEGATIVEINTEGER" ) ) return NONNEGATIVEINTEGER ;
+//      if( v.equals("POSITIVEINTEGER"    ) ) return POSITIVEINTEGER    ;
+//      if( v.equals("UNSIGNEDLONG"       ) ) return UNSIGNEDLONG       ;
+//      if( v.equals("UNSIGNEDINT"        ) ) return UNSIGNEDINT        ;
+//      if( v.equals("UNSIGNEDSHORT"      ) ) return UNSIGNEDSHORT      ;
+//      if( v.equals("UNSIGNEDBYTE"       ) ) return UNSIGNEDBYTE       ;
+//      return null;
    }
 
    /**
@@ -143,13 +217,14 @@ public enum XDT {
     */
    public static XDT fromPDT( DTSPrimitive pdt ) {
       if( pdt == null ) return null;
-      else if( pdt == DTSPrimitive.BINARY   ) return HEXBINARY;
-      else if( pdt == DTSPrimitive.BOOLEAN  ) return BOOLEAN  ;
-      else if( pdt == DTSPrimitive.DATETIME ) return DATETIME ;
-      else if( pdt == DTSPrimitive.DECIMAL  ) return DECIMAL  ;
-      else if( pdt == DTSPrimitive.INTEGER  ) return INTEGER  ;
-      else if( pdt == DTSPrimitive.STRING   ) return STRING   ;
-      return null;
+      return primitiveFormatters.get(pdt);
+//      else if( pdt == DTSPrimitive.BINARY   ) return HEXBINARY;
+//      else if( pdt == DTSPrimitive.BOOLEAN  ) return BOOLEAN  ;
+//      else if( pdt == DTSPrimitive.DATETIME ) return DATETIME ;
+//      else if( pdt == DTSPrimitive.DECIMAL  ) return DECIMAL  ;
+//      else if( pdt == DTSPrimitive.INTEGER  ) return INTEGER  ;
+//      else if( pdt == DTSPrimitive.STRING   ) return STRING   ;
+//      return null;
    }
    
    /**
