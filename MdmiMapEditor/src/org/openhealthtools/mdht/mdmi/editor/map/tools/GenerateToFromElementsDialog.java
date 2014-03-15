@@ -750,9 +750,12 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 		String srcFieldPath;
 		String targetFieldPath;
+		
+		MdmiDatatype srcDatatype = null;
+		MdmiDatatype targetDatatype = null;
 
 		// create variables and fields
-		//   To BE                                 To ME
+		//   To BER                                To SE
 		//   var source = value.value();           var source = ruleName.getValue();
 		//   var target = ruleName.getValue();     var target = value.value();
 		//                                            or if BE is a complex data type and SE is a simple type
@@ -769,7 +772,8 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			} else {
 				targetVar = "var target = " + ruleName + ".getValue();";
 			}
-
+			srcDatatype = seDatatype;
+			targetDatatype = beDatatype;
 			srcFieldPath = seFieldName;
 			targetFieldPath = beFieldName;
 
@@ -790,10 +794,12 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				targetVar = "var target = value.value();";
 			}
 
-
+			srcDatatype = beDatatype;
+			targetDatatype = seDatatype;
 			srcFieldPath = beFieldName;
 			targetFieldPath = seFieldName;
 		}
+		
 		// easy case -
 		// Same datatypes: No code needed.
 		if (beDatatype == seDatatype) {
@@ -832,6 +838,15 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 		for (int s=0; s<srcFieldNames.length; s++) {
 
 			String srcFieldName = srcFieldNames[s];
+			if (srcDatatype instanceof DTComplex && !srcFieldName.isEmpty()) {
+				// get field's datatype
+				Field field = ((DTComplex)srcDatatype).getField(srcFieldName);
+				if (field != null) {
+					srcDatatype = field.getDatatype();
+				} else {
+					srcDatatype = null;
+				}
+			}
 			String srcVarName = "from_" + srcFieldName;
 
 			// we need to walk intermediate fields
@@ -846,7 +861,7 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 			} else {
 				newRule.append( buildTargetJSInfo(depth, seDatatype, beDatatype,
-						prevSrcVarName, srcFieldName, targetFieldNames) );
+						prevSrcVarName, srcDatatype, srcFieldName, targetFieldNames) );
 			}
 
 
@@ -870,10 +885,15 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 
 	// JavaScript rule target assignment
 	private static String buildTargetJSInfo(int indentLevel, MdmiDatatype seDatatype, MdmiDatatype beDatatype,
-			String prevSrcVarName, String srcFieldName, String[] targetFieldNames) {
+			String prevSrcVarName, MdmiDatatype srcDatatype, String srcFieldName, String[] targetFieldNames) {
 
 		String indent = getIndent(indentLevel);
 		StringBuilder targetRule = new StringBuilder();
+		
+		String getSrcMethod = "getValue";
+		if (srcDatatype  == DTSPrimitive.DATETIME) {
+			getSrcMethod = "getDate";
+		}
 
 		String prevTargetVarName = "target";
 		// last field - do targets
@@ -881,10 +901,13 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 			// no target fields
 			//		target.setValue(s2.getValue('s3'));
 			targetRule.append(indent).append(prevTargetVarName).append(".setValue(").append(prevSrcVarName);
+			targetRule.append(".").append(getSrcMethod);
 			if (srcFieldName.isEmpty()) {
-				targetRule.append(".getValue()");
+				// .getValue() or .getDate()
+				targetRule.append("()");
 			} else {
-				targetRule.append(".getValue('").append(srcFieldName).append("')");
+				// .getValue('srcField') or .getDate('srcField')
+				targetRule.append("('").append(srcFieldName).append("')");
 			}
 			targetRule.append(");").append(CR_LF);
 
@@ -919,20 +942,20 @@ public class GenerateToFromElementsDialog extends BaseDialog implements ActionLi
 				} else {
 					// finally - do the assignment
 					//      t3.setValue('t4', s2); or
-					//		t3.setValue('t4', s2.getValue()); or
-					//		t3.setValue('t4', s2.getValue('s3'));
+					//		t3.setValue('t4', s2.getValue()); or t3.setValue('t4', s2.getDate()); 
+					//		t3.setValue('t4', s2.getValue('s3')); or t3.setValue('t4', s2.getDate('s3'));
 					targetRule.append(indent).append(prevTargetVarName).append(".setValue('")
 						.append(targetFieldName).append("', ").append(prevSrcVarName);
 
 					// if BE is a complex data type and SE is a simple type, just use source
 					if (isComplex(beDatatype) && !isComplex(seDatatype)) {
 						// do nothing
-					} else if (beDatatype == DTSPrimitive.DATETIME) {
-						targetRule.append(".getDate()");
 					} else if (srcFieldName.isEmpty()) {
-						targetRule.append(".getValue()");
+						// .getValue() or .getDate()
+						targetRule.append(".").append(getSrcMethod).append("()");
 					} else {
-						targetRule.append(".getValue('").append(srcFieldName).append("')");
+						// .getValue('srcField') or .getDate('srcField')
+						targetRule.append(".").append(getSrcMethod).append("('").append(srcFieldName).append("')");
 					}
 					targetRule.append(");").append(CR_LF);
 				}
