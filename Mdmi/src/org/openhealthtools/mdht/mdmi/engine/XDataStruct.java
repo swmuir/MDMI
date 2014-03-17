@@ -140,6 +140,11 @@ public class XDataStruct extends XData {
       xv.setValue(value);
    }
 
+   public void setXValues(Collection<XValue> xValues) {
+   	for (XValue xValue : xValues) {
+   		  m_values.put(xValue.getName(), xValue );
+   	}
+   }
    /**
     * Get the value of the given field.
     * 
@@ -214,7 +219,11 @@ public class XDataStruct extends XData {
       StringBuffer sb = new StringBuffer();
       for( int i = 0; i < m_values.size(); i++ ) {
          XValue v = m_values.get( i );
-         sb.append( v.toString(indent + "  ") );
+         if (v!=null) {
+         sb.append( v.toString( (indent!=null?indent:" null ") + "  ") );
+         } else {
+         	 sb.append(" null ");
+         }
          sb.append("\r\n");
       }
       return sb.toString();
@@ -222,6 +231,6 @@ public class XDataStruct extends XData {
 
 	@Override
 	public boolean isEmpty() {
-		return m_values.isEmpty();
+		return true;
 	}
 } // XDataStruct
