@@ -38,7 +38,7 @@ public final class ElementValueSet {
       Collection<SEVS> values = m_xelements.values();
       for( Iterator<SEVS> iterator = values.iterator(); iterator.hasNext(); ) {
          SEVS xse = iterator.next();
-         xes.addAll(xse.xelements);
+         xes.addAll(xse.xelements.values());
       }
       return xes;
    }
@@ -122,7 +122,7 @@ public final class ElementValueSet {
       ArrayList<IElementValue> a = new ArrayList<IElementValue>();
       SEVS xse = m_xelements.get(semanticElementName);
       if( xse != null )
-         a.addAll(xse.xelements);
+         a.addAll(xse.xelements.values());
       return a;
    }
 
@@ -132,13 +132,21 @@ public final class ElementValueSet {
     * @param xelement The element value to add.
     */
    public void addElementValue( IElementValue xelement ) {
+   	
+   	if (!m_xelements.containsKey(xelement.getSemanticElement().getName())) {
+   		
+   		  m_xelements.put(xelement.getSemanticElement().getName(), new SEVS(xelement.getSemanticElement()));
+   	}
+   	
       SEVS xse = m_xelements.get(xelement.getSemanticElement().getName());
-      if( xse == null ) {
-         xse = new SEVS(xelement.getSemanticElement());
-         m_xelements.put(xse.getName(), xse);
-      }
-      if( !xse.xelements.contains(xelement) )
-         xse.xelements.add(xelement);
+//      if( xse == null ) {
+//         xse = ;
+//       
+//      }
+   	
+//   	m_xelements.get(xelement.getSemanticElement().getName()).
+      if( !xse.xelements.containsKey(xelement.getName()) )
+         xse.xelements.put(xelement,xelement);
    }
 
    /**
@@ -197,11 +205,11 @@ public final class ElementValueSet {
     */
    public static final class SEVS {
       public SemanticElement          semanticElement;
-      public ArrayList<IElementValue> xelements;
+      public HashMap<IElementValue,IElementValue> xelements;
 
       SEVS( SemanticElement me ) {
          semanticElement = me;
-         xelements = new ArrayList<IElementValue>();
+         xelements = new HashMap<IElementValue,IElementValue>();
       }
 
       String getName() {
