@@ -80,7 +80,10 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- PRE-PROCESSORS END ----------");
 	}
 
+	private static boolean jsonLogging = false;
 	private void serializeSemanticModel( String name, ElementValueSet semanticModel ) {
+		if (jsonLogging) 
+		{
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 
@@ -111,6 +114,7 @@ public class MdmiUow implements Runnable {
 		}
 		catch( IOException ex ) {
 			ex.printStackTrace();
+		}
 		}
 	}
 
@@ -153,11 +157,12 @@ public class MdmiUow implements Runnable {
 	void processConversions() {
 		System.out.println("");
 		System.out.println("---------- CONVERSION START ----------");
-		//long ts = System.currentTimeMillis();
+		long ts = System.currentTimeMillis();
 		Conversion c = new Conversion(this);
 		c.execute();
-		//System.out.println("Data conversion took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		
 		System.out.println("---------- CONVERSION END ----------");
+		System.out.println("Data conversion took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		System.out.println("");
 		serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
       //System.out.println("---------- TARGET MESSAGE START ----------");
@@ -171,19 +176,20 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- PROCESSING OUTPUT MESSAGE START ----------");
 		ISemanticParser trgSemProv = getSemanticProvider(transferInfo.getTargetMessageGroup());
 		ISyntacticParser trgSynProv = getSyntaxProvider(transferInfo.getTargetMessageGroup());
-		//long ts = System.currentTimeMillis();
+		long ts = System.currentTimeMillis();
 		if( trgSyntaxModel != null ) {
 			trgSemProv.updateSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel, trgSyntaxModel);
 		}
 		else {
 			trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
 		}
-		//System.out.println("Serializing the target semantic model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-		//ts = System.currentTimeMillis();
+		System.out.println("updateSyntacticModel  took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		ts = System.currentTimeMillis();
       //System.out.println(trgSyntaxModel.toString());
 		trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
-		//System.out.println("Serializing the target syntax model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		//
 		System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");
+		System.out.println("Serializing the target syntax model took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 	}
 
 	// 5. Call the post-processors, if any
