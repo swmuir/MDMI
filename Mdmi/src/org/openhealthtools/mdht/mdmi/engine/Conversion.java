@@ -16,6 +16,7 @@ package org.openhealthtools.mdht.mdmi.engine;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.openhealthtools.mdht.mdmi.IElementValue;
@@ -218,6 +219,8 @@ public class Conversion {
 			throw new MdmiException(e.getMessage());
 		}
 	}
+	
+	HashMap <String,ArrayList<IElementValue>> globalSources = new HashMap <String,ArrayList<IElementValue>> ();
 
 	private void execute( XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner ) {
 		try {
@@ -231,9 +234,11 @@ public class Conversion {
 					SemanticElement seParentOwner = srcOwner.getSemanticElement();
 					ArrayList<IElementValue> srcs = null;
 					// if the owner SE is not the same as the source parent SE, use all elements, otherwise get only children
-					if( seParent != seParentOwner ) {
-						continue;
-						//srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
+					if( seParent != seParentOwner ) {			
+						if (!globalSources.containsKey(source.getName())) {
+							globalSources.put(source.getName(), m_owner.srcSemanticModel.getElementValuesByType(source));
+						}
+						srcs = globalSources.get(source.getName());
 					}
 					else {
 						srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
