@@ -32,7 +32,7 @@ public class ElementValueSetSerializer extends JsonSerializer<ElementValueSet> {
 			jgen.writeObjectField("Semantic Element", sevs.semanticElement.getName());
 			
 			jgen.writeArrayFieldStart("values");
-			for (IElementValue v : sevs.xelements) {
+			for (IElementValue v : sevs.xelements.values()) {
 				jgen.writeObject(v.value());
 			}
 			jgen.writeEndArray();
