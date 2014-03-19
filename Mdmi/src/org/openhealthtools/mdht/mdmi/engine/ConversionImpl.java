@@ -36,51 +36,70 @@ import org.openhealthtools.mdht.mdmi.model.*;
  * Implementation class for rule execution.
  */
 class ConversionImpl {
-	static ObjectMapper mapper = null;
-	static FileOutputStream jsonFop = null;
-	static File jsonFile = null;
+	
+	boolean logging = false;
+	ObjectMapper mapper = null;
+	FileOutputStream jsonFop = null;
+	File jsonFile = null;
 
 	boolean first = true;
-
+	ObjectNode conversionNode = null;
+	
 	public static ConversionImpl Instance = new ConversionImpl();
 
-	private void logToJson( Object object ) throws Exception {
-		mapper.writeValue(jsonFop, object);
-	}
-
-	private ConversionImpl() {
-	}
-
-	void convert( XElementValue src, ConversionInfo ci, XElementValue trg ) throws Exception {
+	private void logToJson() throws Exception {
+		if (logging) {
 		if( first )
 			first = false;
 		else
 			jsonFop.write(",".getBytes());
+		
+		mapper.writeValue(jsonFop, conversionNode);
+		
+		conversionNode = null;
+		}
+	}
 
-		ObjectNode conversionNode = mapper.createObjectNode().putObject("conversion");
-		conversionNode.putPOJO("conversionInfo", ci);
-		conversionNode.putPOJO("xElementValue", trg);
+	private void logObject(String name,Object object)
+	{
+		if (logging) {
+			if (conversionNode == null) 
+			{
+				conversionNode = mapper.createObjectNode().putObject("conversion");;
+			}
+			conversionNode.putPOJO(name, object);
+		}
+	}
+	private ConversionImpl() {
+	}
+
+	void convert( XElementValue src, ConversionInfo ci, XElementValue trg ) throws Exception {
+
+
+		
+		logObject("conversionInfo", ci);
+		logObject("xElementValue", trg);
 
 		ToBusinessElement toBE = Conversion.getToBE(src.getSemanticElement(), ci.srcBER);
-		conversionNode.putPOJO("toBusinessElement", toBE);
+		logObject("toBusinessElement", toBE);
 
 		ToMessageElement toSE = Conversion.getToSE(trg.getSemanticElement(), ci.trgBER);
-		conversionNode.putPOJO("toMessageElement", toSE);
+		logObject("toMessageElement", toSE);
 
 		XValue v = new XValue("v", toBE.getBusinessElement().getReferenceDatatype());
-		conversionNode.putPOJO("initialXValue", v);
+		logObject("initialXValue", v);
 
 		if( !hasTrgRule(toSE) )
 			cloneValue(trg.getXValue(), v, false);
 		execSrcRule(src, ci, trg, toBE, v);
 
-		conversionNode.putPOJO("toXValue", v);
+		logObject("toXValue", v);
 
 		execTrgRule(v, ci, trg, toSE);
 
-		conversionNode.putPOJO("finalXValue", trg);
+		logObject("finalXValue", trg);
 
-		logToJson(conversionNode);
+		logToJson();
 	}
 
 	boolean hasSrcRule( ToBusinessElement toBE ) {
@@ -205,7 +224,11 @@ class ConversionImpl {
 		}
 	}
 
-	public void start() {
+	public void start(boolean logging) {
+		
+		this.logging = logging;
+		
+		if (this.logging) {
 		jsonFile = new File("./logs/Conversion.json");
 		try {
 			jsonFop = new FileOutputStream(jsonFile);
@@ -221,10 +244,11 @@ class ConversionImpl {
 		mapper = new MdmiMapper();
 
 		mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-
+		}
 	}
 
 	public void end() {
+		if (this.logging) {
 		try {
 			jsonFop.write("]".getBytes());
 			jsonFop.flush();
@@ -234,6 +258,6 @@ class ConversionImpl {
 		catch( IOException e ) {
 			e.printStackTrace();
 		}
-
+		}
 	}
 }

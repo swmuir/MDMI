@@ -166,7 +166,7 @@ public class Conversion {
 	void execute() {
 		try {
 			ConversionImpl impl = ConversionImpl.Instance;
-			impl.start();
+			impl.start(false);
 
 			ArrayList<ConversionInfo> cis = getTopLevelCis();
 			for( int i = 0; i < cis.size(); i++ ) {
@@ -214,6 +214,7 @@ public class Conversion {
 			impl.end();
 		}
 		catch( Exception e ) {
+			e.printStackTrace();
 			throw new MdmiException(e.getMessage());
 		}
 	}
