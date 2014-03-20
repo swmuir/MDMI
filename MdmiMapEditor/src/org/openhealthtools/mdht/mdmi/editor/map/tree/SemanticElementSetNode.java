@@ -180,6 +180,7 @@ public class SemanticElementSetNode extends EditableObjectNode {
 		public EditableObjectNode addNewChild(Object childObject) {
 			SemanticElementSet parentSet = (SemanticElementSet)getUserObject();
 			SemanticElement element = (SemanticElement)childObject;
+			element.setMultipleInstances(true);
 			
 			parentSet.addSemanticElement(element);
 			element.setElementSet(parentSet);

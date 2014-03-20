@@ -220,11 +220,11 @@ public class NewNodeAndElementDialog extends BaseDialog implements DocumentListe
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets.left = 0;
+		m_maxOccurs.addUnboundedBox();
 		try {
-			m_maxOccurs.setDisplayValue("1");
+			m_maxOccurs.setDisplayValue(Integer.MAX_VALUE);
 		} catch (DataFormatException e) {
 		}
-		m_maxOccurs.addUnboundedBox();
 		syntaxNodePanel.add(m_maxOccurs, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
 		

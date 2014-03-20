@@ -157,8 +157,14 @@ public class SemanticElementField extends AdvancedSelectionField {
 	@Override
 	protected void loadComboBox() {
 		if (m_showHierarchy) {
-			getComboBox().removeAllItems();
-			((SemanticElementTreeCombo)getComboBox()).fillComboBox(getMessageModels());
+			JComboBox comboBox = getComboBox();
+			if (comboBox instanceof SemanticElementTreeCombo) {
+				comboBox.removeAllItems();
+				((SemanticElementTreeCombo)comboBox).fillComboBox(getMessageModels());
+			} else {
+				// don't know why we get here, but we can
+				super.loadComboBox();
+			}
 		} else {
 			super.loadComboBox();
 		}

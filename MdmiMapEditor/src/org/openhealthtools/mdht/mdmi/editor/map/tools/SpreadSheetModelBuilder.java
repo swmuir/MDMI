@@ -1196,6 +1196,7 @@ public class SpreadSheetModelBuilder {
 		// add if it doesn't exist
 		if (semanticElement == null && create) {
 			semanticElement = new SemanticElement();
+			semanticElement.setMultipleInstances(true);	// should be on by default
 			semanticElement.setName(elementName);
 			set.addSemanticElement(semanticElement);
 			semanticElement.setElementSet(set);

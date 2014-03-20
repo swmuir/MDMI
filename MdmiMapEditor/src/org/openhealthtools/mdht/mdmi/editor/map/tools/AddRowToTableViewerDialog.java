@@ -374,6 +374,7 @@ public class AddRowToTableViewerDialog extends BaseDialog implements TreeSelecti
 		
 		// create a semantic element
 		SemanticElement semanticElement = new SemanticElement();
+		semanticElement.setMultipleInstances(true);	// should be on by default
 		semanticElement.setName(seName);
 		
 		// add node to SE

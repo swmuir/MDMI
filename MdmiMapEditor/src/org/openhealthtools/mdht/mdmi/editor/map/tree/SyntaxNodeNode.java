@@ -486,9 +486,9 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 				return true;
 			}
 			if ( FIELD_NAME.equalsIgnoreCase(fieldName)) {
-				// fieldName is read-only for Bag
-				Class<?> clazz = getObjectClass();
-				if (clazz == Bag.class) {
+				// fieldName is read-only if there's a semantic element
+				Node node = (Node)getUserObject();
+				if (node.getSemanticElement() != null) {
 					return true;
 				}
 			}
