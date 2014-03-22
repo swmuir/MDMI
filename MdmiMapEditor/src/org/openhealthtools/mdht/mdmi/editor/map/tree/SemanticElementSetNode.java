@@ -43,11 +43,15 @@ public class SemanticElementSetNode extends EditableObjectNode {
 	
 	private FlatHierarchyAction m_flatAction = null;
 	private FlatHierarchyAction m_hierarchicalAction = null;
+	
+	/** return the persisted value for showing Semantic Elements in a parent/child relationship */
+	public static boolean getDefaultHierarchySetting() {
+		UserPreferences userPref = UserPreferences.getInstance(SystemContext.getApplicationName(), null);
+		return userPref.getBooleanValue(SHOW_HIERARCHY, false);
+	}
 
 	public SemanticElementSetNode(SemanticElementSet elemSet) {
-		this(elemSet,
-				UserPreferences.getInstance(SystemContext.getApplicationName(), null).getBooleanValue(SHOW_HIERARCHY, false),
-				true);
+		this(elemSet, getDefaultHierarchySetting(), true);
 	}
 
     

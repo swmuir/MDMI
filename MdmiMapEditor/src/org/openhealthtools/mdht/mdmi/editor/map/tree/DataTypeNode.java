@@ -54,7 +54,6 @@ import org.openhealthtools.mdht.mdmi.model.DTSDerived;
 import org.openhealthtools.mdht.mdmi.model.DTSPrimitive;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
-import org.openhealthtools.mdht.mdmi.model.Node;
 
 /** Node for simple data types. Complex and Enumeration types are handled in their own class */
 public class DataTypeNode extends EditableObjectNode {

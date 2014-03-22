@@ -456,6 +456,8 @@ public abstract class EditableObjectNode extends DefaultMutableTreeNode {
 	 * @throws IllegalArgumentException */
 	public Object copyUserObject() throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		Object userObjectCopy = ClassUtil.clone(getUserObject());
+//		System.out.println("made copy of " + ClassUtil.beautifyName(getUserObject().getClass()) + ": "
+//				+ ClassUtil.getItemName(getUserObject()));
 		return userObjectCopy;
 	}
 	
@@ -501,12 +503,18 @@ public abstract class EditableObjectNode extends DefaultMutableTreeNode {
 			} catch (NoSuchMethodException e) {
 				// try superclass
 				objectClass = objectClass.getSuperclass();
+				if (objectClass == null) {
+					throw new IllegalAccessException("No constructor found for " + ClassUtil.beautifyName(getClass()) +
+							" with " + ClassUtil.beautifyName(userObject.getClass()) + " for the argument");
+				}
 			}
 		}
 
 		EditableObjectNode copy = 
 			(EditableObjectNode)ctor.newInstance(userObject);
-		
+
+//		System.out.println("made copy of Node for " + ClassUtil.beautifyName(objectClass) + ": "
+//				+ ClassUtil.getItemName(userObject));
 		return copy;
 	}
 	

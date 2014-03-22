@@ -16,6 +16,7 @@ package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,6 +76,10 @@ public class SemanticElementNode extends EditableObjectNode {
 	private SemanticElement m_parentElement = null;
 	private boolean m_isHierarchical = false;
 
+	// default constructor
+	public SemanticElementNode(SemanticElement elem) {
+		this(elem, SemanticElementSetNode.getDefaultHierarchySetting(), true);
+	}
 	
 	public SemanticElementNode(SemanticElement elem, boolean isHierarchical) {
 		this(elem, isHierarchical, true);
@@ -430,6 +435,18 @@ public class SemanticElementNode extends EditableObjectNode {
 	}
 
 
+	
+	/** override copying the user object to set the syntax node to null */
+	@Override
+	public Object copyUserObject() throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Object userObjectCopy = super.copyUserObject();
+
+		// clear syntax node
+		SemanticElement se = (SemanticElement)userObjectCopy;
+		se.setSyntaxNode(null);
+		
+		return userObjectCopy;
+	}
 
 	/** Add a menu to show the semantic element in a new view */
 	@Override
