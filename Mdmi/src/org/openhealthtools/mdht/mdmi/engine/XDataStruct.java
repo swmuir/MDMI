@@ -25,8 +25,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
  * @author goancea
  */
 public class XDataStruct extends XData {
-//   private ArrayList<XValue> m_values;
-   private HashMap<String,XValue> m_values = new HashMap<String,XValue>();
+   private ArrayList<XValue> m_values;
 
    /**
     * Construct one from its owner value and its data type.
@@ -36,10 +35,10 @@ public class XDataStruct extends XData {
    public XDataStruct( XValue owner ) {
       super( owner, (DTCStructured)owner.getDatatype() );
       ArrayList<Field> fields = ((DTCStructured)owner.getDatatype()).getFields();
-   
+      m_values = new ArrayList<XValue>( fields.size() );
       for( int i = 0; i < fields.size(); i++ ) {
          XValue v = new XValue( this, fields.get(i) );
-         m_values.put(v.getName(), v);
+         m_values.add( v );
       }
    }
    
@@ -53,10 +52,11 @@ public class XDataStruct extends XData {
    XDataStruct( XValue owner, boolean recursive ) {
       super( owner, (DTCStructured)owner.getDatatype() );
       ArrayList<Field> fields = ((DTCStructured)owner.getDatatype()).getFields();
+      m_values = new ArrayList<XValue>( fields.size() );
       for( int i = 0; i < fields.size(); i++ ) {
          XValue v = new XValue( this, fields.get(i) );
          v.intializeStructs();
-         m_values.put(v.getName(), v);
+         m_values.add( v );
       }
    }
 
@@ -68,10 +68,10 @@ public class XDataStruct extends XData {
     */
    XDataStruct( XValue owner, XDataStruct src ) {
       super( owner, src.m_datatype );
- 
+      m_values = new ArrayList<XValue>( src.m_values.size() );
       for( int i = 0; i < src.m_values.size(); i++ ) {
          XValue xv = src.m_values.get( i );
-         m_values.put(xv.getName(), xv.clone(true) );
+         m_values.add( xv.clone(true) );
       }
    }
 
@@ -80,8 +80,8 @@ public class XDataStruct extends XData {
     * 
     * @return The list of field values, one for each field.
     */
-   public Collection<XValue> getXValues() {
-      return m_values.values();
+   public ArrayList<XValue> getXValues() {
+      return m_values;
    }
 
    /**
@@ -101,16 +101,14 @@ public class XDataStruct extends XData {
     * @return The value, if found, null otherwise.
     */
    public XValue getXValue( String fieldName ) {
-   	
-   
       if( fieldName == null )
          throw new IllegalArgumentException( "Null 'fieldName'" );
-//      for( int i = 0; i < m_values.size(); i++ ) {
-//         XValue v = m_values.get( i );
-//         if( fieldName.equals(v.getName()) )
-//            return v;
-//      }
-      return m_values.get(fieldName);
+      for( int i = 0; i < m_values.size(); i++ ) {
+         XValue v = m_values.get( i );
+         if( fieldName.equals(v.getName()) )
+            return v;
+      }
+      return null;
    }
 
    /**
@@ -119,12 +117,18 @@ public class XDataStruct extends XData {
     * @param value The new value.
     * @return The index of the field being updated.
     */
-   public void setXValue( XValue value ) {
+   public int setXValue( XValue value ) {
       if( value == null )
          throw new IllegalArgumentException( "Null 'value'" );
-      
-      m_values.put(value.getName(), value);
-      
+      for( int i = 0; i < m_values.size(); i++ ) {
+         XValue v = m_values.get( i );
+         if( value.getName().equals(v.getName()) ) {
+            m_values.remove( i );
+            m_values.add( i, value );
+            return i;
+         }
+      }
+      return -1;
    }
    
    /**
@@ -140,11 +144,6 @@ public class XDataStruct extends XData {
       xv.setValue(value);
    }
 
-   public void setXValues(Collection<XValue> xValues) {
-   	for (XValue xValue : xValues) {
-   		  m_values.put(xValue.getName(), xValue );
-   	}
-   }
    /**
     * Get the value of the given field.
     * 
@@ -219,11 +218,7 @@ public class XDataStruct extends XData {
       StringBuffer sb = new StringBuffer();
       for( int i = 0; i < m_values.size(); i++ ) {
          XValue v = m_values.get( i );
-         if (v!=null) {
-         sb.append( v.toString( (indent!=null?indent:" null ") + "  ") );
-         } else {
-         	 sb.append(" null ");
-         }
+         sb.append( v.toString(indent + "  ") );
          sb.append("\r\n");
       }
       return sb.toString();
@@ -231,6 +226,20 @@ public class XDataStruct extends XData {
 
 	@Override
 	public boolean isEmpty() {
+		for( XValue xValue : m_values ) {
+			for( Object object : xValue.getValues() ) {
+				if( object != null ) {
+					if( object instanceof String ) {
+						if( !((String) object).isEmpty() ) {
+							return false;
+						}
+					}
+					else {
+						return false;
+					}
+				}
+			}
+		}
 		return true;
 	}
 } // XDataStruct
