@@ -319,7 +319,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 			}
 		}
 		catch( Throwable throwable ) {
-			throw new MdmiException("Error proccessing node " + DefaultSyntacticParser.getNodePath(ychoice.getNode()), throwable);
+			throw new MdmiException(throwable, "Error proccessing node " + DefaultSyntacticParser.getNodePath(ychoice.getNode()));
 		}
 	}
 
@@ -363,7 +363,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 			}
 		}
 		catch( Throwable throwable ) {
-			throw new MdmiException("Error proccessing node " + DefaultSyntacticParser.getNodePath(ybag.getNode()), throwable);
+			throw new MdmiException(throwable, "Error proccessing node " + DefaultSyntacticParser.getNodePath(ybag.getNode()));
 		}
 	}
 
@@ -599,9 +599,8 @@ public class DefaultSemanticParser implements ISemanticParser {
 				continue;
 			}
 			XValue xvalue = xds.getXValue(fieldName);
-			if( xvalue == null || xvalue.size() <= 0 ) {
+			if( xvalue == null || xvalue.size() <= 0 )
 				continue;
-			}
 			for( int i = 0; i < xvalue.size(); i++ ) {
 				Object xv = xvalue.getValue(i);
 				YNode yn = ensureYNodeExists(ybag, n, i);
@@ -615,10 +614,10 @@ public class DefaultSemanticParser implements ISemanticParser {
 			return;
 		XValue xvalue = xdc.getXValue();
 		if( xvalue != null && xvalue.size() > 0 ) {
-			Node n = ychoice.getChosenNode();
+			Node sel = ychoice.getChoice().getNode(xvalue.getName());
 			for( int i = 0; i < xvalue.size(); i++ ) {
 				Object xv = xvalue.getValue(i);
-				YNode yn = ensureYNodeExists(ychoice, n, i);
+				YNode yn = ensureYNodeExists(ychoice, sel, i);
 				setYNodeValues(yn, xv);
 			}
 		}
@@ -754,7 +753,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 			}
 
 		}
-		else if( parent instanceof YLeaf ) {
+		else if( parent instanceof YChoice ) {
 			YChoice ychoice = (YChoice) parent;
 			if( node instanceof Bag ) {
 				Bag bag = (Bag) node;

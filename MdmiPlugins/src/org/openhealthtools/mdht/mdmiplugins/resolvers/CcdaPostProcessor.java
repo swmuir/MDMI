@@ -43,7 +43,11 @@ public class CcdaPostProcessor implements IPostProcessor {
       // 1. Add a <component> for each <section>
       Element root = doc.getDocumentElement();
       Element component = XmlUtil.getElement(root, "component");
+      if( null == component )
+         return;
       Element structuredBody = XmlUtil.getElement(component, "structuredBody");
+      if( null == structuredBody )
+         return;
       ArrayList<Element> components = XmlUtil.getElements(structuredBody, "component");
       for( int i = 0; i < components.size(); i++ ) {
          Element c = components.get(i);

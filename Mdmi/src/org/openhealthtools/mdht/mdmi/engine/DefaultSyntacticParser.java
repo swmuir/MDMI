@@ -381,9 +381,10 @@ public class DefaultSyntacticParser implements ISyntacticParser {
     * @param yindex The index of the ynode to store, used when having multiple instances of ybag.
     */
    private void setBag( Element root, String xpath, YBag ybag, int yindex ) {
-      if( xpath == null || xpath.length() <= 0 )
+      if( xpath == null || xpath.length() <= 0 ) {
          serializeBag(ybag, root); // mapped to content
-
+         return;
+      }
       org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
       if( xmlNode == null || xmlNode.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
          throw new MdmiException("Invalid xpath expression {0} for element {1}, ybag {2}", xpath, root.getNodeName(),
@@ -401,9 +402,10 @@ public class DefaultSyntacticParser implements ISyntacticParser {
     * @param yindex The index of the ynode to store
     */
    private void setChoice( Element root, String xpath, YChoice ychoice, int yindex ) {
-      if( xpath == null || xpath.length() <= 0 )
+      if( xpath == null || xpath.length() <= 0 ) {
          serializeChoice(ychoice, root); // mapped to content
-
+         return;
+      }
       org.w3c.dom.Node xmlNode = XslUtil.createNodeForPath(root, xpath, yindex);
       if( xmlNode == null || xmlNode.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE )
          throw new MdmiException("Invalid xpath expression {0} for element {1}, ychoice {2}", xpath,
