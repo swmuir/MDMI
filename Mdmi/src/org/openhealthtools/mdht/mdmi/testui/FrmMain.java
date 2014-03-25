@@ -50,7 +50,7 @@ public class FrmMain extends JFrame {
    private JTextField               txtSourceMap;
    private JButton                  btnSourceMap;
    private JButton                  btnSrcSynPrv;
-   private JButton                  btnUpdateMap;
+   private JButton btnUpdateMaps;
 
    private JTextField               txtTargetMap;
    private JButton                  btnTargetMap;
@@ -67,6 +67,7 @@ public class FrmMain extends JFrame {
 
    private JTextField               txtTargetMsg;
    private JButton                  btnTargetMsg;
+   private JButton                  btnUpdateTargetMsg;
 
    private JLabel                   lblMessage;
    private JTextArea                txtSourceMessage;
@@ -202,6 +203,10 @@ public class FrmMain extends JFrame {
          setSourceMsg(lastFileU);
       }
    }
+
+    void onUpdateTargetMsg(){
+        setTargetMsg(txtTargetMsg.getText());
+    }
 
    void onSelTargetMsg() {
       String lastDir = Main.properties().getProperty("ui.user.lastDirs.lastDirectory");
@@ -515,7 +520,7 @@ public class FrmMain extends JFrame {
                .format("Transfer completed successfully. It takes %.3f sec.", (finish - start) / 1000f));
       }
       catch( Exception ex ) {
-         DlgShowException.doModal(this, ex, "FrmMain.setSourceMsg() fails");
+        DlgShowException.doModal(this, ex, "FrmMain.setSourceMsg() fails");
       }
    }
 
@@ -544,12 +549,12 @@ public class FrmMain extends JFrame {
          }
       });
 
-      btnUpdateMap = new JButton("Update Maps");
-      btnUpdateMap.setToolTipText("Update source and target maps to open.");
-      btnUpdateMap.addActionListener(new java.awt.event.ActionListener() {
-         public void actionPerformed( ActionEvent e ) {
-            onUpdateMaps();
-         }
+      btnUpdateMaps = new JButton("Update Maps");
+      btnUpdateMaps.setToolTipText("Update source and target maps to open.");
+      btnUpdateMaps.addActionListener(new java.awt.event.ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+              onUpdateMaps();
+          }
       });
 
       txtTargetMap = new JTextField();
@@ -602,6 +607,14 @@ public class FrmMain extends JFrame {
          }
       });
 
+      btnUpdateTargetMsg = new JButton("Update");
+      btnUpdateTargetMsg.setToolTipText("Update target message.");
+      btnUpdateTargetMsg.addActionListener(new java.awt.event.ActionListener() {
+           public void actionPerformed( ActionEvent e ) {
+               onUpdateTargetMsg();
+           }
+       });
+
       lblMessage = new JLabel("Message body:");
       txtSourceMessage = new JTextArea();
       txtSourceMessage.setColumns(48);
@@ -649,31 +662,35 @@ public class FrmMain extends JFrame {
       JPanel p2 = new JPanel();
       p2.add(btnTargetMap);
       p2.add(btnTrgSynPrv);
-      
+
+       JPanel p3 = new JPanel();
+       p3.add(btnTargetMsg);
+       p3.add(btnUpdateTargetMsg);
+
       JPanel pnlCenter = new JPanel(new GridBagLayout());
-      pnlCenter.add(lblSource       , new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(lblTarget       , new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(lblMap          , new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(txtSourceMap    , new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(p1              , new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(txtTargetMap    , new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(p2              , new GridBagConstraints(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(lblMdl          , new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(cmbSourceMdl    , new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(btnUpdateMap    , new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(cmbTargetMdl    , new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(lblMsg          , new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(txtSourceMsg    , new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(btnSourceMsg    , new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(txtTargetMsg    , new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(btnTargetMsg    , new GridBagConstraints(5, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(lblMessage      , new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(scrSourceMessage, new GridBagConstraints(1, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(btnTransfer     , new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(scrTargetMessage, new GridBagConstraints(4, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(btnSaveXfrResult, new GridBagConstraints(5, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(lblElements     , new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-      pnlCenter.add(scrElements     , new GridBagConstraints(2, 6, 1, 2, 0.2, 0.2, GridBagConstraints.WEST  , GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblSource         , new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblTarget         , new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblMap            , new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(txtSourceMap      , new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(p1                , new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(txtTargetMap      , new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(p2                , new GridBagConstraints(5, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblMdl            , new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(cmbSourceMdl      , new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(btnUpdateMaps     , new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(cmbTargetMdl      , new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblMsg            , new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(txtSourceMsg      , new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(btnSourceMsg      , new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(txtTargetMsg      , new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(p3                , new GridBagConstraints(5, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblMessage        , new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(scrSourceMessage  , new GridBagConstraints(1, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(btnTransfer       , new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(scrTargetMessage  , new GridBagConstraints(4, 4, 1, 4, 1.0, 1.0, GridBagConstraints.WEST  , GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(btnSaveXfrResult  , new GridBagConstraints(5, 4, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(lblElements       , new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0, GridBagConstraints.WEST  , GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+      pnlCenter.add(scrElements       , new GridBagConstraints(2, 6, 1, 2, 0.2, 0.2, GridBagConstraints.WEST  , GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
 
       this.addWindowListener(new WindowAdapter() {
          public void windowClosing( WindowEvent e ) {
