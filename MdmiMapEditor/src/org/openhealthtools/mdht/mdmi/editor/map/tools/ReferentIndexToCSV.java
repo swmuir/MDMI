@@ -14,6 +14,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -34,11 +37,13 @@ import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
+import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.EditorPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
+import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
@@ -47,12 +52,12 @@ import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 
 
-	private static final String BER_NAME = "BER Name";
+	private static final String NAME = "Name";
 	private static final String DESCRIPTION = "Description";
-	private static final String READ_ONLY = "Read Only";
-	private static final String UID = "UID";
-	private static final String URI = "URI";
-	private static final String DATA_TYPE = "Data Type";
+	private static final String READ_ONLY = "Readonly";
+	private static final String UID = "Unique Identifier";
+	private static final String REFERENCE = "Reference";
+	private static final String DATA_TYPE = "Reference Datatype";
 
 
 	/**
@@ -202,9 +207,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		int lineNo = 0;
 		
 		// Fields
-		String berName = null;
-		String revisedName = null;
-		String description = null;
+		String identifier = null;
 
 		// Read File Line By Line
 		List<String> stringList = null;
@@ -218,6 +221,50 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 			return valResults;
 		}
 		
+		// assume we'll be replacing by UID (otherwise by name)
+		boolean findByUID = true;
+		
+		// Scan header to find data
+		List<Method[]> getSetMethods = ClassUtil.getMethodPairs(MdmiBusinessElementReference.class);
+		ArrayList<Method> setMethodList = new ArrayList<Method>();
+		int column = 0;
+		for (String attributeName : stringList)
+		{
+			// find matching getXXX method
+			String condensedName = attributeName.replaceAll(" ", "");
+			
+			Method foundMethod = null;
+			for (Method[] getSetPair : getSetMethods) {
+				String getMethodName = getSetPair[0].getName();
+				if (getMethodName.equalsIgnoreCase("get" + condensedName) ||
+						getMethodName.equalsIgnoreCase("is" + condensedName)) {
+					foundMethod = getSetPair[1];
+					break;
+				}
+			}
+			
+			// no method found
+			if (foundMethod == null) {
+				errorLine = FileAndLine(file, lineNo);
+				valResults.addError(null, "", errorLine + "No Business Element Reference attribute named '" +
+						attributeName + "'");
+				return valResults;
+				
+			} else if (column == 0 && !UID.equalsIgnoreCase(attributeName) &&
+					!NAME.equalsIgnoreCase(attributeName)) {
+				// first column must be UID or Name
+				errorLine = FileAndLine(file, lineNo);
+				valResults.addError(null, "", errorLine + "Invalid column name '" + attributeName + "'. "
+						+ "The first column must be either '" + UID + "' or '" + NAME + "'.");
+				return valResults;
+			
+			}
+
+			setMethodList.add(foundMethod);
+			
+			column++;
+		}
+		
 
 		while ((stringList = reader.getNextLine()) != null) {
 			lineNo++;
@@ -228,14 +275,18 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 
 			errorLine = FileAndLine(file, lineNo);
 
-			// BER Name  | New Name  | Description
-			int column = 0;
-			berName = getString(stringList, column++);
-			revisedName = getString(stringList, column++);
-			description = getString(stringList, column++);
+			// first field must be Unique Identifier or Name
+			column = 0;
+			identifier = getString(stringList, column++);
 			
 			// 1. Find BER
-			MdmiBusinessElementReference ber = findBusinessElementReference(entitySelector, berName);
+			MdmiBusinessElementReference ber = null;
+			if (findByUID) {
+				ber = findBusinessElementReferenceByUID(entitySelector, identifier);
+			} else {
+				ber = findBusinessElementReferenceByName(entitySelector, identifier);
+			}
+			
 			if (ber == null) {
 				// not found - log and move on
 				Object obj = null;
@@ -246,23 +297,46 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 					field = group.getName();
 				}
 				valResults.addError(obj, field, errorLine +
-							"Business Element '" + berName + "' not found. Check spelling.");
+							"Business Element '" + identifier + "' not found. Check spelling.");
 				continue;
 			}
 			
-			// 2. Check New Name
-			MdmiBusinessElementReference newBer = findBusinessElementReference(entitySelector, revisedName);
-			if (newBer != null && newBer != ber) {
-				// already exists
-				valResults.addError(ber, ber.getName(), errorLine +
-							"A Business Element named '" + newBer.getName() + "' already exists. " +
-							ber.getName() + " cannot be changed");
-				continue;
+			// do the other fields
+			for (;column < stringList.size(); column++) {
+				String newStringValue = getString(stringList, column);
+				if (!newStringValue.isEmpty()) {
+					Method setMethod = setMethodList.get(column);
+					
+					// we may need to convert the value
+					Object newValue = newStringValue;
+
+					// we know there's only one parameter
+					Class<?> param = setMethod.getParameterTypes()[0];
+					if (param.equals(URI.class)) {
+						newValue = URI.create(newStringValue);
+					} else if (param.equals(boolean.class)) {
+						newValue = Boolean.valueOf(newStringValue).booleanValue();
+					} else if (param.equals(MdmiDatatype.class)) {
+						// need to find the datatype
+						newValue = ModelIOUtilities.findDatatype(ber.getDomainDictionaryReference().getMessageGroup().getDatatypes(),
+								newStringValue);
+						if (newValue == null) {
+							valResults.addError(ber, setMethod.getName(), errorLine + "Datatype '" +
+									newStringValue + "' doesn't exist");
+							return valResults;
+						}
+					}
+
+					try {
+						setMethod.invoke(ber, newValue);
+						
+					} catch (Exception e) {
+						valResults.addError(ber, setMethod.getName(), errorLine + "Cannot invoke " +
+								setMethod.getName() + ". " + e.getLocalizedMessage());
+						return valResults;
+					}
+				}
 			}
-			ber.setName(revisedName);
-			
-			// 3. Change Description
-			ber.setDescription(description);
 
 			
 			// indicate that there are un-saved changes
@@ -294,15 +368,15 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
         SelectionManager selectionManager = SelectionManager.getInstance();
 		MdmiModelTree entitySelector = selectionManager.getEntitySelector();
         // 1. write header
-        writer.write(BER_NAME);
+        writer.write(UID);
+        writer.write(separator);
+        writer.write(NAME);
         writer.write(separator);
         writer.write(DESCRIPTION);
         writer.write(separator);
         writer.write(READ_ONLY);
         writer.write(separator);
-        writer.write(UID);
-        writer.write(separator);
-        writer.write(URI);
+        writer.write(REFERENCE);
         writer.write(separator);
         writer.write(DATA_TYPE);
         writer.newLine();
@@ -313,7 +387,12 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 			if (group.getDomainDictionary() != null) {
 				for (MdmiBusinessElementReference ber : group.getDomainDictionary().getBusinessElements()) {
 					if (ber.getName() != null) {
+						// UID
+						if (ber.getUniqueIdentifier() != null) {
+							writer.write(ber.getUniqueIdentifier());
+						}
 						// name
+						writer.write(separator);
 						writer.write(ber.getName());
 						writer.write(separator);
 						// description
@@ -323,11 +402,6 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 						// read-only
 						writer.write(separator);
 						writer.write(Boolean.toString(ber.isReadonly()));
-						// UID
-						writer.write(separator);
-						if (ber.getUniqueIdentifier() != null) {
-							writer.write(ber.getUniqueIdentifier());
-						}
 						// URI
 						writer.write(separator);
 						if (ber.getReference() != null) {
@@ -350,8 +424,24 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		out.close();
 	}
 
+	// Find a BER with this UID
+	public MdmiBusinessElementReference findBusinessElementReferenceByUID(MdmiModelTree entitySelector, String uid) {
+		MdmiBusinessElementReference ber = null;
+		for (MessageGroup group : entitySelector.getMessageGroups()) {
+			if (group.getDomainDictionary() != null) {
+				for (MdmiBusinessElementReference berInGroup : group.getDomainDictionary().getBusinessElements()) {
+					if (berInGroup.getUniqueIdentifier() != null && uid.equalsIgnoreCase(berInGroup.getUniqueIdentifier())) {
+						ber = berInGroup;
+						break;
+					}
+				}
+			}
+		}
+		return ber;
+	}
+
 	// Find a BER with this name
-	public MdmiBusinessElementReference findBusinessElementReference(MdmiModelTree entitySelector, String berName) {
+	public MdmiBusinessElementReference findBusinessElementReferenceByName(MdmiModelTree entitySelector, String berName) {
 		MdmiBusinessElementReference ber = null;
 		for (MessageGroup group : entitySelector.getMessageGroups()) {
 			if (group.getDomainDictionary() != null) {
