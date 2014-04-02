@@ -55,7 +55,7 @@ public class ToDateTimeConverter implements IConvertToString {
       	  if (!formats.containsKey(format)) {
       		  formats.put(format, new SimpleDateFormat(format));
       	  }
-            formats.get(format).format((Date) obj);
+            return formats.get(format).format((Date) obj);
         } catch (IllegalArgumentException ignored) {
         }
         return null;
