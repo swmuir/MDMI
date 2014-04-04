@@ -96,6 +96,20 @@
     <version>16.0</version>
 </dependency>
 
+
+<dependency>
+	<groupId>org.antlr</groupId>
+	<artifactId>antlr4</artifactId>
+	<version>4.0</version>
+</dependency>
+
+<dependency>
+	<groupId>org.antlr</groupId>
+	<artifactId>antlr4-runtime</artifactId>
+	<version>4.2</version>
+</dependency>
+
+            
 	</dependencies>
 
 	<build>
@@ -113,8 +127,10 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source/>
-					<target/>
+					    <source>1.7</source>
+        <target>1.7</target>
+        <showDeprecation>true</showDeprecation>
+        <showWarnings>true</showWarnings>
 				</configuration>
 			</plugin>
 		</plugins>

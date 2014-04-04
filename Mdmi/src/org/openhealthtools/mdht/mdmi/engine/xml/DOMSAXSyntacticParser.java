@@ -18,15 +18,22 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Stack;
 
 import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.openhealthtools.mdht.mdmi.ISyntacticParser;
 import org.openhealthtools.mdht.mdmi.ISyntaxNode;
 import org.openhealthtools.mdht.mdmi.MdmiException;
@@ -35,6 +42,9 @@ import org.openhealthtools.mdht.mdmi.engine.YBag;
 import org.openhealthtools.mdht.mdmi.engine.YChoice;
 import org.openhealthtools.mdht.mdmi.engine.YLeaf;
 import org.openhealthtools.mdht.mdmi.engine.YNode;
+import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.AxisSpecifierContext;
+import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.NodeTestContext;
+import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.PredicateContext;
 import org.openhealthtools.mdht.mdmi.model.Bag;
 import org.openhealthtools.mdht.mdmi.model.Choice;
 import org.openhealthtools.mdht.mdmi.model.LeafSyntaxTranslator;
@@ -59,14 +69,96 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
 public class DOMSAXSyntacticParser implements ISyntacticParser {
+
+	private static class XPathExtractor extends XPathBaseListener {
+
+		boolean inPredicate = false;
+		boolean isAttribute = false;
+		boolean isContainer = false;
+//		public StringBuffer sb = new StringBuffer();
+		org.w3c.dom.Node node;
+		Document document;
+
+		public XPathExtractor( Element element, boolean isContainer ) {
+	     this.node = element;
+	     this.isContainer = isContainer;
+	     document = this.node.getOwnerDocument();
+      }
+
+		@Override
+		public void exitNodeTest( NodeTestContext ctx ) {
+			if( !inPredicate ) {
+				if( isAttribute ) {
+//					sb.append(ctx.getText());
+					Attr attribute = document.createAttribute(ctx.getText());
+					((Element) node).setAttributeNode(attribute);
+					node = attribute;
+				}
+				else {
+					Element childElement = null;
+					if (isContainer) {
+						childElement = document.createElement(ctx.getText());
+						node.appendChild (childElement );
+					} else {
+						Element currentElement = (Element) node;
+						NodeList nodeList = currentElement.getElementsByTagName(ctx.getText());
+						if( nodeList.getLength() == 1 ) {
+							childElement = (Element) nodeList.item(0);
+						}
+						if( childElement == null ) {
+							childElement = document.createElement(ctx.getText());
+							node.appendChild (childElement );
+						}
+					}
+	
+					node = childElement;
+				}
+				isAttribute = false;
+			}
+			super.exitNodeTest(ctx);
+		}
+
+		@Override
+		public void enterPredicate( PredicateContext ctx ) {
+			inPredicate = true;
+			super.enterPredicate(ctx);
+		}
+
+		@Override
+		public void exitPredicate( PredicateContext ctx ) {
+			inPredicate = false;
+			super.exitPredicate(ctx);
+		}
+
+		@Override
+		public void exitAxisSpecifier( AxisSpecifierContext ctx ) {
+			if( !inPredicate && "@".equals(ctx.getText()) ) {
+				isAttribute = true;
+//				sb.append("@");
+			}
+			super.exitAxisSpecifier(ctx);
+		}
+
+	}
+	
+ 
+	
+	 
+	private org.w3c.dom.Node createElement(Element elemement, String xPath, boolean container ) {
+		 XPathLexer lexer = new XPathLexer(new ANTLRInputStream(xPath));
+		 
+		 CommonTokenStream tokens = new CommonTokenStream(lexer);
+		 
+		 XPathParser parser = new XPathParser(tokens);
+	  	 
+		 ParseTreeWalker walker = new ParseTreeWalker();
+	
+	
+		XPathExtractor extractor = new XPathExtractor(elemement,container);
+		walker.walk(extractor, parser.main());
+		return extractor.node;
+	}
 
 	protected NamespaceContext context;
 
@@ -441,8 +533,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 			@Override
 			public void endElement( String uri, String localName, String qName ) throws SAXException {
 				if( !endTags.isEmpty() ) {
-					EndTagProcessor foo = endTags.pop();
-					foo.process();
+					EndTagProcessor etp = endTags.pop();
+					etp.process();
 				}
 
 			}
@@ -556,6 +648,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 			throw ex;
 		}
 		catch( Exception ex ) {
+			ex.printStackTrace();
 			throw new MdmiException(ex, "Syntax.serialize(): unexpected exception");
 		}
 	}
@@ -570,53 +663,65 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 	 * @param root
 	 *           The node to store it into.
 	 */
-	private void serializeBag( YBag yroot, Element root ) {
-		
+	int indent=0;
+	private void serializeBag( YBag yroot, Element root ) {	
+		serialize(yroot,root);
+	}
 	
-		Bag rootBag = yroot.getBag();
-		ArrayList<Node> nodes = rootBag.getNodes();
+	private void serialize( YBag bag, Element element ) {
+		// TODO - This loop maintains the physical order of serialization of the syntax mode
+		// Replace with more effective loop
+		for (Node node : bag.getBag().getNodes()){
+			for( YNode ynode : bag.getYNodes() ) {
+				if( ynode.getNode().equals(node) ) {
+					if( ynode.isBag() ) {
+						boolean isContainer = false;
+						if (node.getSemanticElement() != null && node.getSemanticElement().getDatatype() != null ) {
+							if ("Container".equals(node.getSemanticElement().getDatatype().getName())) {
+								 isContainer = true;
+							}
+						}
+						if (node.getMaxOccurs() != 1){
+							isContainer = true;
+						}
+						
+						Element childElement = (Element) createElement(element, ynode.getNode().getLocation(), isContainer);
+						indent++;
+						serialize((YBag) ynode, childElement);
+						indent--;
+					}
+					else if( ynode.isLeaf() ) {
 
-		for( Node node : nodes) {
-			
-			ArrayList<YNode> ynodes = yroot.getYNodesForNode(node);
-			int yctr = 0;
-			
-			for (YNode ynode : ynodes) {
-			
-				if (ynode.isBag()) {
-					org.w3c.dom.Node xmlNode = XslUtil.createNodeForPathNoAxes(root, node.getLocation(), yctr);
-					
-					serializeBag((YBag) ynode,  (Element) xmlNode );
-				} else if (ynode.isLeaf()) {
-					YLeaf yleaf = (YLeaf) ynode;
-					String value = yleaf.getValue();
-					
-					org.w3c.dom.Node xmlNode =null;
-					if (".".equals(node.getLocation())) {
-						xmlNode = root;
-					} else {
-						 xmlNode = XslUtil.createNodeForPathNoAxes(root,node.getLocation(), yctr);
-					}
-					if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
-						Attr o = (Attr) xmlNode;
-						o.setTextContent(value);
-					}
-					else if( xmlNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE ) {
-						Element o = (Element) xmlNode;
-						if (value != null) {
-						XmlUtil.setText(o, value);
+						YLeaf yleaf = (YLeaf) ynode;
+						String value = yleaf.getValue();
+						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), false);
+
+						if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
+							Attr o = (Attr) xmlNode;
+							o.setTextContent(value);
+						}
+						else if( xmlNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE ) {
+							Element o = (Element) xmlNode;
+							if( value != null ) {
+								XmlUtil.setText(o, value);
+							}
+						}
+						else if( xmlNode.getNodeType() == org.w3c.dom.Node.TEXT_NODE ) {
+							Text o = (Text) xmlNode;
+							o.setTextContent(value);
 						}
 					}
-					else if( xmlNode.getNodeType() == org.w3c.dom.Node.TEXT_NODE ) {
-						Text o = (Text) xmlNode;
-						o.setTextContent(value);
-					}
 				}
-				yctr++;
 			}
-			
+		
 		}
+		
+		
+	 
+
+	
 	}
+	
 
 	/**
 	 * Serialize a YChoice to the given root element.
