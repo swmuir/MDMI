@@ -841,16 +841,21 @@ public class DefaultSemanticParser implements ISemanticParser {
 	 * @return The ynode corresponding to the SE passed in.
 	 */
 	private YNode ensureAbsolutePath( YNode yroot, SemanticElement se ) {
-		ArrayList<Node> path = getPath(se, null);
-		if( path.size() == 1 )
-			return yroot;
-		int index = 1;
-		YNode parent = yroot;
-		do {
-			Node current = path.get(index++);
-			parent = ensureParentHasChild(parent, current);
-		} while( index < path.size() );
-		return parent;
+		try {
+			ArrayList<Node> path = getPath(se, null);
+			if( path.size() == 1 )
+				return yroot;
+			int index = 1;
+			YNode parent = yroot;
+			do {
+				Node current = path.get(index++);
+				parent = ensureParentHasChild(parent, current);
+			} while( index < path.size() );
+			return parent;
+		}
+		catch( IndexOutOfBoundsException ioobe ) {
+			throw new MdmiException("Invalid Model - No Path Found  " + se.getName() + " :: " + DefaultSyntacticParser.getNodePath(yroot.getNode()));
+		}
 	}
 
 	/**
@@ -863,14 +868,19 @@ public class DefaultSemanticParser implements ISemanticParser {
 	 * @return The ynode corresponding to the SE passed in.
 	 */
 	private YNode ensureRelativePath( YNode ynode, SemanticElement se ) {
-		ArrayList<Node> path = getPath(se, ynode.getNode());
-		int index = 0;
-		YNode parent = ynode;
-		do {
-			Node current = path.get(index++);
-			parent = ensureParentHasChild(parent, current);
-		} while( index < path.size() );
-		return parent;
+		try {
+			ArrayList<Node> path = getPath(se, ynode.getNode());
+			int index = 0;
+			YNode parent = ynode;
+			do {
+				Node current = path.get(index++);
+				parent = ensureParentHasChild(parent, current);
+			} while( index < path.size() );
+			return parent;
+		}
+		catch( IndexOutOfBoundsException ioobe ) {
+			throw new MdmiException("Invalid Model - No Path Found  " + se.getName() + " :: " + DefaultSyntacticParser.getNodePath(ynode.getNode()));
+		}
 	}
 
 	/**
