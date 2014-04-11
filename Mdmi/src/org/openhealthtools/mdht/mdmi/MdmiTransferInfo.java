@@ -89,14 +89,9 @@ public class MdmiTransferInfo {
    @Override
    public String toString() {
       try {
-         StringBuffer sbe = new StringBuffer();
-         for( int i = 0; i < targetElements.size(); i++ ) {
-            if( i > 0 )
-               sbe.append(", ");
-            sbe.append(targetElements.get(i));
-         }
+        
          return "TRANFORM FROM: " + sourceModel.toString() + "[" + sourceMessage.toString() + "]\r\n" + "TO: "
-               + targetModel.toString() + "[" + targetMessage.toString() + "]\r\n" + "ELEMENTS: " + sbe.toString();
+               + targetModel.toString() + "[" + targetMessage.toString() + "]\r\n"  ;
       }
       catch( Exception ignored ) {}
       return super.toString();
