@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 import org.openhealthtools.mdht.mdmi.IElementValue;
 import org.openhealthtools.mdht.mdmi.MdmiException;
@@ -167,7 +168,7 @@ public class Conversion {
 	void execute() {
 		try {
 			ConversionImpl impl = ConversionImpl.Instance;
-			impl.start(false);
+			impl.start(m_owner.owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue());
 
 			ArrayList<ConversionInfo> cis = getTopLevelCis();
 			for( int i = 0; i < cis.size(); i++ ) {
@@ -225,6 +226,9 @@ public class Conversion {
 	private void execute( XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner ) {
 		try {
 			ConversionImpl impl = ConversionImpl.Instance;
+
+			impl.logging = m_owner.owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue();
+		 
 			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
@@ -281,6 +285,7 @@ public class Conversion {
 
 		}
 		catch( Exception e ) {
+			e.printStackTrace();
 			throw new MdmiException(e.getMessage());
 		}
 

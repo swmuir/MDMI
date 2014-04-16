@@ -16,6 +16,7 @@ package org.openhealthtools.mdht.mdmi.engine;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
 
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.Version;
@@ -80,9 +81,9 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- PRE-PROCESSORS END ----------");
 	}
 
-	private static boolean jsonLogging = false;
+
 	private void serializeSemanticModel( String name, ElementValueSet semanticModel ) {
-		if (jsonLogging) 
+		if (owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue()) 
 		{
 		try {
 			ObjectMapper mapper = new ObjectMapper();

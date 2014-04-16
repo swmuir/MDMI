@@ -48,15 +48,15 @@ class ConversionImpl {
 	public static ConversionImpl Instance = new ConversionImpl();
 
 	private void logToJson() throws Exception {
-		if (logging) {
-		if( first )
-			first = false;
-		else
-			jsonFop.write(",".getBytes());
-		
-		mapper.writeValue(jsonFop, conversionNode);
-		
-		conversionNode = null;
+		if( logging ) {
+			if( first )
+				first = false;
+			else
+				jsonFop.write(",".getBytes());
+
+			mapper.writeValue(jsonFop, conversionNode);
+
+			conversionNode = null;
 		}
 	}
 
@@ -242,6 +242,8 @@ class ConversionImpl {
 		}
 
 		mapper = new MdmiMapper();
+		
+		first = true;
 
 		mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
 		}
