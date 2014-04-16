@@ -657,8 +657,18 @@ public class XmlUtil {
          }
       }
       Document doc = e.getOwnerDocument();
-      Text txt = doc.createTextNode(text != null ? text.trim() : null);
-      e.appendChild(txt);
+      // bit of a hack - we preserve the cdata on the way in so we can serialize correctly
+      // This only works on xml to xml 
+      // TODO need to have a "preserve format" or some such on the mdmi structure
+      if (text.startsWith("<![CDATA[") && text.endsWith("]]>")) {
+      	CDATASection cdata = doc.createCDATASection(text != null ? text.substring(9, text.lastIndexOf("]]>")) : null); 	
+      	e.appendChild(cdata);
+      } else {
+         Text txt = doc.createTextNode(text != null ? text.trim() : null);
+         e.appendChild(txt);   	
+      }
+     
+   
    }
 
    /**
