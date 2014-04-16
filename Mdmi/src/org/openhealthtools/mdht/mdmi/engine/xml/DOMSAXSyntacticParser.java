@@ -63,6 +63,7 @@ import org.w3c.dom.Text;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.google.common.base.Predicate;
@@ -189,8 +190,12 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 	private Stack<org.w3c.dom.Node> domNodes = new Stack<org.w3c.dom.Node>();
 
 	private void saxParse( final YBag yroot, final byte[] data ) throws ParserConfigurationException, SAXException {
+		
+		
+		
+	
 
-		DefaultHandler mdmiHandler = new DefaultHandler() {
+         DefaultHandler2 mdmiHandler = new DefaultHandler2() {
 
 			private Stack<EndTagProcessor> endTags;
 
@@ -203,6 +208,24 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 			StringBuilder builder = null;
 
 			YLeaf currentYLeaf = null;
+
+			@Override
+         public void startCDATA() throws SAXException {
+				if( isParsing && builder != null ) {
+					builder.append("<![CDATA[");
+				} else {
+					isParsing = true;
+					builder = new StringBuilder();
+					builder.append("<![CDATA[");
+				}
+         }
+
+			@Override
+         public void endCDATA() throws SAXException {
+				if( isParsing && builder != null ) {
+					builder.append("]]>");
+				}
+         }
 
 			@Override
 			public void startDocument() throws SAXException {
@@ -468,8 +491,13 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 						else {
 							currentYLeaf = new YLeaf((LeafSyntaxTranslator) matchingSyntaxNode, parentYBag);
 							parentYBag.addYNode(currentYLeaf);
+							
+					
 							isParsing = true;
-							builder = new StringBuilder();
+							if (builder == null) {
+								builder = new StringBuilder();		
+							}
+						
 							endTags.push(leafEndTagProcessor);
 						}
 					
