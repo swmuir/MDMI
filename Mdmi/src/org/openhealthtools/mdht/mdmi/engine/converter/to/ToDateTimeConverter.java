@@ -7,19 +7,22 @@
  *
  * Contributors:
  *     Firestar Software, Inc. - initial API and implementation
+ *     Jeff Klann, PhD - revision for variable precision
  *
  * Author:
  *     Gabriel Oancea
+ *     Jeff Klann
  *
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine.converter.to;
 
-import java.text.*;
-import java.util.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 
-import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.MdmiException;
 import org.openhealthtools.mdht.mdmi.engine.converter.DateWrapper;
-import org.openhealthtools.mdht.mdmi.util.*;
+import org.openhealthtools.mdht.mdmi.util.DateUtil;
 
 public class ToDateTimeConverter implements IConvertToString {
 
@@ -28,36 +31,14 @@ public class ToDateTimeConverter implements IConvertToString {
     public String convertToString(Object obj, String format) {
         if (!((obj instanceof Date) || obj instanceof DateWrapper))
             throw new IllegalArgumentException("Object is not a java.util.Date type.");
+        if (obj instanceof DateWrapper) {
+            DateWrapper dateWrapper = (DateWrapper) obj;
+            obj = dateWrapper.getDate();
+        }
         try {
-            if (format != null && 0 < format.length() && !format.equals("DATETIME")) {
-                String[] formatStrings = format.split(";");
-                if (obj instanceof DateWrapper) {
-                    DateWrapper dateWrapper = (DateWrapper) obj;
-                    obj = dateWrapper.getDate();
-                    String orgFormat = dateWrapper.getOriginalFormat();
-                    if (orgFormat != null && Arrays.asList(formatStrings).contains(orgFormat))
-                        return convert(obj, orgFormat);
-                }
-
-                for (String formatString : formatStrings) {
-                    String convert = convert(obj, formatString);
-                    if (convert != null) return convert;
-                }
-            }
+        	return DateUtil.formatDate(format==null?null:DateUtil.getLongestWithoutSemiColons(format), (Date)obj);
         } catch (Exception ex) {
             throw new MdmiException(ex, "ToDateTimeConverter.convertToString({0}, {1}) failed.", obj, format);
         }
-        return XmlUtil.formatDateYMDHMSMZ((Date) obj);
-    }
-
-    private String convert(Object obj, String format) {
-        try {
-      	  if (!formats.containsKey(format)) {
-      		  formats.put(format, new SimpleDateFormat(format));
-      	  }
-            return formats.get(format).format((Date) obj);
-        } catch (IllegalArgumentException ignored) {
-        }
-        return null;
     }
 }

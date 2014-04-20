@@ -7,17 +7,19 @@
 *
 * Contributors:
 *     Firestar Software, Inc. - initial API and implementation
+*     Jeff Klann, PhD - revision for variable precision
 *
-* Author:
+* Authors:
 *     Gabriel Oancea
+*     Jeff Klann
 *
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine.converter.to;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.openhealthtools.mdht.mdmi.engine.converter.DateWrapper;
+import org.openhealthtools.mdht.mdmi.util.DateUtil;
 
 public class ToStringConverter implements IConvertToString {
    @Override
@@ -30,18 +32,16 @@ public class ToStringConverter implements IConvertToString {
    }
 
    public String convertStringSplit(Object obj, String format) {
-	   String[] formatStrings = format.split(";");
-       for (String formatString : formatStrings) {
-           String convert = convert(obj, formatString);
-           if (convert != null) return convert;
-       }
+	   String bestFormat = DateUtil.getLongestWithoutSemiColons(format);
+	   String convert = convert(obj,bestFormat);
+       if (convert != null) return convert;
 	return null;
    }
 
    private String convert(Object obj, String format) {
+	   if (obj==null) return "ERROR";
        try {
-           SimpleDateFormat sdf = new SimpleDateFormat(format);
-           return sdf.format((Date) obj);
+    	   return DateUtil.formatDate(format, (Date)obj);
        } catch (IllegalArgumentException ignored) {
        }
        return null;

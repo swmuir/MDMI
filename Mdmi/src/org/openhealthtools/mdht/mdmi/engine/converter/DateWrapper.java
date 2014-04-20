@@ -4,6 +4,7 @@ import java.util.Date;
 
 /**
  * @author YMolodkov
+ * @author jklann
  * @since 0.0.1
  */
 final public class DateWrapper {
@@ -28,4 +29,11 @@ final public class DateWrapper {
 	public String getOriginalString() {
 		return originalString;
 	}
+
+	@Override
+	public String toString() {
+		if (date!=null) return date.toString();
+		else return originalString;
+	}
+
 } // DateWrapper
