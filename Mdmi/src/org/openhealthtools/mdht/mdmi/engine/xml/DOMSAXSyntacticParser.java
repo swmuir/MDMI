@@ -42,6 +42,7 @@ import org.openhealthtools.mdht.mdmi.engine.YBag;
 import org.openhealthtools.mdht.mdmi.engine.YChoice;
 import org.openhealthtools.mdht.mdmi.engine.YLeaf;
 import org.openhealthtools.mdht.mdmi.engine.YNode;
+import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.AbbreviatedStepContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.AxisSpecifierContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.NodeTestContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.PredicateContext;
@@ -64,7 +65,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
-import org.xml.sax.helpers.DefaultHandler;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -74,10 +74,11 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 	private static class XPathExtractor extends XPathBaseListener {
 
+		private static final String DOTDOT = "..";
 		boolean inPredicate = false;
 		boolean isAttribute = false;
 		boolean isContainer = false;
-//		public StringBuffer sb = new StringBuffer();
+
 		org.w3c.dom.Node node;
 		Document document;
 
@@ -87,8 +88,25 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 	     document = this.node.getOwnerDocument();
       }
 
+	
+
+		@Override
+      public void exitAbbreviatedStep( AbbreviatedStepContext ctx ) {
+			// If xpath has .. move node upto parent
+			if (DOTDOT.equals(ctx.getText())) {
+				node = node.getParentNode();	
+			}
+	      super.exitAbbreviatedStep(ctx);
+      }
+
+	
+
 		@Override
 		public void exitNodeTest( NodeTestContext ctx ) {
+			System.out.println(ctx.getText());
+			if ("..".equals(ctx.getText())) {
+				System.out.println("foo");
+			}
 			if( !inPredicate ) {
 				if( isAttribute ) {
 //					sb.append(ctx.getText());
@@ -134,6 +152,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 		@Override
 		public void exitAxisSpecifier( AxisSpecifierContext ctx ) {
+			System.out.println("as"+ctx.getText());
 			if( !inPredicate && "@".equals(ctx.getText()) ) {
 				isAttribute = true;
 //				sb.append("@");
