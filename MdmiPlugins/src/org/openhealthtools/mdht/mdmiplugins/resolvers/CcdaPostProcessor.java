@@ -106,7 +106,6 @@ public class CcdaPostProcessor implements IPostProcessor {
 					.newTransformer(new javax.xml.transform.stream.StreamSource(
 							"section.xsl"));
 
-			System.out.println(result);
 			transformer.transform(new javax.xml.transform.stream.StreamSource(
 					bis), new javax.xml.transform.stream.StreamResult(bos));
 
