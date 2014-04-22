@@ -103,10 +103,6 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 		@Override
 		public void exitNodeTest( NodeTestContext ctx ) {
-			System.out.println(ctx.getText());
-			if ("..".equals(ctx.getText())) {
-				System.out.println("foo");
-			}
 			if( !inPredicate ) {
 				if( isAttribute ) {
 //					sb.append(ctx.getText());
@@ -152,10 +148,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 		@Override
 		public void exitAxisSpecifier( AxisSpecifierContext ctx ) {
-			System.out.println("as"+ctx.getText());
 			if( !inPredicate && "@".equals(ctx.getText()) ) {
 				isAttribute = true;
-//				sb.append("@");
 			}
 			super.exitAxisSpecifier(ctx);
 		}
