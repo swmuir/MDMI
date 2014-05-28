@@ -176,9 +176,7 @@ public class Conversion {
 				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
-
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getElementValuesByType(ci.target);
-
 					if( ci.target.isMultipleInstances() ) {
 						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
@@ -524,4 +522,14 @@ public class Conversion {
 			return sb.toString();
 		}
 	} // Conversion$ConversionInfo
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
+	      ConversionInfo ci = m_conversionInfos.get(i);
+	      sb.append(ci.toString()).append("\r\n");
+      }
+		return sb.toString();
+	}
 } // Conversion

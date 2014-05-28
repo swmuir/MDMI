@@ -81,41 +81,39 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- PRE-PROCESSORS END ----------");
 	}
 
-
 	private void serializeSemanticModel( String name, ElementValueSet semanticModel ) {
-		if (owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue()) 
-		{
-		try {
-			ObjectMapper mapper = new ObjectMapper();
+		if( owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue() ) {
+			try {
+				ObjectMapper mapper = new ObjectMapper();
 
-			SimpleModule dateTimeSerializerModule = new SimpleModule("DateTimeSerializerModule", new Version(1, 0, 0, null));
-			dateTimeSerializerModule.addSerializer(ElementValueSet.class, new ElementValueSetSerializer());
-			mapper.registerModule(dateTimeSerializerModule);
+				SimpleModule dateTimeSerializerModule = new SimpleModule("DateTimeSerializerModule", new Version(1, 0, 0, null));
+				dateTimeSerializerModule.addSerializer(ElementValueSet.class, new ElementValueSetSerializer());
+				mapper.registerModule(dateTimeSerializerModule);
 
-			SimpleModule xElementValueSerializerModule = new SimpleModule("XElementValueSerializer", new Version(1, 0, 0, null));
-			xElementValueSerializerModule.addSerializer(XElementValue.class, new XElementValueSerializer());
-			mapper.registerModule(xElementValueSerializerModule);
+				SimpleModule xElementValueSerializerModule = new SimpleModule("XElementValueSerializer", new Version(1, 0, 0, null));
+				xElementValueSerializerModule.addSerializer(XElementValue.class, new XElementValueSerializer());
+				mapper.registerModule(xElementValueSerializerModule);
 
-			SimpleModule semanticElementSerializerModule = new SimpleModule("SemanticElementSerializer", new Version(1, 0, 0, null));
-			xElementValueSerializerModule.addSerializer(SemanticElement.class, new SemanticElementSerializer());
-			mapper.registerModule(semanticElementSerializerModule);
+				SimpleModule semanticElementSerializerModule = new SimpleModule("SemanticElementSerializer", new Version(1, 0, 0, null));
+				xElementValueSerializerModule.addSerializer(SemanticElement.class, new SemanticElementSerializer());
+				mapper.registerModule(semanticElementSerializerModule);
 
-			SimpleModule xDataStructSerializerrModule = new SimpleModule("XDataStructSerializer", new Version(1, 0, 0, null));
-			xDataStructSerializerrModule.addSerializer(XDataStruct.class, new XDataStructSerializer());
-			mapper.registerModule(xDataStructSerializerrModule);
+				SimpleModule xDataStructSerializerrModule = new SimpleModule("XDataStructSerializer", new Version(1, 0, 0, null));
+				xDataStructSerializerrModule.addSerializer(XDataStruct.class, new XDataStructSerializer());
+				mapper.registerModule(xDataStructSerializerrModule);
 
-			File jsonFile = new File(String.format("./logs/%s.json", name));
-			mapper.writeValue(jsonFile, semanticModel);
-		}
-		catch( JsonGenerationException ex ) {
-			ex.printStackTrace();
-		}
-		catch( JsonMappingException ex ) {
-			ex.printStackTrace();
-		}
-		catch( IOException ex ) {
-			ex.printStackTrace();
-		}
+				File jsonFile = new File(String.format("./logs/%s.json", name));
+				mapper.writeValue(jsonFile, semanticModel);
+			}
+			catch( JsonGenerationException ex ) {
+				ex.printStackTrace();
+			}
+			catch( JsonMappingException ex ) {
+				ex.printStackTrace();
+			}
+			catch( IOException ex ) {
+				ex.printStackTrace();
+			}
 		}
 	}
 
@@ -128,13 +126,14 @@ public class MdmiUow implements Runnable {
 		//long ts = System.currentTimeMillis();
 		srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
 		//System.out.println("Syntax-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-
+		//System.out.println(srcSyntaxModel.toString());
 	
 		//ts = System.currentTimeMillis();
 		srcSemanticModel = new ElementValueSet();
 		srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel, false);
 		//System.out.println("Semantic-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
+		//System.out.println("");
       //System.out.println(srcSemanticModel.toString());
 		System.out.println("---------- SOURCE MESSAGE END ----------");
 	}
@@ -150,7 +149,10 @@ public class MdmiUow implements Runnable {
 		System.out.println("");
 		System.out.println("---------- TARGET MESSAGE START ----------");
 		trgSyntaxModel = (YNode) trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
+      //System.out.println(trgSyntaxModel.toString());
 		trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel, true);
+		//System.out.println("");
+      //System.out.println(trgSemanticModel.toString());
 		System.out.println("---------- TARGET MESSAGE END ----------");
 	}
 
@@ -161,10 +163,9 @@ public class MdmiUow implements Runnable {
 		long ts = System.currentTimeMillis();
 		Conversion c = new Conversion(this);
 		c.execute();
-		
+		//System.out.println(c.toString());
 		System.out.println("---------- CONVERSION END ----------");
 		System.out.println("Data conversion took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-		System.out.println("");
 		serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
       //System.out.println("---------- TARGET MESSAGE START ----------");
       //System.out.println(trgSemanticModel.toString());
@@ -184,6 +185,7 @@ public class MdmiUow implements Runnable {
 		else {
 			trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
 		}
+      //System.out.println(trgSyntaxModel.toString());
 		System.out.println("updateSyntacticModel  took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		ts = System.currentTimeMillis();
       //System.out.println(trgSyntaxModel.toString());
