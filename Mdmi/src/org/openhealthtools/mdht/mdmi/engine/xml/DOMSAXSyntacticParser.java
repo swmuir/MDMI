@@ -386,28 +386,26 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 						matches = new NodePredicate(currentBag, qName);
 					}
 					Iterable<Node> matchingNodes = Iterables.filter(currentBag.getNodes(), matches);
-					int numberOfmatches = Iterables.size(matchingNodes);
-
-					if( numberOfmatches == 1 ) {
-						return matchingNodes.iterator().next();
-					}
-					else if( numberOfmatches > 1 ) {
 						Iterator<Node> iterator = matchingNodes.iterator();
 						XPath xPath = XPathFactory.newInstance().newXPath();
-
+						/*
+						 * Loop over the nodes in the syntax model 
+						 * If the node has a xpath  - use that xpath evaluation to determine the correct node
+						 * If the node does not have a xpath - assume a match to the first node
+						 */
 						while( iterator.hasNext() ) {
 							Node node = iterator.next();
-
 							try {
 								String path = node.getLocation();
 								int start = path.indexOf("[");
 								int end = node.getLocation().lastIndexOf("]");
-								if( start > 0 || end > 0 ) {
-
+								if( start > -1 && end > -1 ) {
 									NodeList nodes = (NodeList) xPath.evaluate(path.substring(start + 1, end), domNodes.peek(), XPathConstants.NODESET);
 									if( nodes.getLength() > 0 ) {
 										return node;
 									}
+								} else {
+									return node;
 								}
 							}
 							catch( XPathExpressionException ex ) {
@@ -415,7 +413,6 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 							}
 
 						}
-					}
 					matches.pushNode(currentBag);
 				}
 				return null;
@@ -722,14 +719,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 								 isContainer = true;
 							}
 						}
-						if (node.getMaxOccurs() != 1){
-							isContainer = true;
-						}
-						
-						Element childElement = (Element) createElement(element, ynode.getNode().getLocation(), isContainer);
-						indent++;
-						serialize((YBag) ynode, childElement);
-						indent--;
+							Element childElement = (Element) createElement(element, ynode.getNode().getLocation(), isContainer);					 
+							serialize((YBag) ynode, childElement);
 					}
 					else if( ynode.isLeaf() ) {
 
