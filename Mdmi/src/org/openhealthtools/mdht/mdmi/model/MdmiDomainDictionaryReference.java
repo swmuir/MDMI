@@ -196,4 +196,19 @@ public class MdmiDomainDictionaryReference implements IPackage {
    public ElementType getElementType() {
       return ElementType.Package;
    }
+
+	public MdmiBusinessElementReference getBusinessElement( MdmiBusinessElementReference ber ) {
+		
+	     if( ber == null ) {
+	         return null;
+	      }
+
+	      for( MdmiBusinessElementReference curRef : getBusinessElements() ) {
+	         if(ber.getUniqueIdentifier() != null && ber.getUniqueIdentifier().equals(curRef.getUniqueIdentifier())) {
+	            return curRef;
+	         }
+	      }
+
+	      return null;
+   }
 } // MdmiDomainDictionaryReference

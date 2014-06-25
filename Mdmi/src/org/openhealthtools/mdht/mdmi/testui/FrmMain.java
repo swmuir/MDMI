@@ -497,10 +497,10 @@ public class FrmMain extends JFrame {
          Object[] items = lstElements.getSelectedValues();
          if( items == null || items.length <= 0 )
             throw new RuntimeException("No elements to transfer selected!");
-         ArrayList<String> elements = new ArrayList<String>();
+         ArrayList<MdmiBusinessElementReference> elements = new ArrayList<MdmiBusinessElementReference>();
          for( int i = 0; i < items.length; i++ ) {
             MdmiBusinessElementReference ber = (MdmiBusinessElementReference)items[i];
-            elements.add(ber.getName());
+            elements.add(ber);
          }
 
          // sMod.resolve( Mdmi.INSTANCE );

@@ -32,7 +32,7 @@ public class MdmiTransferInfo {
    /** The target message. */
    public MdmiMessage       targetMessage;
    /** A list of target element names to be transfered. May be Semantic Element names or Business Element names, depending upon the useDictionary. */
-   public ArrayList<String> targetElements;
+   public ArrayList<MdmiBusinessElementReference> targetElements;
    /** If true, the names in the targetElements are Semantic Element names, otherwise they are Business Element names.*/
    public boolean           useDictionary;
 
@@ -44,15 +44,15 @@ public class MdmiTransferInfo {
     * @param sourceMessage The source message.
     * @param targetModel The target model describing the target message.
     * @param targetMessage The target message.
-    * @param targetElements The target element names to be transfered.
+    * @param elements The target element names to be transfered.
     */
    public MdmiTransferInfo( MdmiModelRef sourceModel, MdmiMessage sourceMessage, MdmiModelRef targetModel,
-         MdmiMessage targetMessage, ArrayList<String> targetElements ) {
+         MdmiMessage targetMessage, ArrayList<MdmiBusinessElementReference> elements ) {
       this.sourceModel = sourceModel;
       this.sourceMessage = sourceMessage;
       this.targetModel = targetModel;
       this.targetMessage = targetMessage;
-      this.targetElements = targetElements;
+      this.targetElements = elements;
    }
 
    /**

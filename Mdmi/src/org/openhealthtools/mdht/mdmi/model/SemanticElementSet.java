@@ -208,4 +208,9 @@ public class SemanticElementSet implements IPackage {
    public ElementType getElementType() {
       return ElementType.Package;
    }
+
+	public SemanticElement getSemanticElement( MdmiBusinessElementReference name ) {
+	   // TODO Auto-generated method stub
+	   return null;
+   }
 } // SemanticElementSet

@@ -55,7 +55,7 @@ public class Conversion {
 		m_owner = owner;
 		m_transferInfo = m_owner.transferInfo;
 
-		ArrayList<String> elements = m_transferInfo.targetElements;
+		ArrayList<MdmiBusinessElementReference> elements = m_transferInfo.targetElements;
 		if( elements.size() <= 0 ) {
 			System.out.println("WARNING: no transfer targets specified, nothing to do!");
 			return;
@@ -76,7 +76,7 @@ public class Conversion {
 	 * @param elements
 	 *           The elements to use, a list of strings.
 	 */
-	private void initFromDictionaryElements( ArrayList<String> elements ) {
+	private void initFromDictionaryElements( ArrayList<MdmiBusinessElementReference> elements ) {
 		MessageModel trgModel = m_transferInfo.targetModel.getModel();
 		MessageModel srcModel = m_transferInfo.sourceModel.getModel();
 
@@ -84,7 +84,7 @@ public class Conversion {
 		MdmiDomainDictionaryReference srcDict = srcModel.getGroup().getDomainDictionary();
 
 		for( int i = 0; i < elements.size(); i++ ) {
-			String name = elements.get(i);
+			MdmiBusinessElementReference name = elements.get(i);
 			MdmiBusinessElementReference trgBER = trgDict.getBusinessElement(name);
 			if( trgBER == null )
 				throw new MdmiException("Conversion: invalid target BER " + name);
@@ -124,14 +124,14 @@ public class Conversion {
 	 * @param elements
 	 *           The elements to use, a list of strings.
 	 */
-	private void initFromTargetElements( ArrayList<String> elements ) {
+	private void initFromTargetElements( ArrayList<MdmiBusinessElementReference> elements ) {
 		MessageModel trgModel = m_transferInfo.targetModel.getModel();
 		MessageModel srcModel = m_transferInfo.sourceModel.getModel();
 
 		MdmiDomainDictionaryReference srcDict = srcModel.getGroup().getDomainDictionary();
 
 		for( int i = 0; i < elements.size(); i++ ) {
-			String name = elements.get(i);
+			MdmiBusinessElementReference name = elements.get(i);
 			SemanticElement target = trgModel.getElementSet().getSemanticElement(name);
 			if( target == null )
 				throw new MdmiException("Conversion: invalid target SE " + name);
