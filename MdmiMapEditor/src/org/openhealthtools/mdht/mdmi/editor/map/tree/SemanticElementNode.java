@@ -322,6 +322,11 @@ public class SemanticElementNode extends EditableObjectNode {
 
 	@Override
 	public boolean isRemovable() {
+		// don't allow removal if in hierarchical view - there are issues with showing
+		// broken parent/child relationships
+		if (isHierarchical()) {
+			return false;
+		}
 		return true;
 	}
 
