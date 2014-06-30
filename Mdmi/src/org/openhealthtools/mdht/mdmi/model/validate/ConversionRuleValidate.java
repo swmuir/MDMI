@@ -17,10 +17,11 @@ package org.openhealthtools.mdht.mdmi.model.validate;
 import org.openhealthtools.mdht.mdmi.model.*;
 
 public class ConversionRuleValidate<T extends ConversionRule> implements IModelValidate<T> {
-   public static final String s_nameField    = "name";
-   public static final String s_descName     = "description";
-   public static final String s_ruleLangName = "ruleExpressionLanguage";
-   public static final String s_ruleName     = "rule";
+   public static final String s_nameField          = "name";
+   public static final String s_descName           = "description";
+   public static final String s_ruleLangName       = "ruleExpressionLanguage";
+   public static final String s_ruleName           = "rule";
+   public static final String s_enumExtResolverUri = "enumExtResolverUri";
 
    @Override
    public void validate( T object, ModelValidationResults results ) {

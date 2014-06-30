@@ -49,5 +49,6 @@ public abstract class ConversionRuleReader<T extends ConversionRule> extends XMI
       object.setName(reader.getAttributeValue(null, ConversionRuleValidate.s_nameField));
       object.setDescription(reader.getAttributeValue(null, ConversionRuleValidate.s_descName));
       object.setRuleExpressionLanguage(reader.getAttributeValue(null, ConversionRuleValidate.s_ruleLangName));
+      object.setEnumExtResolverUri(reader.getAttributeValue(null, ConversionRuleValidate.s_enumExtResolverUri));
    }
 }

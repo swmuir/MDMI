@@ -18,13 +18,14 @@ import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.raw.*;
 
 public class ConversionRuleBuilder implements IModelInitializer<ConversionRule> {
+   private static final String s_enumExtResolverUri = "enumExtResolverUri";
 
    @Override
    public void initMessageModelObject( ConversionRule modelObject, ClassDef classDef, RawRoot root ) {
-
       modelObject.setName(BuilderUtil.getNameAttribVal(classDef));
       modelObject.setDescription(BuilderUtil.getDescriptionAttribVal(classDef));
       modelObject.setRule(BuilderUtil.getRuleAttribVal(classDef));
       modelObject.setRuleExpressionLanguage(BuilderUtil.getRuleExprAttribVal(classDef));
+      modelObject.setEnumExtResolverUri(BuilderUtil.getAttribVal(classDef, s_enumExtResolverUri));
    }
 }

@@ -39,6 +39,10 @@ public class MdmiBerWriter extends DirectWriterAbstract<MdmiBusinessElementRefer
       WriterUtil.writeAttribute(writer, BusinessElemRefValidate.s_refField, object.getReference());
       WriterUtil.writeAttribute(writer, BusinessElemRefValidate.s_idField, object.getUniqueIdentifier());
       WriterUtil.writeAttribute(writer, BusinessElemRefValidate.s_isReadonly, object.isReadonly());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueSetField, object.getEnumValueSetField());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueField, object.getEnumValueField());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueDescrField, object.getEnumValueDescrField());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueSet, object.getEnumValueSet());
 
       // Write child element
       if( object.getReferenceDatatype() != null ) {

@@ -26,6 +26,7 @@ public abstract class ConversionRule implements IAttribute {
    protected String                m_description;
    protected String                m_rule;
    protected String                m_ruleExpressionLanguage;
+   protected String                m_enumExtResolverUri;
    protected SemanticElement       m_owner;
    private HashMap<String, Object> m_userData = new HashMap<String, Object>();
 
@@ -61,7 +62,15 @@ public abstract class ConversionRule implements IAttribute {
       m_ruleExpressionLanguage = ruleExpressionLanguage;
    }
 
-   public String getActualRuleExpressionLanguage() {
+   public String getEnumExtResolverUri() {
+		return m_enumExtResolverUri;
+	}
+
+	public void setEnumExtResolverUri( String enumExtResolverUri ) {
+		this.m_enumExtResolverUri = enumExtResolverUri;
+	}
+
+	public String getActualRuleExpressionLanguage() {
       if( null != m_ruleExpressionLanguage && 0 < m_ruleExpressionLanguage.length() )
          return m_ruleExpressionLanguage;
       try {

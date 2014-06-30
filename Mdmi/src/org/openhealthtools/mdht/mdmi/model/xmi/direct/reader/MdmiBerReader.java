@@ -55,6 +55,10 @@ public class MdmiBerReader extends XMIReaderDirectAbstract<MdmiBusinessElementRe
       object.setName(reader.getAttributeValue(null, BusinessElemRefValidate.s_nameField));
       object.setUniqueIdentifier(reader.getAttributeValue(null, BusinessElemRefValidate.s_idField));
       object.setDescription(reader.getAttributeValue(null, BusinessElemRefValidate.s_descField));
+      object.setEnumValueSetField(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueSetField));
+      object.setEnumValueField(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueField));
+      object.setEnumValueDescrField(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueDescrField));
+      object.setEnumValueSet(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueSet));
 
       Boolean bool = XMIReaderUtil.convertToBoolean(reader.getAttributeValue(null,
             BusinessElemRefValidate.s_isReadonly));

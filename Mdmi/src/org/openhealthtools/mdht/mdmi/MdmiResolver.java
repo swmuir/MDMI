@@ -92,10 +92,21 @@ public class MdmiResolver {
          if( ecf.exists() )
             ecv = new MdmiEnumerationConverter(ecf);
       }
+
+      MdmiValueSetsHandler vsh = null;
+      mfn = mf.getAbsolutePath().trim().toLowerCase();
+      if( 0 < mfn.lastIndexOf(".xmi") ) {
+         mfn = mf.getAbsolutePath().trim().substring(0, mfn.lastIndexOf(".xmi"));
+         mfn += MdmiValueSetsHandler.FILE_EXTENSION;
+         File ecf = new File(mfn);
+         if( ecf.exists() )
+            vsh = new MdmiValueSetsHandler(ecf);
+      }
       
       for( MessageGroup mg : mgs ) {
          MI mi = new MI(mapInfo, mg);
          mi.enumerationConverter = ecv; // set the converter to be available to the runtime
+         mi.valueSetsHandler = vsh;
          System.out.println("Loaded message group " + mg.getName());
          if( m_maps.containsKey(mi.messageGroup.getName()) )
             m_maps.remove(mi.messageGroup.getName());
@@ -177,7 +188,22 @@ public class MdmiResolver {
       MI mi = m_maps.get(messageGroup);
       if( mi == null )
          return null;
-      return mi.getEnumerationConverter();
+      return mi.enumerationConverter;
+   }
+   
+   /**
+    * Get the value sets handler for the specified message group.
+    * 
+    * @param messageGroup The message group name to look for.
+    * @return The enumeration converter for the specified message group, or null if the group is not found.
+    */
+   public MdmiValueSetsHandler getValueSetsHandler( String messageGroup ) {
+      if( messageGroup == null )
+         throw new IllegalArgumentException("Null argument");
+      MI mi = m_maps.get(messageGroup);
+      if( mi == null )
+         return null;
+      return mi.valueSetsHandler;
    }
 
    /**
@@ -222,6 +248,7 @@ public class MdmiResolver {
       ISyntacticParser      syntacticSvcProvider;
       ISemanticParser       semanticSvcProvider;
       IEnumerationConverter enumerationConverter;
+      MdmiValueSetsHandler  valueSetsHandler;  
 
       public MI( MdmiConfig.MapInfo mapInfo, MessageGroup messageGroup ) {
          this.mapInfo = mapInfo;
@@ -264,10 +291,6 @@ public class MdmiResolver {
             }
          }
          return semanticSvcProvider;
-      }
-      
-      IEnumerationConverter getEnumerationConverter() {
-         return enumerationConverter;
       }
    } // MdmiMapResolver$MT
 } // MdmiMapResolver

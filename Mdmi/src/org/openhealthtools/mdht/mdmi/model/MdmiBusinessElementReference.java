@@ -27,6 +27,10 @@ public class MdmiBusinessElementReference implements IClassifier {
    private String                        m_description;
    private URI                           m_reference;
    private String                        m_uniqueIdentifier;
+   private String                        m_enumValueSetField;
+   private String                        m_enumValueField;
+   private String                        m_enumValueDescrField;
+	private String                        m_enumValueSet;
    private MdmiDomainDictionaryReference m_domainDictionaryReference;
    private List<MdmiBusinessElementRule> m_businessRules;
    private MdmiDatatype                  m_referenceDatatype;
@@ -94,6 +98,38 @@ public class MdmiBusinessElementReference implements IClassifier {
    public void setUniqueIdentifier( String identifier ) {
       m_uniqueIdentifier = identifier;
    }
+
+   public String getEnumValueSetField() {
+		return m_enumValueSetField;
+	}
+
+	public void setEnumValueSetField( String enumValueSetField ) {
+		this.m_enumValueSetField = enumValueSetField;
+	}
+
+	public String getEnumValueField() {
+		return m_enumValueField;
+	}
+
+	public void setEnumValueField( String enumValueField ) {
+		this.m_enumValueField = enumValueField;
+	}
+
+	public String getEnumValueDescrField() {
+		return m_enumValueDescrField;
+	}
+
+	public void setEnumValueDescrField( String enumValueDescrField ) {
+		this.m_enumValueDescrField = enumValueDescrField;
+	}
+
+	public String getEnumValueSet() {
+		return m_enumValueSet;
+	}
+
+	public void setEnumValueSet( String m_enumValueSet ) {
+		this.m_enumValueSet = m_enumValueSet;
+	}
 
    public boolean isReadonly() {
       return m_isReadonly;

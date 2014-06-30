@@ -26,7 +26,6 @@ public class ValidateHelper {
    public static String getResourceKey( String className, String fieldName ) {
       StringBuilder builder = new StringBuilder(className);
       builder.append(".").append(fieldName);
-
       return builder.toString();
    }
 }

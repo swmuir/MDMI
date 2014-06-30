@@ -28,6 +28,10 @@ public class SemanticElementBuilder extends ModelBuilderAbstract<SemanticElement
    private static final String                             s_multInstAttrib        = "multipleInstances";
    private static final String                             s_orderingAttrib        = "ordering";
    private static final String                             s_orderingLangAttrib    = "orderingLanguage";
+   private static final String                             s_enumValueSetField     = "enumValueSetField";
+   private static final String                             s_enumValueField        = "enumValueField";
+   private static final String                             s_enumValueDescrField   = "enumValueDescrField";
+   private static final String                             s_enumValueSet          = "enumValueSet";
    private static final String                             s_computedAttrib        = "computedValue";
    private static final String                             s_computedInAttrib      = "computedInValue";
    private static final String                             s_computedOutAttrib     = "computedOutValue";
@@ -84,6 +88,10 @@ public class SemanticElementBuilder extends ModelBuilderAbstract<SemanticElement
       msgElem.setMultipleInstances(BuilderUtil.getBooleanAttribVal(classDef, s_multInstAttrib));
       msgElem.setOrdering(BuilderUtil.getAttribVal(classDef, s_orderingAttrib));
       msgElem.setOrderingLanguage(BuilderUtil.getAttribVal(classDef, s_orderingLangAttrib));
+      msgElem.setEnumValueSetField(BuilderUtil.getAttribVal(classDef, s_enumValueSetField));
+      msgElem.setEnumValueField(BuilderUtil.getAttribVal(classDef, s_enumValueField));
+      msgElem.setEnumValueDescrField(BuilderUtil.getAttribVal(classDef, s_enumValueDescrField));
+      msgElem.setEnumValueSet(BuilderUtil.getAttribVal(classDef, s_enumValueSet));
 
       String value = BuilderUtil.getAttribVal(classDef, s_elemTypeAttrib);
       if( value != null ) {

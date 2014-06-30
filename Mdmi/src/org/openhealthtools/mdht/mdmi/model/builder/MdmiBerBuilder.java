@@ -20,11 +20,15 @@ import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.model.raw.*;
 
 public class MdmiBerBuilder extends ModelBuilderCompositionOnly<MdmiBusinessElementReference> {
-   private static final String             s_idAttrib       = "uniqueIdentifier";
-   private static final String             s_refAttrib      = "reference";
-   private static final String             s_datatypeAttrib = "referenceDatatype";
-   private static final String             s_isReadonly     = "isReadonly";
-   private static final MdmiBerRuleBuilder m_ruleBuilder    = new MdmiBerRuleBuilder();
+   private static final String             s_idAttrib              = "uniqueIdentifier";
+   private static final String             s_refAttrib             = "reference";
+   private static final String             s_datatypeAttrib        = "referenceDatatype";
+   private static final String             s_isReadonly            = "isReadonly";
+   private static final String             s_enumValueSetField     = "enumValueSetField";
+   private static final String             s_enumValueField        = "enumValueField";
+   private static final String             s_enumValueDescrField   = "enumValueDescrField";
+   private static final String             s_enumValueSet          = "enumValueSet";
+   private static final MdmiBerRuleBuilder m_ruleBuilder           = new MdmiBerRuleBuilder();
 
    @Override
    public MdmiBusinessElementReference buildMessageModelObject( ClassDef classDef, RawRoot root,
@@ -52,6 +56,10 @@ public class MdmiBerBuilder extends ModelBuilderCompositionOnly<MdmiBusinessElem
       ref.setUniqueIdentifier(BuilderUtil.getAttribVal(classDef, s_idAttrib));
       ref.setReference(BuilderUtil.getURIAttribVal(classDef, s_refAttrib));
       ref.setReadonly(BuilderUtil.getBooleanAttribVal(classDef, s_isReadonly));
+      ref.setEnumValueSetField(BuilderUtil.getAttribVal(classDef, s_enumValueSetField));
+      ref.setEnumValueField(BuilderUtil.getAttribVal(classDef, s_enumValueField));
+      ref.setEnumValueDescrField(BuilderUtil.getAttribVal(classDef, s_enumValueDescrField));
+      ref.setEnumValueSet(BuilderUtil.getAttribVal(classDef, s_enumValueSet));
       return ref;
    }
 

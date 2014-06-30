@@ -31,6 +31,10 @@ public class SemanticElement implements IClassifier {
    private SemanticElement                   m_parent;
    private String                            m_ordering;
    private String                            m_orderingLanguage;
+   private String                            m_enumValueSetField;
+   private String                            m_enumValueField;
+   private String                            m_enumValueDescrField;
+	private String                            m_enumValueSet;
    private MdmiExpression                    m_computedValue;
    private MdmiExpression                    m_computedInValue;
    private MdmiExpression                    m_computedOutValue;
@@ -150,7 +154,39 @@ public class SemanticElement implements IClassifier {
       m_orderingLanguage = orderingLanguage;
    }
 
-   public MdmiExpression getComputedValue() {
+   public String getEnumValueSetField() {
+		return m_enumValueSetField;
+	}
+
+	public void setEnumValueSetField( String enumValueSetField ) {
+		this.m_enumValueSetField = enumValueSetField;
+	}
+
+	public String getEnumValueField() {
+		return m_enumValueField;
+	}
+
+	public void setEnumValueField( String enumValueField ) {
+		this.m_enumValueField = enumValueField;
+	}
+
+	public String getEnumValueDescrField() {
+		return m_enumValueDescrField;
+	}
+
+	public void setEnumValueDescrField( String enumValueDescrField ) {
+		this.m_enumValueDescrField = enumValueDescrField;
+	}
+
+	public String getEnumValueSet() {
+		return m_enumValueSet;
+	}
+
+	public void setEnumValueSet( String m_enumValueSet ) {
+		this.m_enumValueSet = m_enumValueSet;
+	}
+
+	public MdmiExpression getComputedValue() {
       return m_computedValue;
    }
 

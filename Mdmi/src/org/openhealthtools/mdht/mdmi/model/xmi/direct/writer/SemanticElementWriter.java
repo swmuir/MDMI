@@ -46,6 +46,10 @@ public class SemanticElementWriter extends DirectWriterAbstract<SemanticElement>
       WriterUtil.writeAttribute(writer, SemanticElementValidate.s_multInstName, object.isMultipleInstances());
       WriterUtil.writeAttribute(writer, SemanticElementValidate.s_orderName, object.getOrdering());
       WriterUtil.writeAttribute(writer, SemanticElementValidate.s_orderLangName, object.getOrderingLanguage());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueSetField, object.getEnumValueSetField());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueField, object.getEnumValueField());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueDescrField, object.getEnumValueDescrField());
+      WriterUtil.writeAttribute(writer, SemanticElementValidate.s_enumValueSet, object.getEnumValueSet());
 
       // Write child elements, including references
       if( object.getDatatype() != null ) {

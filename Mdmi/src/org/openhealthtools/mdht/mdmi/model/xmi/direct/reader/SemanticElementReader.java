@@ -104,6 +104,10 @@ public class SemanticElementReader extends XMIReaderDirectAbstract<SemanticEleme
       object.setDescription(reader.getAttributeValue(null, SemanticElementValidate.s_descName));
       object.setOrdering(reader.getAttributeValue(null, SemanticElementValidate.s_orderName));
       object.setOrderingLanguage(reader.getAttributeValue(null, SemanticElementValidate.s_orderLangName));
+      object.setEnumValueSetField(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueSetField));
+      object.setEnumValueField(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueField));
+      object.setEnumValueDescrField(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueDescrField));
+      object.setEnumValueSet(reader.getAttributeValue(null, SemanticElementValidate.s_enumValueSet));
 
       Boolean bool = XMIReaderUtil.convertToBoolean(reader.getAttributeValue(null,
             SemanticElementValidate.s_multInstName));

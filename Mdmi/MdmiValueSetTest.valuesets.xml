@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mdmiValueSets>
+   <valueSets>
+      <valueSet name="Colors">
+         <values>
+            <value code="WHITE" />
+            <value code="BLUE" />
+            <value code="RED" />
+         </values>
+      </valueSet>
+      <valueSet name="ColorCodes">
+         <values>
+            <value code="W" />
+            <value code="B" />
+            <value code="R" />
+         </values>
+      </valueSet>
+   </valueSets>
+   <valueSetMaps>
+      <valueSetMap sourceSet="ColorCodes" targetSet="Colors">
+         <mappings>
+            <mapping source="R" target="RED" />
+            <mapping source="B" target="BLUE" />
+            <mapping source="W" target="WHITE" />
+         </mappings>
+      </valueSetMap>
+      <valueSetMap sourceSet="Colors" targetSet="ColorCodes">
+         <mappings>
+            <mapping source="RED" target="R" />
+            <mapping source="BLUE" target="B" />
+            <mapping source="WHITE" target="W" />
+         </mappings>
+      </valueSetMap>
+   </valueSetMaps>
+</mdmiValueSets>
