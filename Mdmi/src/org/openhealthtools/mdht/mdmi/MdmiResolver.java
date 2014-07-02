@@ -99,8 +99,7 @@ public class MdmiResolver {
          mfn = mf.getAbsolutePath().trim().substring(0, mfn.lastIndexOf(".xmi"));
          mfn += MdmiValueSetsHandler.FILE_EXTENSION;
          File ecf = new File(mfn);
-         if( ecf.exists() )
-            vsh = new MdmiValueSetsHandler(ecf);
+         vsh = new MdmiValueSetsHandler(ecf);
       }
       
       for( MessageGroup mg : mgs ) {

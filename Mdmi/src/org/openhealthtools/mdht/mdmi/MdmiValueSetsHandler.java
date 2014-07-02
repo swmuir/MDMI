@@ -21,10 +21,10 @@ public final class MdmiValueSetsHandler {
 	
 	protected MdmiValueSetsHandler( File sourceFile ) {
 		this();
-		if( null == sourceFile || !sourceFile.exists() || !sourceFile.isFile() )
-			throw new IllegalArgumentException("Invalid or missing source file " + sourceFile);
-		this.sourceFile = sourceFile;
-		fromXml();
+		if( null != sourceFile && sourceFile.exists() && sourceFile.isFile() ) {
+			this.sourceFile = sourceFile;
+			fromXml();
+		}
 	}
 	
 	public MdmiValueSet getValueSet( String name ) {
