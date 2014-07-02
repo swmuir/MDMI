@@ -152,10 +152,14 @@ public final class Field implements IAttribute {
    }
 
    protected void toString( StringBuffer out, String indent ) {
-      out.append(indent + m_name + ": " + m_datatype.getTypeName());
-      if( m_minOccurs != 1 || m_maxOccurs != 1 )
-         out.append("[" + m_minOccurs + ".." + (m_maxOccurs < 0 ? "*" : m_maxOccurs) + "]");
-      out.append("\r\n");
+   	if (m_datatype == null) {
+   		out.append(indent + m_name);
+   	} else {
+   		out.append(indent + m_name + ": " + m_datatype.getTypeName());
+   	}
+   	if( m_minOccurs != 1 || m_maxOccurs != 1 )
+   		out.append("[" + m_minOccurs + ".." + (m_maxOccurs < 0 ? "*" : m_maxOccurs) + "]");
+   	out.append("\r\n");
    }
 
    @Override
