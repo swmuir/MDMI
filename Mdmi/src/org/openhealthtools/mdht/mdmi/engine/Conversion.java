@@ -106,9 +106,15 @@ public class Conversion {
 				if( srcSes.size() <= 0 ) {
 					throw new MdmiException("Conversion: invalid mapping, missing source SEs, source BER is " + ci.srcBER.getName());
 				}
-				for( int k = 0; k < srcSes.size(); k++ ) {
+				for( int k = 0; k < srcSes.size(); k++ ) {			
 					SemanticElement ses = srcSes.get(k);
-					ci.source.add(ses);
+					for (ToMessageElement tme : ses.getToMdmi()) {
+						// Only add to the source if the business element match and the semantic elements match
+						if (tme.getOwner().equals(target) && trgBER.getUniqueIdentifier().equals(tme.getBusinessElement().getUniqueIdentifier())) {							
+						ci.source.add(ses);
+							break;
+						}
+					}
 				}
 				cis.add(ci);
 			}
