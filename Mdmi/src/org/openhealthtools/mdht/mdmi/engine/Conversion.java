@@ -110,9 +110,18 @@ public class Conversion {
 					SemanticElement ses = srcSes.get(k);
 					for (ToMessageElement tme : ses.getToMdmi()) {
 						// Only add to the source if the business element match and the semantic elements match
-						if (tme.getOwner().equals(target) && trgBER.getUniqueIdentifier().equals(tme.getBusinessElement().getUniqueIdentifier())) {							
-						ci.source.add(ses);
-							break;
+						// Check to see if isomorphic - this is a kludge for ken
+						if( trgModel.getGroup().getName().equals(srcModel.getGroup().getName()) ) {
+							if(tme.getOwner().equals(target) && trgBER.getUniqueIdentifier().equals(tme.getBusinessElement().getUniqueIdentifier()) ) {
+								ci.source.add(ses);
+								break;
+							}
+						}
+						else {
+							if( trgBER.getUniqueIdentifier().equals(tme.getBusinessElement().getUniqueIdentifier()) ) {
+								ci.source.add(ses);
+								break;
+							}
 						}
 					}
 				}
