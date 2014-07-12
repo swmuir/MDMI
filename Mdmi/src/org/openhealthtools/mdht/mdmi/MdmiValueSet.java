@@ -45,12 +45,16 @@ public class MdmiValueSet {
 		
 		protected void fromXml( Element root ) {
 			code = root.getAttribute("code");
-			description = XmlUtil.getText(root);
+//			description = XmlUtil.getText(root);
+			description = root.getAttribute("description");
 		}
 		
 		protected void toXml( Element owner ) {
 			Element root = XmlUtil.addElement(owner, TAG);
 			root.setAttribute("code", code);
+			if (description != null) {
+				root.setAttribute("description", description);
+			}
 		}
 	} // Value
 	
@@ -72,6 +76,7 @@ public class MdmiValueSet {
 		if( null == owner )
 			throw new IllegalArgumentException("Owner cannot be null!");
 		this.owner = owner;
+		values = new HashMap<String, Value>();
 		fromXml(root);
 	}
 

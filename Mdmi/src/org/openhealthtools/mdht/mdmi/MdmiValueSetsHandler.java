@@ -19,7 +19,9 @@ public final class MdmiValueSetsHandler {
 		valueSetMaps = new HashMap<String, MdmiValueSetMap>();
 	}
 	
-	protected MdmiValueSetsHandler( File sourceFile ) {
+	// TODO: made public for testing (shouldn't check in)
+	//protected MdmiValueSetsHandler( File sourceFile ) {
+	public MdmiValueSetsHandler( File sourceFile ) {
 		this();
 		if( null != sourceFile && sourceFile.exists() && sourceFile.isFile() ) {
 			this.sourceFile = sourceFile;
@@ -43,6 +45,10 @@ public final class MdmiValueSetsHandler {
 	
 	public void removeValueSet( String name ) {
 		valueSets.remove(name);
+	}
+	
+	public Collection<MdmiValueSet> getAllValueSets() {
+		return valueSets.values();
 	}
 	
 	public MdmiValueSetMap getValueSetMap( String name ) {

@@ -108,6 +108,7 @@ public class MdmiValueSetMap {
 		if( null == owner )
 			throw new IllegalArgumentException("Owner cannot be null!");
 		this.owner = owner;
+		mappings = new ArrayList<MdmiValueSetMap.Mapping>();
 		fromXml(root);
 	}
 	
