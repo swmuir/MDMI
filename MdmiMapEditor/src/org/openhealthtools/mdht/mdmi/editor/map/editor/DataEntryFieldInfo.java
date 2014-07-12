@@ -21,6 +21,7 @@ import java.net.URL;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 
@@ -97,64 +98,86 @@ public class DataEntryFieldInfo {
 	/** Indicate that this field has an error */
 	public void showDataInputError() {
 		if (!m_dataInputError) {
-			Border errorBorder = createErrorBorder();
-			
-			// add the error border outside the existing border
-			Border border = m_editComponent.getComponent().getBorder();
-
-			border = BorderFactory.createCompoundBorder(errorBorder, border);
-			m_editComponent.getComponent().setBorder(border);
+			createErrorBorder(m_editComponent.getComponent());
 		}
 		
 		m_dataInputError = true;
 	}
 
-	/** Create a border that has a red squiggly line on the bottom, but no
-	 * top or side impact
-	 * @return
-	 */
-	private static Border createErrorBorder() {
-		// create a border with a red line on the bottom
-		//         ________________________________
-		//        |                                |
-		//        |                                |
-		//        |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
-		//
-		URL url = DataEntryFieldInfo.class.getResource(s_iconPath);
-		Border outerPattern; 
-		if (url != null) {
-			ImageIcon icon = new ImageIcon(url);
-			outerPattern = BorderFactory.createMatteBorder(0, 0, icon.getIconHeight(), 0, icon);
-		} else {
-			outerPattern = BorderFactory.createMatteBorder(0, 0, 2, 0, Color.red);
+	/** Surround this component with a border indicating there's an error */
+	public static void createErrorBorder(JComponent component) {
+		Border border = component.getBorder();
+		if (!(border instanceof ErrorBorder)) {
+			// create an Error Border surrounding the existing border
+			// (if it doesn't already have one)
+			border = new ErrorBorder(component.getBorder());
+			component.setBorder(border);
 		}
-		
-		// add a white line on the inside
-		//         ________________________________
-		//        |                                |
-		//        |                                |
-		//        |--------------------------------|
-		//        |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
-		//
-		Border errorBorder = BorderFactory.createCompoundBorder(outerPattern,
-				BorderFactory.createMatteBorder(0, 0, 1, 0, Color.white) );
-		return errorBorder;
 	}
+	
+	/** Remove the error border around the component */
+	public static void clearErrorBorder(JComponent component) {
+		Border border = component.getBorder();
+		if (border instanceof ErrorBorder) {
+			border = ((ErrorBorder)border).getOriginalBorder();
+			component.setBorder(border);
+		}
+	}
+
 	
 	/** Clear indication of an error */
 	public void clearDataInputError() {
 		if (m_dataInputError) {
 			// clear the border
-			Border border = m_editComponent.getComponent().getBorder();
-			if (border instanceof CompoundBorder) {
-				border = ((CompoundBorder)border).getInsideBorder();
-			}
-			m_editComponent.getComponent().setBorder(border);
+			clearErrorBorder(m_editComponent.getComponent());
 		}
 		
 		m_dataInputError = false;
 	}
 	
+	/** Create a new border surrounding the inside border */
+	public static class ErrorBorder extends CompoundBorder {
+		
+		public ErrorBorder(Border insideBorder) {
+			super(createErrorIndicatorBorder(), insideBorder);
+		}
+
+		public Border getOriginalBorder() {
+			return super.getInsideBorder();
+		}
+
+		/** Create a border that has a red squiggly line on the bottom, but no
+		 * top or side impact
+		 * @return
+		 */
+		private static Border createErrorIndicatorBorder() {
+			// create a border with a red line on the bottom
+			//         ________________________________
+			//        |                                |
+			//        |                                |
+			//        |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
+			//
+			URL url = DataEntryFieldInfo.class.getResource(s_iconPath);
+			Border outerPattern; 
+			if (url != null) {
+				ImageIcon icon = new ImageIcon(url);
+				outerPattern = BorderFactory.createMatteBorder(0, 0, icon.getIconHeight(), 0, icon);
+			} else {
+				outerPattern = BorderFactory.createMatteBorder(0, 0, 2, 0, Color.red);
+			}
+			
+			// add a white line on the inside
+			//         ________________________________
+			//        |                                |
+			//        |                                |
+			//        |--------------------------------|
+			//        |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
+			//
+			Border errorBorder = BorderFactory.createCompoundBorder(outerPattern,
+					BorderFactory.createMatteBorder(0, 0, 1, 0, Color.white) );
+			return errorBorder;
+		}
+	}
 
 	
 	////////////////////////////////////////////////

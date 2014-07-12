@@ -131,61 +131,6 @@ public class SpreadSheetModelBuilder {
 		return true;
 	}
 
-	// check whether each string in the list is empty
-	public static boolean isEmptyList(List<String> list) {
-		return isEmptyList(list, 0);
-	}
-	
-	// check whether each string in the list is empty, starting with the i'th element
-	public static boolean isEmptyList(List<String> list, int idx) {
-		boolean isEmpty = true;
-		for (int i=idx; i<list.size(); i++) {
-			if (list.get(i).length() > 0) {
-				isEmpty = false;
-				break;		
-			}
-		}
-		return isEmpty;
-	}
-	
-	// get the i'th string in a list. If the list is shorter than 
-	// needed, return an empty string
-	public static String getString(List<String>list, int idx)
-	{
-		String s = "";
-		if (list != null && idx < list.size()) {
-			// strip off leading and trailing quotes if there are any
-			s = stripQuotes(list.get(idx));
-		}
-		return s;
-	}
-
-	// if there are leading and trailing quotes, it means there are embedded quotes -
-	// e.g. "EncounterPerformerRepresentedOrganizationPhone.use = ""WP"""
-	//   --> EncounterPerformerRepresentedOrganizationPhone.use = "WP"
-	private static String stripQuotes(String string) {
-		int length = string.length();
-		if (length > 2 && string.charAt(0) == '"' && string.charAt(length - 1) == '"') {
-			StringBuilder newString = new StringBuilder();
-			for (int i = 0; i < length; i++) {
-				if (i == 0 || i == length - 1) {
-					continue; // strip first and last
-				}
-				
-				char c = string.charAt(i);
-				if (c == '"') {
-					// replace doubles with a single
-					if (i == 0 || string.charAt(i - 1) != '"') {
-						continue;
-					}
-				}
-				newString.append(c);
-			}
-			string = newString.toString();
-		}
-		return string;
-	}
-
 	// Normalize an element name (first letter capitalized, blanks dropped)
 	private static String normalizeName(String name) {
 		StringBuilder newName = new StringBuilder();
@@ -377,7 +322,7 @@ public class SpreadSheetModelBuilder {
 			while ((stringList = reader.getNextLine()) != null) {
 				lineNo++;
 				// skip empty lines
-				if (isEmptyList(stringList)) {
+				if (CSVFileReader.isEmptyList(stringList)) {
 					continue;
 				}
 
@@ -388,16 +333,16 @@ public class SpreadSheetModelBuilder {
 				// Symedical Domain
 
 				int column = 0;
-				dataTypeName = getString(stringList, column++);
-				containerName = getString(stringList, column++);
-				fieldName = getString(stringList, column++);
-				fieldType = getString(stringList, column++);
-				required = getString(stringList, column++);
-				multiple = getString(stringList, column++);
-				HL7ValueSet = getString(stringList, column++);
-				relativeXpathTag = getString(stringList, column++);
-				format = getString(stringList, column++);
-				serverDomain = getString(stringList, column++);
+				dataTypeName = CSVFileReader.getString(stringList, column++);
+				containerName = CSVFileReader.getString(stringList, column++);
+				fieldName = CSVFileReader.getString(stringList, column++);
+				fieldType = CSVFileReader.getString(stringList, column++);
+				required = CSVFileReader.getString(stringList, column++);
+				multiple = CSVFileReader.getString(stringList, column++);
+				HL7ValueSet = CSVFileReader.getString(stringList, column++);
+				relativeXpathTag = CSVFileReader.getString(stringList, column++);
+				format = CSVFileReader.getString(stringList, column++);
+				serverDomain = CSVFileReader.getString(stringList, column++);
 
 				// ////////////////////////////////
 				// get maximum from Multiple
@@ -695,7 +640,7 @@ public class SpreadSheetModelBuilder {
 			while ( (stringList = reader.getNextLine()) != null) {
 				lineNo++;
 				// skip empty lines
-				if (isEmptyList(stringList)) {
+				if (CSVFileReader.isEmptyList(stringList)) {
 					continue;
 				}
 
@@ -707,26 +652,26 @@ public class SpreadSheetModelBuilder {
 				//     Required | Parent | SE (HL7) Data Type | Datatype Category |
 				//     Data Rule | HL7 Value Set |Relative Xpath tag | Format | Symantic Server Domain
 				
-				modelName = getString(stringList, column++);
+				modelName = CSVFileReader.getString(stringList, column++);
 				
 				// if there's a model name only - use name as message group name
-				if (isEmptyList(stringList, column)) {
+				if (CSVFileReader.isEmptyList(stringList, column)) {
 					messageGroup.setName(modelName);
 					continue;
 				}
 				
-				elementName = getString(stringList, column++);
-				SEType = getString(stringList, column++);
-				maximum = getString(stringList, column++);
-				required = getString(stringList, column++);
-				parentName = getString(stringList, column++);
-				dataTypeName = getString(stringList, column++);
-				datatypeCategory = getString(stringList, column++);
-				dataRuleText = getString(stringList, column++);
-				HL7ValueSet = getString(stringList, column++);
-				relativeXpathTag = getString(stringList, column++);
-				format = getString(stringList, column++);
-				serverDomain = getString(stringList, column++);
+				elementName = CSVFileReader.getString(stringList, column++);
+				SEType = CSVFileReader.getString(stringList, column++);
+				maximum = CSVFileReader.getString(stringList, column++);
+				required = CSVFileReader.getString(stringList, column++);
+				parentName = CSVFileReader.getString(stringList, column++);
+				dataTypeName = CSVFileReader.getString(stringList, column++);
+				datatypeCategory = CSVFileReader.getString(stringList, column++);
+				dataRuleText = CSVFileReader.getString(stringList, column++);
+				HL7ValueSet = CSVFileReader.getString(stringList, column++);
+				relativeXpathTag = CSVFileReader.getString(stringList, column++);
+				format = CSVFileReader.getString(stringList, column++);
+				serverDomain = CSVFileReader.getString(stringList, column++);
 
 				///////////////////////////////////////
 				// Message Model name - use previous if blank
@@ -1323,7 +1268,7 @@ public class SpreadSheetModelBuilder {
 			while ( (stringList = reader.getNextLine()) != null) {
 				lineNo++;
 				// skip empty lines
-				if (isEmptyList(stringList)) {
+				if (CSVFileReader.isEmptyList(stringList)) {
 					continue;
 				}
 				
@@ -1334,17 +1279,17 @@ public class SpreadSheetModelBuilder {
 				//      | Description | UID 
 
 				int column = 0;
-				elementName = getString(stringList, column++);
-				beRefName = getString(stringList, column++);
-				datatypeName = getString(stringList, column++);
-				datatypeCategory = getString(stringList, column++);
-				iso = getString(stringList, column++);
-				SEtoBER = getString(stringList, column++);
-				SEfromBER = getString(stringList, column++);
-				HL7ValueSet = getString(stringList, column++);
-				serverDomain = getString(stringList, column++);
-				description = getString(stringList, column++);
-				uidString = getString(stringList, column++);
+				elementName = CSVFileReader.getString(stringList, column++);
+				beRefName = CSVFileReader.getString(stringList, column++);
+				datatypeName = CSVFileReader.getString(stringList, column++);
+				datatypeCategory = CSVFileReader.getString(stringList, column++);
+				iso = CSVFileReader.getString(stringList, column++);
+				SEtoBER = CSVFileReader.getString(stringList, column++);
+				SEfromBER = CSVFileReader.getString(stringList, column++);
+				HL7ValueSet = CSVFileReader.getString(stringList, column++);
+				serverDomain = CSVFileReader.getString(stringList, column++);
+				description = CSVFileReader.getString(stringList, column++);
+				uidString = CSVFileReader.getString(stringList, column++);
 				
 				/////////////////////////////////////
 				// Semantic Element Name

@@ -26,6 +26,7 @@ import javax.swing.JMenuItem;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 
+import org.openhealthtools.mdht.mdmi.editor.map.Actions;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewDatatypeTree;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewDatatypeUsageSummary;
@@ -162,6 +163,11 @@ public class DataTypeSetNode extends EditableObjectNode {
 		if (menus == null) {
 			menus = new ArrayList<JComponent>();
 		}
+
+		// Create enumerated type
+		JMenuItem menuItem = new JMenuItem(Actions.getActionInstance(Actions.CREATE_ENUM_ACTION));
+		menus.add(menuItem);
+		
 		// Tree
 		menus.add(new JMenuItem(new AbstractAction(s_res.getString("DataTypeNode.viewTypeHierarchy")) {
 			@Override

@@ -15,6 +15,7 @@
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,9 +39,10 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.StringField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.ValueSetData;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
+import org.openhealthtools.mdht.mdmi.model.Field;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
-import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 import org.openhealthtools.mdht.mdmi.model.SemanticElementRelationship;
@@ -61,14 +63,19 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 //		add(bizElemsTitleNode);	
 	}
 
+	/** Get the user object */
+	public MdmiBusinessElementReference getBusinessElementReference() {
+		return (MdmiBusinessElementReference)getUserObject();
+	}
+
 	@Override
 	public String getDisplayName(Object userObject) {
-		return ((MdmiBusinessElementReference)userObject).getName();
+		return getBusinessElementReference().getName();
 	}
 
 	@Override
 	public String getToolTipText() {
-		return ((MdmiBusinessElementReference)getUserObject()).getDescription();
+		return getBusinessElementReference().getDescription();
 	}
 
 
@@ -95,14 +102,14 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 			return true;
 		}
 		// if read-only, treat as imported
-		return ((MdmiBusinessElementReference)getUserObject()).isReadonly();
+		return getBusinessElementReference().isReadonly();
 	}
 	
 	@Override
 	public void setImported(boolean imported) {
 		// make read-only
 		if (imported) {
-			((MdmiBusinessElementReference)getUserObject()).setReadonly(true);
+			getBusinessElementReference().setReadonly(true);
 		}
 
 		 super.setImported(imported);
@@ -114,7 +121,7 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		Object userObjectCopy = super.copyUserObject();
 
 		// clear read-only flag, and UID in the copy
-		MdmiBusinessElementReference ber = (MdmiBusinessElementReference)userObjectCopy;
+		MdmiBusinessElementReference ber = getBusinessElementReference();
 		ber.setReadonly(false);
 		ber.setUniqueIdentifier(null);
 		
@@ -127,6 +134,7 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 	//
 	public class CustomEditor extends GenericEditor {
 		private SemanticElementReference m_semanticElementField;
+		private ValueSetData m_valueSetditorField;
 
 		public CustomEditor(MessageGroup group, Class<?> objectClass) {
 			super(group, objectClass);
@@ -136,7 +144,12 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		protected void createDataEntryFields(List<Method[]> methodPairList) {
 			super.createDataEntryFields(methodPairList);
 
-			// Add a field to show all Semantic Elements that reference this one
+			//add a component to show ValueSet fields
+			m_valueSetditorField = new ValueSetData(this, getBusinessElementReference().getReferenceDatatype());
+			addFieldFullWidth(m_valueSetditorField, GridBagConstraints.HORIZONTAL);
+			addDataEntryFieldInfo(m_valueSetditorField.getDataEntryFieldInfo());
+
+			// Add a component to show all Semantic Elements that reference this one
 			// add to layout 
 			m_semanticElementField = new SemanticElementReference(null);
 			addLabeledField("Associated Semantic Elements",
@@ -149,7 +162,7 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		public boolean isReadOnlyFields(String fieldName) {
 			// look at read-only flag
 			if (!SelectionManager.getInstance().isReferentIndexEditingAllowed()) {
-				return ((MdmiBusinessElementReference)getUserObject()).isReadonly();
+				return getBusinessElementReference().isReadonly();
 			}
 			return super.isReadOnlyFields(fieldName);
 		}
@@ -158,12 +171,41 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 		/** Use a custom editor for Unique ID */
 		@Override
 		protected IEditorField createEditorField(DataEntryFieldInfo fieldInfo) {
-			if ("UniqueIdentifier".equalsIgnoreCase(fieldInfo.getFieldName())) {
+			String fieldName = fieldInfo.getFieldName();
+			if ("UniqueIdentifier".equalsIgnoreCase(fieldName)) {
 				// use a string field that provides a button to generate a unique ID
 				return new UniqueIDField(this);
-
+				
+			} else if (fieldName.startsWith("EnumValue")) {
+				return null;
 			}
 			return super.createEditorField(fieldInfo);
+		}
+
+		/** Find the field that has an error, and highlight it with a red line
+		 * @param errorMsg
+		 */
+		@Override
+		public void highlightFieldWithError(String fieldName) {
+			//  handle EnumValues
+			if (fieldName.startsWith("enumValue")) {
+				m_valueSetditorField.highlightFieldWithError(fieldName);
+			}
+			super.highlightFieldWithError(fieldName);
+		}
+
+		@Override
+		public void highlightField(Object value, Color highlightColor) {
+			// if value is a Field, we need to highlight the field name
+			if (value instanceof Field) {
+				try {
+					m_valueSetditorField.highlightText(((Field)value).getName(), highlightColor);
+				} catch (Exception e) {
+					// ignore
+				}
+			} else {
+				super.highlightField(value, highlightColor);
+			}
 		}
 
 		// A StringField, with a button to generate a UUID

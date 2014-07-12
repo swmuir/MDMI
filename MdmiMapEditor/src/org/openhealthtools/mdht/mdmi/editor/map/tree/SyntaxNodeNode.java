@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -40,14 +38,12 @@ import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.console.ReferenceLink;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
-import org.openhealthtools.mdht.mdmi.editor.map.editor.AdvancedSelectionField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DefaultTextField;
-import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.FieldNameSelector;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.IntegerField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
-import org.openhealthtools.mdht.mdmi.editor.map.tools.Comparators;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.NewNodeAndElementDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSyntaxNode;
 import org.openhealthtools.mdht.mdmi.model.Bag;
@@ -528,7 +524,7 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 		protected IEditorField createEditorField(DataEntryFieldInfo fieldInfo) {
 			if (FIELD_NAME.equalsIgnoreCase(fieldInfo.getFieldName())) {
 				// Use a combo-box
-				return new FieldNameSelector(this);
+				return new FieldNameSelector(this, getParentDatatype());
 				
 			} else if ("LocationExpressionLanguage".equalsIgnoreCase(fieldInfo.getFieldName())) {
 				// Show default
@@ -573,94 +569,94 @@ public abstract class SyntaxNodeNode extends EditableObjectNode {
 		}
 	}
 	
-	protected class FieldNameSelector extends AdvancedSelectionField {
-
-		protected FieldNameSelector(GenericEditor parentEditor) {
-			super(parentEditor);
-		}
-
-		@Override
-		public Class<?> getDataClass() {
-			return Field.class;
-		}
-
-		@Override
-		protected Collection<? extends Object> getComboBoxData() {
-			// Find all the allowed field names, based on the parent's type
-			ArrayList<Field> elements = new ArrayList<Field>();
-
-			MdmiDatatype datatype = getParentDatatype();
-			if (datatype instanceof DTComplex) {
-				for (Field field : ((DTComplex)datatype).getFields()) {
-					// skip fields without valid names
-					if (field.getName() != null && field.getName().length() > 0) {
-						elements.add(field);
-					}
-				}
-			}
-			
-			// Sort by name
-			Collections.sort(elements, new Comparators.FieldComparator());
-		
-			List<Object> data = new ArrayList<Object>();
-			data.addAll(elements);
-			// make first item blank
-			data.add(0, BLANK_ENTRY);
-			return data;
-		}
-
-		@Override
-		protected String toString(Object listObject) {
-			if (listObject instanceof Field) {
-				Field field = (Field)listObject;
-				if (field.getDatatype() != null) {
-					// name : Type
-					return showNameAndType(field.getName(), field.getDatatype().getTypeName());	//field.getDatatype().getName());
-				}
-				return field.getName();
-			}
-			return listObject.toString();
-		}
-		
-		/** Get a tooltip for an item in the list */
-		@Override
-		protected String getToolTipText(Object listObject) {
-			if (listObject instanceof Field) {
-				Field element = (Field)listObject;
-				return element.getDescription();
-			}
-			return null;
-		}
-
-		@Override
-		public Object getValue() {
-			// return name only
-			Object value = super.getValue();
-			if (value instanceof Field) {
-				value = ((Field)value).getName();
-			}
-			return value;
-		}
-
-		@Override
-		public void setDisplayValue(Object value) {
-			// value will be a string, but our list contains Fields
-			if ("".equals(value)) {
-				value = BLANK_ENTRY;
-			} else if (value instanceof String) {
-				// find Field with this name
-				for (int i = 0; i < getComboBox().getItemCount(); i++) {
-					Object item = getComboBox().getItemAt(i);
-					if (item instanceof Field && value.equals(((Field)item).getName())) {
-						value = item;
-						break;
-					}
-				}
-			}
-			super.setDisplayValue(value);
-		}
-		
-	}
+//	protected class FieldNameSelector extends AdvancedSelectionField {
+//
+//		protected FieldNameSelector(GenericEditor parentEditor) {
+//			super(parentEditor);
+//		}
+//
+//		@Override
+//		public Class<?> getDataClass() {
+//			return Field.class;
+//		}
+//
+//		@Override
+//		protected Collection<? extends Object> getComboBoxData() {
+//			// Find all the allowed field names, based on the parent's type
+//			ArrayList<Field> elements = new ArrayList<Field>();
+//
+//			MdmiDatatype datatype = getParentDatatype();
+//			if (datatype instanceof DTComplex) {
+//				for (Field field : ((DTComplex)datatype).getFields()) {
+//					// skip fields without valid names
+//					if (field.getName() != null && field.getName().length() > 0) {
+//						elements.add(field);
+//					}
+//				}
+//			}
+//			
+//			// Sort by name
+//			Collections.sort(elements, new Comparators.FieldComparator());
+//		
+//			List<Object> data = new ArrayList<Object>();
+//			data.addAll(elements);
+//			// make first item blank
+//			data.add(0, BLANK_ENTRY);
+//			return data;
+//		}
+//
+//		@Override
+//		protected String toString(Object listObject) {
+//			if (listObject instanceof Field) {
+//				Field field = (Field)listObject;
+//				if (field.getDatatype() != null) {
+//					// name : Type
+//					return showNameAndType(field.getName(), field.getDatatype().getTypeName());	//field.getDatatype().getName());
+//				}
+//				return field.getName();
+//			}
+//			return listObject.toString();
+//		}
+//		
+//		/** Get a tooltip for an item in the list */
+//		@Override
+//		protected String getToolTipText(Object listObject) {
+//			if (listObject instanceof Field) {
+//				Field element = (Field)listObject;
+//				return element.getDescription();
+//			}
+//			return null;
+//		}
+//
+//		@Override
+//		public Object getValue() {
+//			// return name only
+//			Object value = super.getValue();
+//			if (value instanceof Field) {
+//				value = ((Field)value).getName();
+//			}
+//			return value;
+//		}
+//
+//		@Override
+//		public void setDisplayValue(Object value) {
+//			// value will be a string, but our list contains Fields
+//			if ("".equals(value)) {
+//				value = BLANK_ENTRY;
+//			} else if (value instanceof String) {
+//				// find Field with this name
+//				for (int i = 0; i < getComboBox().getItemCount(); i++) {
+//					Object item = getComboBox().getItemAt(i);
+//					if (item instanceof Field && value.equals(((Field)item).getName())) {
+//						value = item;
+//						break;
+//					}
+//				}
+//			}
+//			super.setDisplayValue(value);
+//		}
+//		
+//	}
 
 	public static abstract class AbstractNewBag extends NewObjectInfo {
 		/** return the type of child that will be created */

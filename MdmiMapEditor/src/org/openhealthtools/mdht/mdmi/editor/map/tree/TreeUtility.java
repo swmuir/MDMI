@@ -28,10 +28,12 @@ import javax.swing.tree.TreeNode;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.model.DataRule;
 import org.openhealthtools.mdht.mdmi.model.Field;
+import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.MessageSyntaxModel;
 import org.openhealthtools.mdht.mdmi.model.Node;
+import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 
 /** A collection of utility methods for the MDMI Tree */
 public class TreeUtility {
@@ -63,16 +65,16 @@ public class TreeUtility {
 				if (!edChild.isEditable()) {
 					continue;
 				}
+
+				Object childUserObject = child.getUserObject();
 				
-				// special handling of Field, which is referenced by name in a SyntaxNode
-				if (referencedObject instanceof Field && child instanceof SyntaxNodeNode) {
-					if (nodeReferencesField((SyntaxNodeNode)child, (Field)referencedObject)) {
+				// special handling of Field, which is referenced by name in a SyntaxNode, SemanticElement and BER
+				if (referencedObject instanceof Field) {
+					if (nodeReferencesField(child, (Field)referencedObject)) {
 						referenceNodes.add(edChild);
 						continue;
 					}
 				}
-
-				Object childUserObject = child.getUserObject();
 				
 				// Special handling of an MdmiDatatype, which is referenced in a list by a DataRule
 				if (referencedObject instanceof MdmiDatatype && childUserObject instanceof DataRule) {
@@ -156,26 +158,53 @@ public class TreeUtility {
 	}
 
 	
-	/** Check if the Node in the provided treeNode references this field. 
+	/** Check if the user object in a tree node references this field. 
 	 * We'll use the node's fieldName attribute to match the name, plus look at
 	 * the datatype of the parent node
 	 **/
-	private static boolean nodeReferencesField(SyntaxNodeNode treeNode, Field field) {
-		Node node = (Node)treeNode.getUserObject();
+	private static boolean nodeReferencesField(DefaultMutableTreeNode treeNode, Field field) {
+
 		String fieldName = field.getName();
-		
-		// first check if names match
-		if (fieldName != null && fieldName.equals(node.getFieldName())) {
-			// names match, so check datatype
-			MdmiDatatype fieldDatatype = field.getDatatype();
-			MdmiDatatype nodeDatatype = treeNode.getDataType();
-			if (fieldDatatype == nodeDatatype) {
-				// datatypes match - check owner type against the node's parent's datatype
-				MdmiDatatype ownerType = field.getOwnerType();
-				if (treeNode.getParent() instanceof SyntaxNodeNode) {
-					MdmiDatatype parentType = ((SyntaxNodeNode)treeNode.getParent()).getDataType();
-					if (ownerType == parentType) {
-						return true;
+		if (fieldName == null) {
+			return false;
+		}
+		Object userObject = treeNode.getUserObject();
+
+		if (userObject instanceof SemanticElement) { 
+			SemanticElement se = (SemanticElement)userObject;
+			if (se.getDatatype() == field.getOwnerType() &&
+					(fieldName.equals(se.getEnumValueDescrField()) || fieldName.equals(se.getEnumValueField()) ||
+							fieldName.equals(se.getEnumValueSet()) || fieldName.equals(se.getEnumValueSetField()))
+					) {
+
+				return true;
+			}
+			
+		} else if (userObject instanceof MdmiBusinessElementReference) { 
+			MdmiBusinessElementReference ber = (MdmiBusinessElementReference)userObject;
+			if (ber.getReferenceDatatype() == field.getOwnerType() &&
+					(fieldName.equals(ber.getEnumValueDescrField()) || fieldName.equals(ber.getEnumValueField()) ||
+							fieldName.equals(ber.getEnumValueSet()) || fieldName.equals(ber.getEnumValueSetField()))
+					) {
+
+				return true;
+			}
+			
+		} else if (userObject instanceof Node) { 
+			Node node = (Node)userObject;
+			// first check if names match
+			if (fieldName.equals(node.getFieldName())) {
+				// names match, so check datatype
+				MdmiDatatype fieldDatatype = field.getDatatype();
+				MdmiDatatype nodeDatatype = ((SyntaxNodeNode)treeNode).getDataType();
+				if (fieldDatatype == nodeDatatype) {
+					// datatypes match - check owner type against the node's parent's datatype
+					MdmiDatatype ownerType = field.getOwnerType();
+					if (treeNode.getParent() instanceof SyntaxNodeNode) {
+						MdmiDatatype parentType = ((SyntaxNodeNode)treeNode.getParent()).getDataType();
+						if (ownerType == parentType) {
+							return true;
+						}
 					}
 				}
 			}

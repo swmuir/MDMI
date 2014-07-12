@@ -14,9 +14,12 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
+import java.awt.Color;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +49,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.NestedEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SemanticElementField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.SyntaxNodeField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.ValueSetData;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateComputedInValuesDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateToFromElementsDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewDatatypeSyntax;
@@ -54,6 +58,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementFromTo;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementHeirarchy;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementRelationships;
 import org.openhealthtools.mdht.mdmi.model.DTComplex;
+import org.openhealthtools.mdht.mdmi.model.Field;
 import org.openhealthtools.mdht.mdmi.model.MdmiExpression;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.Node;
@@ -528,6 +533,8 @@ public class SemanticElementNode extends EditableObjectNode {
 	//    Custom Classes
 	//////////////////////////////////////////////////////////////
 	public class CustomEditor extends AbstractModelChangeEditor {
+		private ValueSetData m_valueSetditorField;
+		
 		public CustomEditor(MessageGroup group, Class<?> objectClass) {
 			super(group, objectClass);
 		}
@@ -551,10 +558,53 @@ public class SemanticElementNode extends EditableObjectNode {
 			} else if ("ComputedInValue".equalsIgnoreCase(fieldName)) {
 				return new ComputedInEditor(this, MdmiExpression.class, 
 						ClassUtil.beautifyName(fieldName));
+				
+			} else if (fieldName.startsWith("EnumValue")) {
+				// we'll handle these with the ValueSetData component
+				return null;
 			}
 			return super.createEditorField(fieldInfo);
 		}
-		
+
+
+		/** We need to create a special field for setting the EnumVale fields */
+		@Override
+		protected void createDataEntryFields(List<Method[]> methodPairList) {
+			super.createDataEntryFields(methodPairList);
+			
+			// create data entry field for ValueSets
+			m_valueSetditorField = new ValueSetData(this, getSemanticElement().getDatatype());
+
+			// add to layout 
+			addFieldFullWidth(m_valueSetditorField, GridBagConstraints.HORIZONTAL);
+			addDataEntryFieldInfo(m_valueSetditorField.getDataEntryFieldInfo());
+		}
+
+		/** Find the field that has an error, and highlight it with a red line
+		 * @param errorMsg
+		 */
+		@Override
+		public void highlightFieldWithError(String fieldName) {
+			//  handle EnumValues
+			if (fieldName.startsWith("enumValue")) {
+				m_valueSetditorField.highlightFieldWithError(fieldName);
+			}
+			super.highlightFieldWithError(fieldName);
+		}
+
+		@Override
+		public void highlightField(Object value, Color highlightColor) {
+			// if value is a Field, we need to highlight the field name
+			if (value instanceof Field) {
+				try {
+					m_valueSetditorField.highlightText(((Field)value).getName(), highlightColor);
+				} catch (Exception e) {
+					// ignore
+				}
+			} else {
+				super.highlightField(value, highlightColor);
+			}
+		}
 	}
 	
 	protected class ComputedInEditor extends NestedEditor {

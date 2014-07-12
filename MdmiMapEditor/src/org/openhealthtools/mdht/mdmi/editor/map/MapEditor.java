@@ -32,6 +32,7 @@ import java.util.TimerTask;
 import java.util.logging.Level;
 
 import javax.swing.JSplitPane;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
@@ -243,7 +244,13 @@ public class MapEditor extends AbstractApplicationFrame {
 		super.startApplication(args);
 
 		// Prompt for a file to open
-		ModelIOUtilities.loadModelFromFile();
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				ModelIOUtilities.loadModelFromFile();
+			}
+		});
 		return true;
 
 	}

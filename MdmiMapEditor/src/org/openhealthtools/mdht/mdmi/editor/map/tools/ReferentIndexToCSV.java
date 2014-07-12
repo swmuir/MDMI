@@ -17,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -29,7 +30,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
@@ -39,6 +39,9 @@ import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.common.components.CursorManager;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
+import org.openhealthtools.mdht.mdmi.editor.map.StatusPanel;
+import org.openhealthtools.mdht.mdmi.editor.map.console.LinkedObject;
+import org.openhealthtools.mdht.mdmi.editor.map.console.ValidationErrorLink;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.EditorPanel;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.EditableObjectNode;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.MdmiModelTree;
@@ -46,7 +49,6 @@ import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
-import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 
 // Utility for reading/writing Referent Index in CSV form
 public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
@@ -112,12 +114,9 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     		String lastFileName = preferences.getValue(LAST_CSV_FILE, null);
 
     		// create a file chooser
-    		JFileChooser chooser = new JFileChooser(lastFileName == null ? "." : lastFileName);
+    		JFileChooser chooser = CSVFileReader.getCSVFileChooser(lastFileName);
     		// Select a CSV File
     		chooser.setDialogTitle(s_res.getString("ReferentIndexToCSV.csvFileTitle"));
-    		chooser.setFileFilter(new CSVFilter());
-    		chooser.setAcceptAllFileFilterUsed(false);
-    		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
             // get the file
             File file = ModelIOUtilities.getFileToWriteTo(lastFileName, chooser);
@@ -144,7 +143,8 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     	// set cursor
     	CursorManager cm = CursorManager.getInstance(applicationFrame);
     	cm.setWaitCursor();
-    	try {
+    	StatusPanel statusPanel = SelectionManager.getInstance().getStatusPanel();
+		try {
     		// tell user to save edits
     		EditorPanel editor = SelectionManager.getInstance().getEntityEditor();
     		if (editor.isAnyEntityModified()) {
@@ -158,12 +158,8 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     		String lastFileName = preferences.getValue(LAST_CSV_FILE, null);
 
     		// create a file chooser
-    		JFileChooser chooser = new JFileChooser(lastFileName == null ? "." : lastFileName);
-    		// Select a CSV File
+    		JFileChooser chooser = CSVFileReader.getCSVFileChooser(lastFileName);
     		chooser.setDialogTitle(s_res.getString("ReferentIndexToCSV.csvFileTitle"));
-    		chooser.setFileFilter(new CSVFilter());
-    		chooser.setAcceptAllFileFilterUsed(false);
-    		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
     		// prompt for a CSV file
     		int opt = chooser.showOpenDialog(applicationFrame);
@@ -172,11 +168,17 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     			lastFileName = file.getAbsolutePath();
 
 
-    			ModelValidationResults valResults = reviseReferentIndex(file, sep);
+    			Collection<ModelInfo> valResults = reviseReferentIndex(file, sep);
 
                 // show errors
-                for (ModelInfo errorMsg : valResults.getErrors()) {
-                    SelectionManager.getInstance().getStatusPanel().writeValidationErrorMsg("", errorMsg);
+                for (ModelInfo results : valResults) {
+                	String preText = "";
+                	if (results.getObject() instanceof MdmiBusinessElementReference) {
+                		preText = ((MdmiBusinessElementReference)results.getObject()).getName() + ": field ";
+                	}
+
+            		LinkedObject linkedObject = new ValidationErrorLink(results);
+            		statusPanel.writeConsoleLink(preText, linkedObject, results.getMessage());
                 }
     			
 
@@ -185,15 +187,15 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     		}
     		
     	} catch (FileNotFoundException e) {
-            SelectionManager.getInstance().getStatusPanel().writeException(e);
+            statusPanel.writeException(e);
 		} catch (IOException e) {
-            SelectionManager.getInstance().getStatusPanel().writeException(e);
+            statusPanel.writeException(e);
 		} finally {
     		cm.restoreCursor();
     	}
     }
     
-    public ModelValidationResults reviseReferentIndex(File file, char sep) throws IOException {
+    public Collection<ModelInfo> reviseReferentIndex(File file, char sep) throws IOException {
 
         SelectionManager selectionManager = SelectionManager.getInstance();
         MdmiModelTree entitySelector = selectionManager.getEntitySelector();
@@ -202,22 +204,23 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 
 		// error information -  File and Line number
 		String errorLine = new String();
-		ModelValidationResults valResults = new ModelValidationResults();
+		List<ModelInfo> valResults = new ArrayList<ModelInfo>();
 
 		int lineNo = 0;
 		
 		// Fields
 		String identifier = null;
 
-		// Read File Line By Line
-		List<String> stringList = null;
+		// Read first line of the file
+		List<String> columnNames = reader.getNextLine();
 		
 		// First line is the header
-		if ((stringList = reader.getNextLine()) == null) {
+		if (columnNames == null) {
 			lineNo++;
 
 			errorLine = FileAndLine(file, lineNo);
-			valResults.addError(null, "", errorLine + s_res.getString("ReferentIndexToCSV.headerExpected"));
+			valResults.add(new ModelInfo(null, "", 
+					errorLine + s_res.getString("ReferentIndexToCSV.headerExpected")));
 			return valResults;
 		}
 		
@@ -226,50 +229,54 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		
 		// Scan header to find data
 		List<Method[]> getSetMethods = ClassUtil.getMethodPairs(MdmiBusinessElementReference.class);
-		ArrayList<Method> setMethodList = new ArrayList<Method>();
+		
+		
+		ArrayList<Method[]> getSetMethodList = new ArrayList<Method[]>();
+		
 		int column = 0;
-		for (String attributeName : stringList)
+		for (String attributeName : columnNames)
 		{
 			// find matching getXXX method
 			String condensedName = attributeName.replaceAll(" ", "");
 			
-			Method foundMethod = null;
+			Method[] foundPair = null;
 			for (Method[] getSetPair : getSetMethods) {
 				String getMethodName = getSetPair[0].getName();
 				if (getMethodName.equalsIgnoreCase("get" + condensedName) ||
 						getMethodName.equalsIgnoreCase("is" + condensedName)) {
-					foundMethod = getSetPair[1];
+					foundPair = getSetPair;
 					break;
 				}
 			}
 			
 			// no method found
-			if (foundMethod == null) {
+			if (foundPair == null) {
 				errorLine = FileAndLine(file, lineNo);
-				valResults.addError(null, "", errorLine + "No Business Element Reference attribute named '" +
-						attributeName + "'");
+				valResults.add(new ModelInfo(null, "", errorLine + "No Business Element Reference attribute named '" +
+						attributeName + "'"));
 				return valResults;
 				
 			} else if (column == 0 && !UID.equalsIgnoreCase(attributeName) &&
 					!NAME.equalsIgnoreCase(attributeName)) {
 				// first column must be UID or Name
 				errorLine = FileAndLine(file, lineNo);
-				valResults.addError(null, "", errorLine + "Invalid column name '" + attributeName + "'. "
-						+ "The first column must be either '" + UID + "' or '" + NAME + "'.");
+				valResults.add(new ModelInfo(null, "", errorLine + "Invalid column name '" + attributeName + "'. "
+						+ "The first column must be either '" + UID + "' or '" + NAME + "'."));
 				return valResults;
 			
 			}
 
-			setMethodList.add(foundMethod);
+			getSetMethodList.add(foundPair);
 			
 			column++;
 		}
-		
+
+		List<String> stringList = null;
 
 		while ((stringList = reader.getNextLine()) != null) {
 			lineNo++;
 			// skip empty lines
-			if (isEmptyList(stringList)) {
+			if (CSVFileReader.isEmptyList(stringList)) {
 				continue;
 			}
 
@@ -277,7 +284,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 
 			// first field must be Unique Identifier or Name
 			column = 0;
-			identifier = getString(stringList, column++);
+			identifier = CSVFileReader.getString(stringList, column++);
 			
 			// 1. Find BER
 			MdmiBusinessElementReference ber = null;
@@ -296,45 +303,75 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 					obj = group;
 					field = group.getName();
 				}
-				valResults.addError(obj, field, errorLine +
-							"Business Element '" + identifier + "' not found. Check spelling.");
+				valResults.add(new ModelInfo(obj, field, errorLine +
+							"Business Element '" + identifier + "' not found. Check spelling."));
 				continue;
 			}
 			
 			// do the other fields
 			for (;column < stringList.size(); column++) {
-				String newStringValue = getString(stringList, column);
-				if (!newStringValue.isEmpty()) {
-					Method setMethod = setMethodList.get(column);
-					
-					// we may need to convert the value
-					Object newValue = newStringValue;
+				String newStringValue = CSVFileReader.getString(stringList, column);
+				
 
-					// we know there's only one parameter
-					Class<?> param = setMethod.getParameterTypes()[0];
-					if (param.equals(URI.class)) {
-						newValue = URI.create(newStringValue);
-					} else if (param.equals(boolean.class)) {
-						newValue = Boolean.valueOf(newStringValue).booleanValue();
-					} else if (param.equals(MdmiDatatype.class)) {
-						// need to find the datatype
-						newValue = ModelIOUtilities.findDatatype(ber.getDomainDictionaryReference().getMessageGroup().getDatatypes(),
-								newStringValue);
-						if (newValue == null) {
-							valResults.addError(ber, setMethod.getName(), errorLine + "Datatype '" +
-									newStringValue + "' doesn't exist");
-							return valResults;
-						}
-					}
+				if (newStringValue.isEmpty()) {
+					// skip empty cells
+					continue;
+				}
+				
+				Method getMethod = getSetMethodList.get(column)[0];
+				Method setMethod = getSetMethodList.get(column)[1];
 
-					try {
-						setMethod.invoke(ber, newValue);
-						
-					} catch (Exception e) {
-						valResults.addError(ber, setMethod.getName(), errorLine + "Cannot invoke " +
-								setMethod.getName() + ". " + e.getLocalizedMessage());
+				// check for original item
+				Object oldValue = null;
+				try {
+					oldValue = getMethod.invoke(ber);
+				} catch (Exception e) {
+				}
+
+				// we may need to convert the value
+				Object newValue = newStringValue;
+
+				// we know there's only one parameter
+				Class<?> param = setMethod.getParameterTypes()[0];
+				if (param.equals(URI.class)) {
+					newValue = URI.create(newStringValue);
+				} else if (param.equals(boolean.class)) {
+					newValue = Boolean.valueOf(newStringValue).booleanValue();
+				} else if (param.equals(MdmiDatatype.class)) {
+					// need to find the datatype
+					newValue = ModelIOUtilities.findDatatype(ber.getDomainDictionaryReference().getMessageGroup().getDatatypes(),
+							newStringValue);
+					if (newValue == null) {
+						valResults.add(new ModelInfo(ber, columnNames.get(column), errorLine + "Datatype '" +
+								newStringValue + "' doesn't exist"));
 						return valResults;
 					}
+				}
+
+				try {
+					setMethod.invoke(ber, newValue);
+
+				} catch (Exception e) {
+					valResults.add(new ModelInfo(ber, columnNames.get(column), errorLine + "Cannot invoke " +
+							setMethod.getName() + ". " + e.getLocalizedMessage()));
+					return valResults;
+				}
+
+				// compare the two
+				if (oldValue == null || (oldValue instanceof String && ((String)oldValue).isEmpty()) ) {
+					// added
+					valResults.add(new ModelInfo(ber, columnNames.get(column), 
+							"- Value set to '" + newStringValue + "'"));
+				} else if (!oldValue.equals(newValue)) {
+					String oldStringValue;
+					if (oldValue instanceof MdmiDatatype) {
+						oldStringValue = ((MdmiDatatype)oldValue).getTypeName();
+					} else {
+						oldStringValue = oldValue.toString();
+					}
+					// changed
+					valResults.add(new ModelInfo(ber, columnNames.get(column), "- Value changed from '" + 
+							oldStringValue + "' to '" + newStringValue + "'"));
 				}
 			}
 
@@ -455,19 +492,6 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		}
 		return ber;
 	}
-
-
-    public static class CSVFilter extends FileFilter {
-        @Override
-        public boolean accept(File f) {
-            return f.isDirectory() || f.getName().toLowerCase().endsWith(".csv");
-        }
-
-        @Override
-        public String getDescription() {
-            return "CSV Files (.csv)";
-        }
-    }
     
     public static class TokenSelector extends BaseDialog implements ActionListener, DocumentListener {
     	private JRadioButton m_commaButton = new JRadioButton("Comma (,)", false);

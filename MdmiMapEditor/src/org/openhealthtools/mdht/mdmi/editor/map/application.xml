@@ -79,7 +79,8 @@
         <action name="search" class="org.openhealthtools.mdht.mdmi.editor.map.actions.SearchAction"/>
         <action name="changeType" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ChangeTypeAction"/>
         <action name="tableView" class="org.openhealthtools.mdht.mdmi.editor.map.actions.TableViewAction"/>
-      
+        <action name="enumDataType" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CreateEnumeratedDataTypeAction"/>
+        <action name="valueSetMap" class="org.openhealthtools.mdht.mdmi.editor.map.actions.CreateValueSetMappingAction"/>
 		
 		
 		<!-- Help Menu -->
@@ -161,6 +162,9 @@
 		   <item action="findReferences"/>
 		   <item action="search"/>
 		   <item action="tableView"/>
+		   <separator/>
+		   <item action="enumDataType"/>
+		   <item action="valueSetMap"/>
 		</menu>
 
 		<menu action="help">

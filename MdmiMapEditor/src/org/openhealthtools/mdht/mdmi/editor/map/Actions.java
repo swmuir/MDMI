@@ -59,6 +59,9 @@ public class Actions {
 	public static final String TOOLS_MENU_ACTION      = "tools";	
 	public static final String FIND_REFERENCES_ACTION = "findReferences";
 	public static final String CHANGE_TYPE_ACTION     = "changeType";
+	public static final String CREATE_ENUM_ACTION     = "enumDataType";
+	public static final String CREATE_VALUE_SET_MAP_ACTION     = "valueSetMap";
+	
 	
 	// -- Help Menu -- //
 	public static final String HELP_MENU_ACTION = "help";
