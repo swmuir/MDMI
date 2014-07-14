@@ -294,6 +294,10 @@ public class SemanticElement implements IClassifier {
       String x = m_computedOutValue.getExpression();
       return x != null && x.length() > 0;
    }
+   
+   public boolean usesValueSet() {
+   	return null != m_enumValueField;
+   }
 
    @Override
    public IAttribute getAttributeByName( String name, boolean includeInherited ) {

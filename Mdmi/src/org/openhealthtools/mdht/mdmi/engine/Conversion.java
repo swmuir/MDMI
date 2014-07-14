@@ -508,7 +508,7 @@ public class Conversion {
 			target = src.target;
 			trgBER = src.trgBER;
 			srcBER = src.srcBER;
-			source = (ArrayList<SemanticElement>) src.source.clone();
+			source = (ArrayList<SemanticElement>)src.source.clone();
 		}
 
 		@Override

@@ -82,19 +82,9 @@ public class MdmiResolver {
       if( r.getWarnings().size() > 0 )
          handleWarnings(mf, r.getWarnings());
       
-      // load message converter from file (if one exists)
-      IEnumerationConverter ecv = null;
-      String mfn = mf.getAbsolutePath().trim().toLowerCase();
-      if( 0 < mfn.lastIndexOf(".xmi") ) {
-         mfn = mf.getAbsolutePath().trim().substring(0, mfn.lastIndexOf(".xmi"));
-         mfn += MdmiEnumerationConverter.FILE_EXTENSION;
-         File ecf = new File(mfn);
-         if( ecf.exists() )
-            ecv = new MdmiEnumerationConverter(ecf);
-      }
-
+      // load value set handler from file (if one exists)
       MdmiValueSetsHandler vsh = null;
-      mfn = mf.getAbsolutePath().trim().toLowerCase();
+      String mfn = mf.getAbsolutePath().trim().toLowerCase();
       if( 0 < mfn.lastIndexOf(".xmi") ) {
          mfn = mf.getAbsolutePath().trim().substring(0, mfn.lastIndexOf(".xmi"));
          mfn += MdmiValueSetsHandler.FILE_EXTENSION;
@@ -104,7 +94,6 @@ public class MdmiResolver {
       
       for( MessageGroup mg : mgs ) {
          MI mi = new MI(mapInfo, mg);
-         mi.enumerationConverter = ecv; // set the converter to be available to the runtime
          mi.valueSetsHandler = vsh;
          System.out.println("Loaded message group " + mg.getName());
          if( m_maps.containsKey(mi.messageGroup.getName()) )
@@ -146,6 +135,24 @@ public class MdmiResolver {
    }
 
    /**
+    * Get the message group for the specified MdmiValueSetsHandler.
+    * 
+    * @param vsh The value set handler.
+    * @return The message group if found, null otherwise.
+    */
+   public MessageGroup getMessageGroup( MdmiValueSetsHandler vsh ) {
+      if( vsh == null )
+         throw new IllegalArgumentException("Null argument");
+      Collection<MI> c = m_maps.values();
+      for( Iterator<MI> it = c.iterator(); it.hasNext(); ) {
+         MI mi = it.next();
+         if( mi.valueSetsHandler == vsh )
+         	return mi.messageGroup;
+      }
+      return null;
+   }
+
+   /**
     * Get a list of all known message groups.
     * 
     * @return A list of all known message groups.
@@ -173,21 +180,6 @@ public class MdmiResolver {
       if( mi == null )
          return null;
       return mi.getSyntaxParser();
-   }
-   
-   /**
-    * Get the enumeration converter for the specified message group.
-    * 
-    * @param messageGroup The message group name to look for.
-    * @return The enumeration converter for the specified message group, or null if the group is not found.
-    */
-   public IEnumerationConverter getEnumerationConverter( String messageGroup ) {
-      if( messageGroup == null )
-         throw new IllegalArgumentException("Null argument");
-      MI mi = m_maps.get(messageGroup);
-      if( mi == null )
-         return null;
-      return mi.enumerationConverter;
    }
    
    /**
@@ -246,7 +238,6 @@ public class MdmiResolver {
       MessageGroup          messageGroup;
       ISyntacticParser      syntacticSvcProvider;
       ISemanticParser       semanticSvcProvider;
-      IEnumerationConverter enumerationConverter;
       MdmiValueSetsHandler  valueSetsHandler;  
 
       public MI( MdmiConfig.MapInfo mapInfo, MessageGroup messageGroup ) {

@@ -1,20 +1,11 @@
 package org.openhealthtools.mdht.mdmi.engine.xml;
-
-
  
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.AbsoluteLocationPathNorootContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.AxisSpecifierContext;
-import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.ExprContext;
-import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.LocationPathContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.NodeTestContext;
-import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.PathExprNoRootContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.PredicateContext;
-import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.QNameContext;
 import org.openhealthtools.mdht.mdmi.engine.xml.XPathParser.StepContext;
 
 public class TestDemo {

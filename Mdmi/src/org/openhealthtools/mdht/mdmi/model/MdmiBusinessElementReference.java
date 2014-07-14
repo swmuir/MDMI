@@ -138,6 +138,10 @@ public class MdmiBusinessElementReference implements IClassifier {
    public void setReadonly( boolean isReadonly ) {
       m_isReadonly = isReadonly;
    }
+   
+   public boolean usesValueSet() {
+   	return null != m_enumValueField;
+   }
 
    @Override
    public IAttribute getAttributeByName( String name, boolean includeInherited ) {

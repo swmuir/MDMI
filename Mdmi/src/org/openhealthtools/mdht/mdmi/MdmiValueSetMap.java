@@ -113,7 +113,11 @@ public class MdmiValueSetMap {
 	}
 	
 	public String getName() {
-		return sourceSet.getName() + "." + targetSet.getName();
+		return getMapName(sourceSet.getName(), targetSet.getName());
+	}
+	
+	public static String getMapName( String sourceSetName, String targetSetName ) {
+		return sourceSetName + "." + targetSetName;
 	}
 
 	public MdmiValueSet getSourceSet() {
@@ -138,6 +142,14 @@ public class MdmiValueSetMap {
 
 	public ArrayList<Mapping> getMappings() {
 		return mappings;
+	}
+
+	public Mapping getMappingBySource( String sourceCode ) {
+		for( Mapping map : mappings ) {
+			if( map.source.getCode().equalsIgnoreCase(sourceCode) )
+				return map;
+		}
+		return null;
 	}
 
 	public void addMapping( Mapping mapping ) {
