@@ -26,16 +26,18 @@ public class ValueSetData extends JPanel implements IEditorField {
 	/** Resource for localization */
 	protected static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.editor.Local");
 
-	//  fields
+	//  This is a String
 	public static final String ENUM_VALUE_SET         = "EnumValueSet";
+	
+	// These use the Field
 	public static final String ENUM_VALUE_FIELD       = "EnumValueField";
 	public static final String ENUM_VALUE_SET_FIELD   = "EnumValueSetField";
 	public static final String ENUM_VALUE_DESCR_FIELD = "EnumValueDescrField";
 	
 
-	// simply provide 4 combo boxes in this order
+	// simply provide a String editor, and 3 field combo boxes in this order
+	private StringField m_valueSetName;
 	private String[] m_valueFieldNames = {
-			ENUM_VALUE_SET, 
 			ENUM_VALUE_FIELD, 
 			ENUM_VALUE_SET_FIELD, 
 			ENUM_VALUE_DESCR_FIELD
@@ -43,7 +45,7 @@ public class ValueSetData extends JPanel implements IEditorField {
 	private FieldNameSelector[] m_allFields;
 
 	public ValueSetData(GenericEditor parentEditor, MdmiDatatype datatype) {
-		
+		m_valueSetName = new StringField(parentEditor, 1, 10);
 		m_allFields = new FieldNameSelector[m_valueFieldNames.length];
 		for (int i=0; i<m_allFields.length; i++) {
 			m_allFields[i] = new FieldNameSelector(parentEditor, datatype);
@@ -53,7 +55,8 @@ public class ValueSetData extends JPanel implements IEditorField {
 	}
 	
 	//
-	//   Value Set:         [_______v]
+	//   Value Set:         [________]
+	//
 	//   Value Field:       [_______v]
 	//   Value Set Field:   [_______v]
 	//   Value Description: [_______v]
@@ -71,11 +74,28 @@ public class ValueSetData extends JPanel implements IEditorField {
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		String fieldName = ClassUtil.beautifyName(ENUM_VALUE_SET);
+		add(new JLabel(fieldName + ":"), gbc);
+		
+		gbc.gridx++;
+		
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		add(m_valueSetName, gbc);
+
+		gbc.gridx = 0;
+		gbc.gridy++; 
+		
+		// adjust padding
+		gbc.insets.bottom = 0;
+		
 		for (int i=0; i<m_allFields.length; i++) {
 
 			gbc.weightx = 0;
 			gbc.fill = GridBagConstraints.NONE;
-			String fieldName = ClassUtil.beautifyName(m_valueFieldNames[i]);
+			fieldName = ClassUtil.beautifyName(m_valueFieldNames[i]);
 			add(new JLabel(fieldName + ":"), gbc);
 			
 			gbc.gridx++;
@@ -94,7 +114,11 @@ public class ValueSetData extends JPanel implements IEditorField {
 	
 	@Override
 	public void highlightText(String text, Color highlightColor) {
-
+		// Name
+		if (text.equals(m_valueSetName.getValue())) {
+			m_valueSetName.highlightText(text, highlightColor);
+		}
+		// Fields
 		for (FieldNameSelector valueField : m_allFields) {
 			if (text.equals(valueField.getValue())) {
 				valueField.highlightText(text, highlightColor);
@@ -102,24 +126,30 @@ public class ValueSetData extends JPanel implements IEditorField {
 		}
 	}
 
-	/** Get the field values as an array of 4 strings */
+	/** Get the values as an array of 4 strings */
 	@Override
 	public Object getValue() throws DataFormatException {
 		Collection<String> valueList = new ArrayList<String>();
+		valueList.add( (String) m_valueSetName.getValue() );
 		for (FieldNameSelector valueField : m_allFields) {
 			valueList.add( (String) valueField.getValue() );
 		}
 		return valueList;
 	}
 
-	/** Set the field values as an array of 4 strings */
+	/** Set the values as an array of 4 strings */
 	@Override
 	public void setDisplayValue(Object value) throws DataFormatException {
 		if (value instanceof Collection<?>) {
 			Collection<?> valueList = (Collection<?>)value;
 			int i=0;
 			for (Object v : valueList) {
-				m_allFields[i].setDisplayValue(v);
+				if (i == 0) {
+					m_valueSetName.setDisplayValue(v);
+				} else {
+					// i=1,2,3
+					m_allFields[i-1].setDisplayValue(v);
+				}
 				i++;
 			}
 		}
@@ -127,6 +157,12 @@ public class ValueSetData extends JPanel implements IEditorField {
 
 
 	public void highlightFieldWithError(String fieldName) {
+
+		if (fieldName.equalsIgnoreCase(ENUM_VALUE_SET)) {
+			DataEntryFieldInfo.createErrorBorder(m_valueSetName);
+			return;
+		}
+		
 		for (int i=0; i<m_valueFieldNames.length; i++) {
 			if (fieldName.equalsIgnoreCase(m_valueFieldNames[i])) {
 				DataEntryFieldInfo.createErrorBorder(m_allFields[i]);
@@ -136,6 +172,7 @@ public class ValueSetData extends JPanel implements IEditorField {
 	}
 
 	public void clearFieldsWithError() {
+		DataEntryFieldInfo.clearErrorBorder(m_valueSetName);
 		for (int i=0; i<m_allFields.length; i++) {
 			DataEntryFieldInfo.clearErrorBorder(m_allFields[i]);
 		}
@@ -143,6 +180,7 @@ public class ValueSetData extends JPanel implements IEditorField {
 
 	@Override
 	public void setReadOnly() {
+		m_valueSetName.setReadOnly();
 		for (int i=0; i<m_allFields.length; i++) {
 			m_allFields[i].setReadOnly();
 		}

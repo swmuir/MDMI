@@ -31,10 +31,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 
+import javax.swing.JFileChooser;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import org.openhealthtools.mdht.mdmi.Mdmi;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.AbstractApplicationFrame;
@@ -55,6 +57,7 @@ import org.openhealthtools.mdht.mdmi.util.LogWriter;
  */
 public class MapEditor extends AbstractApplicationFrame {
 
+	private static final String SETTINGS_DIR = "Settings";
 	/** Resource for localization */
 	private static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.Local");
 	private static String	s_applicationName;
@@ -236,6 +239,30 @@ public class MapEditor extends AbstractApplicationFrame {
 		super.dispose();
 
 	}
+	
+	/** Prompt for a config file */
+	public File getSettingsDirectory() {
+        UserPreferences preferences = getUserPreferences();
+        String currentDir = preferences.getValue(SETTINGS_DIR, System.getProperty("user.dir"));
+		
+		JFileChooser chooser = new JFileChooser(currentDir);
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		chooser.setDialogTitle("Select the Settings Directory");
+
+		int returnVal = chooser.showOpenDialog(this);
+
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = chooser.getSelectedFile();
+			String fileName = file.getAbsolutePath();
+			
+			// Save
+            preferences.putValue(SETTINGS_DIR, fileName);
+			
+			return new File(fileName);
+		}
+		
+		return new File(currentDir);
+	}
 
 	/** Start the application by presenting a login dialog, etc */
 	@Override
@@ -248,6 +275,11 @@ public class MapEditor extends AbstractApplicationFrame {
 			
 			@Override
 			public void run() {
+				// initialize the Mdmi instance
+				File currentDir = getSettingsDirectory();
+				Mdmi.INSTANCE.initialize(currentDir);
+				Mdmi.INSTANCE.start();
+				
 				ModelIOUtilities.loadModelFromFile();
 			}
 		});

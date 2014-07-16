@@ -25,6 +25,7 @@ import org.openhealthtools.mdht.mdmi.MdmiValueSet;
 import org.openhealthtools.mdht.mdmi.MdmiValueSetMap;
 import org.openhealthtools.mdht.mdmi.MdmiValueSetsHandler;
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
+import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.MdmiDatatypeField;
@@ -235,11 +236,13 @@ public class ValueSetIdentifierDialog extends BaseDialog {
 		if (srcToTargetMap == null) {
 			// create if it doesn't exist
 			srcToTargetMap = new MdmiValueSetMap(m_handler, srcValueSet, targetValueSet);
+			m_handler.addValueSetMap(srcToTargetMap);
 		}
 		MdmiValueSetMap targetToSrcMap = m_handler.getValueSetMap(targetValueSetName + "." + srcValueSetName);
 		if (targetToSrcMap == null) {
 			// create if it doesn't exist
 			targetToSrcMap = new MdmiValueSetMap(m_handler, targetValueSet, srcValueSet);
+			m_handler.addValueSetMap(targetToSrcMap);
 		}
 
 		
@@ -250,11 +253,16 @@ public class ValueSetIdentifierDialog extends BaseDialog {
 		valueSetEditor.center();
 		int val = valueSetEditor.display();
 		if (val == OK_BUTTON_OPTION) {
-			// update the value sets in the handler with the ones from the map
+			//update the value sets in the handler with the ones from the map
 			m_handler.addValueSet(srcToTargetMap.getSourceSet());
 			m_handler.addValueSet(srcToTargetMap.getTargetSet());
 			
-			m_handler.save();
+			// save file
+        	String mapFileName = SystemContext.getMapFileName();
+			String handlerFile = mapFileName.replace(".xmi", MdmiValueSetsHandler.FILE_EXTENSION);
+			File f = new File(handlerFile);
+			m_handler.save(f);
+			
 			super.okButtonAction();
 		}
 	}
@@ -305,7 +313,7 @@ public class ValueSetIdentifierDialog extends BaseDialog {
 	///////////////////////////////////////////
 	public static MdmiValueSetsHandler createDummyHandler() {
 
-		String filename = "MdmiValueSetTest.valuesets.xml";	// "ValueSetIdentifier.colorsample.xml"
+		String filename = "MdmiMapEditor.valuesets.xml";
 		File f = new File(filename);
 		
 

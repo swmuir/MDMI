@@ -17,6 +17,7 @@ package org.openhealthtools.mdht.mdmi.editor.map.tools;
 import java.awt.Frame;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +32,8 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.stream.XMLStreamException;
 
+import org.openhealthtools.mdht.mdmi.Mdmi;
+import org.openhealthtools.mdht.mdmi.MdmiConfig;
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
@@ -266,6 +269,12 @@ public class ModelIOUtilities {
             String fileName = readModel(groups, results, LAST_FILE_OPENED);
 
             if (fileName != null) {
+            	// set up configuration info
+            	configureMapInfo(fileName);
+            	
+            	// save 
+            	SystemContext.setMapFileName(fileName);
+            	
                 // update title
                 ((MapEditor) SystemContext.getApplicationFrame()).updateTitle(fileName);
 
@@ -307,10 +316,38 @@ public class ModelIOUtilities {
                             errorMsg);
                 }
             }
-        } finally {
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
             cm.restoreCursor();
         }
     }
+
+    /** Initialize the Mdmi Configuration 
+     * @throws IOException */
+	private static void configureMapInfo(String fileName) throws IOException {
+		File mapFile = new File(fileName);
+		String mapName = mapFile.getName().replace(".xmi", "");
+		MdmiConfig.MapInfo mapInfo = new MdmiConfig.MapInfo(mapName, fileName);
+		
+		MdmiConfig.MapInfo oldInfo = Mdmi.INSTANCE.getConfig().getMapInfoByFileName(fileName);
+		if( oldInfo != null ) {
+			// copy data from old map
+			mapInfo.synSvcJarName = oldInfo.synSvcJarName;
+			mapInfo.synSvcClassName = oldInfo.synSvcClassName;
+			mapInfo.semSvcJarName = oldInfo.semSvcJarName;
+			mapInfo.semSvcClassName = oldInfo.semSvcClassName;
+		}
+		
+		oldInfo = Mdmi.INSTANCE.getConfig().getMapInfo(mapInfo.mapName);
+		if( oldInfo != null ) {
+			Mdmi.INSTANCE.getConfig().removeMapInfo(mapInfo.mapName);
+		}
+		
+		@SuppressWarnings("unused")
+		Collection<MessageGroup> sourceMessageGroups = Mdmi.INSTANCE.getResolver().resolveOne(mapInfo);
+	}
 
     /**
      * find all nodes at this node that are marked as imported

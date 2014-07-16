@@ -50,6 +50,9 @@ public class SystemContext {
      * @see getApplicationName() */
     public static final String APPLICATION_NAME = "applicationName";
     
+    /** Key for map file name */
+    public static final String MAP_FILE_NAME = "mapFileName";
+    
     private static HashMap<String, Object> m_context = new HashMap<String, Object>();
 
     /** Set the LogWriter */
@@ -92,4 +95,14 @@ public class SystemContext {
         return (String)m_context.get(APPLICATION_NAME);
     }
 
+    /** Set the current map file name */
+    public static void setMapFileName(String name) {
+        m_context.put(MAP_FILE_NAME, name);
+    }
+    
+    /** Get the current map file name */
+    public static String getMapFileName() {
+        return (String)m_context.get(MAP_FILE_NAME);
+    }
+    
 }
