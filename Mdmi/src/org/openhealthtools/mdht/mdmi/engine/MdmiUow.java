@@ -36,6 +36,7 @@ import org.openhealthtools.mdht.mdmi.model.*;
  * @author goancea
  */
 public class MdmiUow implements Runnable {
+	static final boolean OUTPUT_TO_CONSOLE = false;
 	MdmiEngine       owner;
 	MdmiTransferInfo transferInfo;
 	ISyntaxNode      srcSyntaxModel;
@@ -126,15 +127,18 @@ public class MdmiUow implements Runnable {
 		//long ts = System.currentTimeMillis();
 		srcSyntaxModel = (YNode)srcSynProv.parse(transferInfo.sourceModel.getModel(), transferInfo.sourceMessage);
 		//System.out.println("Syntax-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
-		//System.out.println(srcSyntaxModel.toString());
+		if( OUTPUT_TO_CONSOLE )
+			System.out.println(srcSyntaxModel.toString());
 	
 		//ts = System.currentTimeMillis();
 		srcSemanticModel = new ElementValueSet();
 		srcSemProv.buildSemanticModel(transferInfo.sourceModel.getModel(), srcSyntaxModel, srcSemanticModel, false);
 		//System.out.println("Semantic-parsing of the source message took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		serializeSemanticModel("SourceSemanticModel", srcSemanticModel);
-		//System.out.println("");
-      //System.out.println(srcSemanticModel.toString());
+		if( OUTPUT_TO_CONSOLE ) {
+			System.out.println("");
+	      System.out.println(srcSemanticModel.toString());
+		}
 		System.out.println("---------- SOURCE MESSAGE END ----------");
 	}
 
@@ -149,10 +153,13 @@ public class MdmiUow implements Runnable {
 		System.out.println("");
 		System.out.println("---------- TARGET MESSAGE START ----------");
 		trgSyntaxModel = (YNode) trgSynProv.parse(transferInfo.targetModel.getModel(), transferInfo.targetMessage);
-      //System.out.println(trgSyntaxModel.toString());
+		if( OUTPUT_TO_CONSOLE )
+			System.out.println(trgSyntaxModel.toString());
 		trgSemProv.buildSemanticModel(transferInfo.targetModel.getModel(), trgSyntaxModel, trgSemanticModel, true);
-		//System.out.println("");
-      //System.out.println(trgSemanticModel.toString());
+		if( OUTPUT_TO_CONSOLE ) {
+			System.out.println("");
+	      System.out.println(trgSemanticModel.toString());
+		}
 		System.out.println("---------- TARGET MESSAGE END ----------");
 	}
 
@@ -162,14 +169,17 @@ public class MdmiUow implements Runnable {
 		System.out.println("---------- CONVERSION START ----------");
 		long ts = System.currentTimeMillis();
 		Conversion c = new Conversion(this);
+		if( !OUTPUT_TO_CONSOLE )
+			System.out.println(c.toString());
 		c.execute();
-		//System.out.println(c.toString());
 		System.out.println("---------- CONVERSION END ----------");
 		System.out.println("Data conversion took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
-      //System.out.println("---------- TARGET MESSAGE START ----------");
-      //System.out.println(trgSemanticModel.toString());
-      //System.out.println("---------- TARGET MESSAGE END ----------");
+		if( OUTPUT_TO_CONSOLE ) {
+	      System.out.println("---------- TARGET MESSAGE START ----------");
+	      System.out.println(trgSemanticModel.toString());
+	      System.out.println("---------- TARGET MESSAGE END ----------");
+		}
 	}
 
 	// 4. Build the target syntax tree from the target semantic model
@@ -185,10 +195,10 @@ public class MdmiUow implements Runnable {
 		else {
 			trgSyntaxModel = trgSemProv.createNewSyntacticModel(transferInfo.targetModel.getModel(), trgSemanticModel);
 		}
-      //System.out.println(trgSyntaxModel.toString());
 		System.out.println("updateSyntacticModel  took " + (System.currentTimeMillis() - ts) + " milliseconds.");
 		ts = System.currentTimeMillis();
-      //System.out.println(trgSyntaxModel.toString());
+		if( OUTPUT_TO_CONSOLE )
+			System.out.println(trgSyntaxModel.toString());
 		trgSynProv.serialize(transferInfo.targetModel.getModel(), transferInfo.targetMessage, trgSyntaxModel);
 		//
 		System.out.println("---------- PROCESSING OUTPUT MESSAGE END ----------");

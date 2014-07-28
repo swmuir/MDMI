@@ -53,7 +53,7 @@ public class JsAdapter implements IExpressionInterpreter  {
       ArrayList<Exception> lex = new ArrayList<Exception>();
       eval(context, rule, lex);
       if( 0 < lex.size() )
-         throw new MdmiException(lex.get(0), "evalConstraint({0}, {1}) fails!", context.toString(), rule);
+         throw new MdmiException(lex.get(0), "evalAction({0}, {1}) fails!", context.toString(), rule);
    }
 
    @Override

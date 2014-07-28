@@ -108,7 +108,7 @@ public class Conversion {
 				}
 				for( int k = 0; k < srcSes.size(); k++ ) {			
 					SemanticElement ses = srcSes.get(k);
-					for (ToMessageElement tme : ses.getToMdmi()) {
+					for( ToBusinessElement tme : ses.getFromMdmi() ) {
 						// Only add to the source if the business element match and the semantic elements match
 						// Check to see if isomorphic - this is a kludge for ken
 						if( trgModel.getGroup().getName().equals(srcModel.getGroup().getName()) ) {
@@ -188,6 +188,8 @@ public class Conversion {
 			ArrayList<ConversionInfo> cis = getTopLevelCis();
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
+				if( MdmiUow.OUTPUT_TO_CONSOLE )
+					System.out.println("Conversion[" + (i+1) + "] " + ci.toString());
 				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);

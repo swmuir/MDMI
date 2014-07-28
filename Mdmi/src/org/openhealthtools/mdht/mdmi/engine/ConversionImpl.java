@@ -52,6 +52,8 @@ class ConversionImpl {
 	}
 
 	private void logObject( String name, Object object ) {
+		if( MdmiUow.OUTPUT_TO_CONSOLE && !"conversionInfo".equals(name) )
+			System.out.println(name + ": " + object.toString());
 		if( logging ) {
 			if( conversionNode == null ) {
 				conversionNode = mapper.createObjectNode().putObject("conversion");
@@ -385,7 +387,8 @@ class ConversionImpl {
 			return false;
 		if( fromSrc ) {
 			// toBE is not null, toSE is null, executing conversion from SE -> BER
-			if( null != toBE.getEnumExtResolverUri() )
+			String erUri = toBE.getEnumExtResolverUri();
+			if( null != erUri && 0 < erUri.length() )
 				return true;
 			MdmiBusinessElementReference ber = toBE.getBusinessElement();
 			SemanticElement se = toBE.getOwner();
@@ -394,7 +397,8 @@ class ConversionImpl {
 		}
 		else {
 			// toBE is null, toSE is not null, executing conversion from BER -> SE
-			if( null != toSE.getEnumExtResolverUri() )
+			String erUri = toSE.getEnumExtResolverUri();
+			if( null != erUri && 0 < erUri.length() )
 				return true;
 			MdmiBusinessElementReference ber = toSE.getBusinessElement();
 			SemanticElement se = toSE.getOwner();
@@ -409,12 +413,14 @@ class ConversionImpl {
 			return false;
 		if( fromSrc ) {
 			// toBE is not null, toSE is null, executing conversion from SE -> BER
-			if( null != toBE.getEnumExtResolverUri() )
+			String erUri = toBE.getEnumExtResolverUri();
+			if( null != erUri && 0 < erUri.length() )
 				return true;
 		}
 		else {
 			// toBE is null, toSE is not null, executing conversion from BER -> SE
-			if( null != toSE.getEnumExtResolverUri() )
+			String erUri = toSE.getEnumExtResolverUri();
+			if( null != erUri && 0 < erUri.length() )
 				return true;
 		}
 		return false;

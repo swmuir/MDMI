@@ -296,7 +296,7 @@ public class SemanticElement implements IClassifier {
    }
    
    public boolean usesValueSet() {
-   	return null != m_enumValueField;
+   	return null != m_enumValueField && 0 < m_enumValueField.length();
    }
 
    @Override
