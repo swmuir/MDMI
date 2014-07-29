@@ -328,6 +328,11 @@ public class ModelIOUtilities {
      * @throws IOException */
 	private static void configureMapInfo(String fileName) throws IOException {
 		File mapFile = new File(fileName);
+		
+		// initialize with the current directory
+		Mdmi.INSTANCE.initialize(mapFile.getParentFile());
+		Mdmi.INSTANCE.start();
+		
 		String mapName = mapFile.getName().replace(".xmi", "");
 		MdmiConfig.MapInfo mapInfo = new MdmiConfig.MapInfo(mapName, fileName);
 		
@@ -345,6 +350,7 @@ public class ModelIOUtilities {
 			Mdmi.INSTANCE.getConfig().removeMapInfo(mapInfo.mapName);
 		}
 		
+		// initialize resolver
 		@SuppressWarnings("unused")
 		Collection<MessageGroup> sourceMessageGroups = Mdmi.INSTANCE.getResolver().resolveOne(mapInfo);
 	}

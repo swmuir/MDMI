@@ -573,7 +573,8 @@ public class SemanticElementNode extends EditableObjectNode {
 			super.createDataEntryFields(methodPairList);
 			
 			// create data entry field for ValueSets
-			m_valueSetditorField = new ValueSetData(this, getSemanticElement().getDatatype());
+			m_valueSetditorField = new ValueSetData(this, getMessageGroup(),
+					getSemanticElement().getDatatype());
 
 			// add to layout 
 			addFieldFullWidth(m_valueSetditorField, GridBagConstraints.HORIZONTAL);

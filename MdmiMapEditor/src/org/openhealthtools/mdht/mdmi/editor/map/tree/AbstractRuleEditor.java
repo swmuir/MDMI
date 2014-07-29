@@ -109,5 +109,4 @@ public abstract class AbstractRuleEditor extends GenericEditor implements ModelC
 			m_rulesLanguageField.setDefaultValue(defaultLanguage);
 		}
 	}
-
 }

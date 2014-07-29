@@ -25,7 +25,6 @@ import org.openhealthtools.mdht.mdmi.MdmiValueSet;
 import org.openhealthtools.mdht.mdmi.MdmiValueSetMap;
 import org.openhealthtools.mdht.mdmi.MdmiValueSetsHandler;
 import org.openhealthtools.mdht.mdmi.editor.common.Standards;
-import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.MdmiDatatypeField;
@@ -49,7 +48,7 @@ public class ValueSetIdentifierDialog extends BaseDialog {
 
 	
 	// Handler
-	MdmiValueSetsHandler m_handler = null;
+	private MdmiValueSetsHandler m_handler = null;
 	
 	private ModelRenderers.MessageGroupRenderer m_messageGroupRenderer = new ModelRenderers.MessageGroupRenderer();
 
@@ -221,48 +220,15 @@ public class ValueSetIdentifierDialog extends BaseDialog {
 		String srcValueSetName = getSrcValueSetName();
 		String targetValueSetName = getTargetValueSetName();
 
-		MdmiValueSet srcValueSet = m_handler.getValueSet(srcValueSetName);
-		if (srcValueSet == null) {
-			// create if it doesn't exist
-			srcValueSet = new MdmiValueSet(m_handler, srcValueSetName);
-		}
-		MdmiValueSet targetValueSet = m_handler.getValueSet(targetValueSetName);
-		if (targetValueSet == null) {
-			// create if it doesn't exist
-			targetValueSet = new MdmiValueSet(m_handler, targetValueSetName);
-		}
 		
-		MdmiValueSetMap srcToTargetMap = m_handler.getValueSetMap(srcValueSetName + "." + targetValueSetName);
-		if (srcToTargetMap == null) {
-			// create if it doesn't exist
-			srcToTargetMap = new MdmiValueSetMap(m_handler, srcValueSet, targetValueSet);
-			m_handler.addValueSetMap(srcToTargetMap);
-		}
-		MdmiValueSetMap targetToSrcMap = m_handler.getValueSetMap(targetValueSetName + "." + srcValueSetName);
-		if (targetToSrcMap == null) {
-			// create if it doesn't exist
-			targetToSrcMap = new MdmiValueSetMap(m_handler, targetValueSet, srcValueSet);
-			m_handler.addValueSetMap(targetToSrcMap);
-		}
-
-		
-		// populate ValueSetEditor dialog
-		ValueSetEditor valueSetEditor = new ValueSetEditor(this, srcToTargetMap, targetToSrcMap);
+		// create bi-directional ValueSetEditor dialog
+		ValueSetMapEditor valueSetEditor = new ValueSetMapEditor(this, true,
+				m_handler, srcValueSetName, targetValueSetName);
 
 		// show it
 		valueSetEditor.center();
 		int val = valueSetEditor.display();
 		if (val == OK_BUTTON_OPTION) {
-			//update the value sets in the handler with the ones from the map
-			m_handler.addValueSet(srcToTargetMap.getSourceSet());
-			m_handler.addValueSet(srcToTargetMap.getTargetSet());
-			
-			// save file
-        	String mapFileName = SystemContext.getMapFileName();
-			String handlerFile = mapFileName.replace(".xmi", MdmiValueSetsHandler.FILE_EXTENSION);
-			File f = new File(handlerFile);
-			m_handler.save(f);
-			
 			super.okButtonAction();
 		}
 	}

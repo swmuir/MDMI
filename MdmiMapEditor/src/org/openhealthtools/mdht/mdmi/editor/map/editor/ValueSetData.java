@@ -3,12 +3,15 @@ package org.openhealthtools.mdht.mdmi.editor.map.editor;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -17,16 +20,17 @@ import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
+import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 
 
 /** A component to pick Field names for value sets.
  * A property change event will be fired when the selection changes. */
-public class ValueSetData extends JPanel implements IEditorField {	
+public class ValueSetData extends JPanel implements IEditorField, ActionListener {
 	/** Resource for localization */
 	protected static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.editor.map.editor.Local");
 
-	//  This is a String
+	//  This is the value set
 	public static final String ENUM_VALUE_SET         = "EnumValueSet";
 	
 	// These use the Field
@@ -36,22 +40,42 @@ public class ValueSetData extends JPanel implements IEditorField {
 	
 
 	// simply provide a String editor, and 3 field combo boxes in this order
-	private StringField m_valueSetName;
+	private ValueSetSelector m_valueSetName;
 	private String[] m_valueFieldNames = {
 			ENUM_VALUE_FIELD, 
 			ENUM_VALUE_SET_FIELD, 
 			ENUM_VALUE_DESCR_FIELD
 			};
 	private FieldNameSelector[] m_allFields;
+	
+	private GenericEditor m_parentEditor = null;
+	private MessageGroup m_group = null;
+	private MdmiDatatype m_datatype = null;
+	private JComboBox<?> m_datatypeCombo = null;
 
-	public ValueSetData(GenericEditor parentEditor, MdmiDatatype datatype) {
-		m_valueSetName = new StringField(parentEditor, 1, 10);
-		m_allFields = new FieldNameSelector[m_valueFieldNames.length];
-		for (int i=0; i<m_allFields.length; i++) {
-			m_allFields[i] = new FieldNameSelector(parentEditor, datatype);
+	public ValueSetData(GenericEditor parentEditor, MessageGroup group, MdmiDatatype datatype) {
+		m_parentEditor = parentEditor;
+		m_group = group;
+		m_datatype = datatype;
+		
+		// save the data type editor field, so we can listen for changes
+		MdmiDatatypeField datatypeField = findDatatypeField();
+		if (datatypeField != null) {
+			m_datatypeCombo = datatypeField.getComboBox();
 		}
 		
 		buildUI();
+	}
+	
+	/** Find the field that supports editing the data type */
+	private MdmiDatatypeField findDatatypeField() {
+
+		for (DataEntryFieldInfo fieldInfo : m_parentEditor.getDataEntryFieldList()) {
+			if (fieldInfo.getEditComponent() instanceof MdmiDatatypeField) {
+				return (MdmiDatatypeField)fieldInfo.getEditComponent();
+			}
+		}
+		return null;
 	}
 	
 	//
@@ -61,7 +85,19 @@ public class ValueSetData extends JPanel implements IEditorField {
 	//   Value Set Field:   [_______v]
 	//   Value Description: [_______v]
 	private void buildUI() {
+		// create the data
+		m_valueSetName = new ValueSetSelector(m_parentEditor, m_group);
+		m_allFields = new FieldNameSelector[m_valueFieldNames.length];
+		for (int i=0; i<m_allFields.length; i++) {
+			m_allFields[i] = new FieldNameSelector(m_parentEditor, m_datatype);
+		}
+		
+		// disable value set name if no fields
+		if (m_allFields[0].getComboBox().getItemCount() <= 1) {
+			m_valueSetName.setReadOnly();
+		}
 
+		// layout the components
 		setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0;
@@ -110,7 +146,6 @@ public class ValueSetData extends JPanel implements IEditorField {
 		
 		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Value Set Data"));
 	}
-
 	
 	@Override
 	public void highlightText(String text, Color highlightColor) {
@@ -125,14 +160,36 @@ public class ValueSetData extends JPanel implements IEditorField {
 			}
 		}
 	}
+	
+	@Override
+	public void addNotify() {
+		// add listener
+		if (m_datatypeCombo != null) {
+			m_datatypeCombo.addActionListener(this);
+		}
+		super.addNotify();
+	}
+	
+	@Override
+	public void removeNotify() {
+		super.removeNotify();
+		// cleanup listener
+		if (m_datatypeCombo != null) {
+			m_datatypeCombo.removeActionListener(this);
+		}
+	}
 
 	/** Get the values as an array of 4 strings */
 	@Override
 	public Object getValue() throws DataFormatException {
 		Collection<String> valueList = new ArrayList<String>();
-		valueList.add( (String) m_valueSetName.getValue() );
+		
+		String value = (String) m_valueSetName.getValue();
+		valueList.add( ensureNonNull(value) );
+		
 		for (FieldNameSelector valueField : m_allFields) {
-			valueList.add( (String) valueField.getValue() );
+			value = (String) valueField.getValue();
+			valueList.add( ensureNonNull(value) );
 		}
 		return valueList;
 	}
@@ -277,6 +334,24 @@ public class ValueSetData extends JPanel implements IEditorField {
 		}
 		
 		
+	}
+
+	///////////////////////////////////////////
+	// Action Listener
+	/////////////////////////////////////////////
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// Check if the Data Type has changed - if so, we need to rebuild 
+		if (e.getSource() == m_datatypeCombo) {
+			Object selected = m_datatypeCombo.getSelectedItem();
+			if (selected instanceof MdmiDatatype && selected != m_datatype) {
+				// data type changed - we need to reload
+				m_datatype = (MdmiDatatype)selected;
+				
+				removeAll();
+				buildUI();
+			}
+		}
 	}
 
 }

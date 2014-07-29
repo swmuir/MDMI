@@ -145,7 +145,8 @@ public class BusinessElementReferenceNode extends EditableObjectNode {
 			super.createDataEntryFields(methodPairList);
 
 			//add a component to show ValueSet fields
-			m_valueSetditorField = new ValueSetData(this, getBusinessElementReference().getReferenceDatatype());
+			m_valueSetditorField = new ValueSetData(this, getMessageGroup(),
+					getBusinessElementReference().getReferenceDatatype());
 			addFieldFullWidth(m_valueSetditorField, GridBagConstraints.HORIZONTAL);
 			addDataEntryFieldInfo(m_valueSetditorField.getDataEntryFieldInfo());
 

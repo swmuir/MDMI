@@ -14,27 +14,43 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tree;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.tree.TreeNode;
 
+import org.openhealthtools.mdht.mdmi.Mdmi;
+import org.openhealthtools.mdht.mdmi.MdmiResolver;
+import org.openhealthtools.mdht.mdmi.MdmiValueSetsHandler;
+import org.openhealthtools.mdht.mdmi.editor.common.Standards;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.AbstractComponentEditor;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.BooleanField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.BusinessElementReferenceField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.DataEntryFieldInfo;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.DataFormatException;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.GenericEditor;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.IEditorField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.MdmiDatatypeField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.RuleField;
+import org.openhealthtools.mdht.mdmi.editor.map.editor.StringField;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.ValueSetMapEditor;
 import org.openhealthtools.mdht.mdmi.model.ConversionRule;
 import org.openhealthtools.mdht.mdmi.model.MdmiBusinessElementReference;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
-import org.openhealthtools.mdht.mdmi.model.MessageModel;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
-import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
@@ -178,6 +194,15 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 			// Owner is read-only
 			return "Owner".equalsIgnoreCase(fieldName);
 		}
+		
+		@Override
+		protected IEditorField createEditorField(DataEntryFieldInfo fieldInfo) {
+			if ("EnumExtResolverUri".equalsIgnoreCase(fieldInfo.getFieldName())) {
+				// we want to add a button to show the mapping
+				return new ViewMapField(this);
+			}
+			return super.createEditorField(fieldInfo);
+		}
 
 		
 		@Override
@@ -235,6 +260,155 @@ public abstract class ConversionRuleNode extends EditableObjectNode {
 				errors = ruleField.validateActionRule(cr.getActualRuleExpressionLanguage(), semanticElement);
 			}
 			return errors;
+		}
+
+	}
+
+
+
+	// A StringField, with a button to view the map
+	protected class ViewMapField extends StringField implements ActionListener {
+		private JButton m_viewBtn;
+
+		ViewMapField(GenericEditor parentEditor) {
+			super(parentEditor, 1, 10);
+			m_viewBtn = new JButton("View Map...");
+			m_viewBtn.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
+					SemanticElementNode.s_res.getString("ViewMapField.icon")));
+			JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Standards.LEFT_INSET, 0));
+			btnPanel.add(m_viewBtn);
+			add(BorderLayout.EAST, btnPanel);
+			
+			// disable button if not mapped
+		}
+
+
+		@Override
+		public void setReadOnly() {
+			m_viewBtn.setEnabled(false);
+			super.setReadOnly();
+		}
+
+		@Override
+		public void addNotify() {
+			super.addNotify();
+			m_viewBtn.addActionListener(this);
+			m_viewBtn.setToolTipText(DataTypeNode.s_res.getString("ViewMapField.toolTip"));
+		}
+
+		@Override
+		public void removeNotify() {
+			m_viewBtn.removeActionListener(this);
+			m_viewBtn.setToolTipText(null);
+			super.removeNotify();
+		}
+
+		/** Display the value set map between the SE and BER */
+		private void showValueSetMap() {
+			String srcValueSetName = null;
+			String targetValueSetName = null;
+			boolean hasBERValueSet = false;
+			boolean hasSEValueSet = false;
+			
+			ConversionRule rule  = (ConversionRule)getUserObject();
+			SemanticElement se = rule.getOwner();
+
+			MessageGroup group = se.getElementSet().getModel().getGroup();
+
+			// get the Business Element from the dialog, since the user can change it
+			MdmiBusinessElementReference ber = getSelectedMdmiBusinessElementReference();
+			
+			
+			if (rule instanceof ToBusinessElement) {
+				// Source is the SE, Target is the BER
+				srcValueSetName = se.getEnumValueSet();
+				if (srcValueSetName != null && !srcValueSetName.isEmpty()) {
+					hasSEValueSet = true;
+				}
+				
+				if (ber != null) {
+					targetValueSetName = ber.getEnumValueSet();
+					if (targetValueSetName != null && !targetValueSetName.isEmpty()) {
+						hasBERValueSet = true;
+					}
+				}
+			} else if (rule instanceof ToMessageElement) {
+				// Source is the BER, Target is the SE
+				if (ber != null) {
+					srcValueSetName = ber.getEnumValueSet();
+					if (srcValueSetName != null && !srcValueSetName.isEmpty()) {
+						hasBERValueSet = true;
+					}
+				}
+				
+				targetValueSetName = se.getEnumValueSet();
+				if (targetValueSetName != null && !targetValueSetName.isEmpty()) {
+					hasSEValueSet = true;
+				}
+			}
+			
+			// show map
+			if (hasBERValueSet && hasSEValueSet) {
+				
+				MdmiResolver resolver = Mdmi.INSTANCE.getResolver();
+				if (resolver != null) {
+					MdmiValueSetsHandler handler = resolver.getValueSetsHandler(group.getName());
+					ValueSetMapEditor dlg = new ValueSetMapEditor((JFrame)this.getTopLevelAncestor(), 
+							false, handler, srcValueSetName, targetValueSetName);
+					dlg.display();
+				} else {
+					JOptionPane.showMessageDialog(this, "The MDMI Resolver cannot be identified", 
+							"Error", JOptionPane.ERROR_MESSAGE);
+				}
+				
+			} else {
+				// don't have the data we need - show an error message
+				StringBuilder buf = new StringBuilder();
+				if (!hasBERValueSet && !hasSEValueSet) {
+					buf.append("Neither the Business Element Reference, nor the");
+					buf.append("Semantic Element,");
+					buf.append("have value sets defined");
+				} else if (!hasBERValueSet) {
+					buf.append("The Business Element Reference does not have a value set defined");
+				} else if (!hasSEValueSet) {
+					buf.append("The Semantic Element does not have a value set defined");
+				}
+				JOptionPane.showMessageDialog(this, buf.toString(), "Value Set Undefined", JOptionPane.WARNING_MESSAGE);
+				
+			}
+		}
+
+
+		/** get the currently selected BER */
+		private MdmiBusinessElementReference getSelectedMdmiBusinessElementReference() {
+			MdmiBusinessElementReference ber = null;
+			BusinessElementReferenceField beField = findBusinessElementReferenceField();
+			if (beField != null) {
+				Object selected = beField.getValue();
+				if (selected instanceof MdmiBusinessElementReference) {
+					ber = (MdmiBusinessElementReference)selected;
+				}
+			}
+			return ber;
+		}
+
+		
+		/** Find the edit field that supports editing the business element */
+		private BusinessElementReferenceField findBusinessElementReferenceField() {
+
+			for (DataEntryFieldInfo fieldInfo : getParentEditor().getDataEntryFieldList()) {
+				if (fieldInfo.getEditComponent() instanceof BusinessElementReferenceField) {
+					return (BusinessElementReferenceField)fieldInfo.getEditComponent();
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if (e.getSource() == m_viewBtn) {
+				showValueSetMap();
+			}
 		}
 
 	}

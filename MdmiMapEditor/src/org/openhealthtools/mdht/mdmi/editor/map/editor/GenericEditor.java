@@ -775,7 +775,7 @@ public class GenericEditor extends AbstractComponentEditor {
 				// error reading from model
 				// Unable to invoke '{0}' on {1}
 				String msg = MessageFormat.format(s_res.getString("GenericEditor.invocationErrorFormat"),
-						fieldInfo.getGetMethod().getName(), m_objectClass.getName());
+						"get" + fieldInfo.getFieldName(), m_objectClass.getName());
 				SelectionManager.getInstance().getStatusPanel().writeException(msg, e);
 			}
 		}
@@ -866,7 +866,7 @@ public class GenericEditor extends AbstractComponentEditor {
 	}
 	
 	/** Get all fields */
-	protected List<DataEntryFieldInfo> getDataEntryFieldList() {
+	public List<DataEntryFieldInfo> getDataEntryFieldList() {
 		return m_dataEntryFieldList;
 	}
 	

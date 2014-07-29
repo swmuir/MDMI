@@ -59,6 +59,9 @@ public class StringField extends JPanel implements IEditorField, DocumentListene
 		m_defaultValueDisplay.setVisible(false);
 	}
 	
+	public GenericEditor getParentEditor() {
+		return m_parentEditor;
+	}
 	
 	@Override
 	public JComponent getComponent() {

@@ -36,9 +36,7 @@ import org.openhealthtools.mdht.mdmi.model.DataRule;
 import org.openhealthtools.mdht.mdmi.model.Field;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
-import org.openhealthtools.mdht.mdmi.model.MessageModel;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
-import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 
 /** Node for simple data types. Complex and Enumeration types are handled in their own class */
