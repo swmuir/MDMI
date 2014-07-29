@@ -213,17 +213,19 @@ ListSelectionListener, MouseListener {
 			m_list.setSelectedValue(value, true);
 
 			// show error
-			Object modelObject = m_parentEditor.getEditObject();
-			String fieldName = m_parentEditor.getFieldNameFor(this);
-			m_parentEditor.highlightFieldWithError(fieldName);
-			SelectionManager.getInstance().getStatusPanel().writeErrorLink(
-					// Error in <objectType>
-					MessageFormat.format(s_res.getString("AdvancedListField.errorInObjectFormat"),
-							ClassUtil.beautifyName(m_parentEditor.getObjectClass())), 
-							new LinkedObject(modelObject, m_parentEditor.getModelName(modelObject)),
-							// - <value> is not a valid choice for <field name>
-							MessageFormat.format(s_res.getString("AdvancedListField.itemNotFoundFormat"),
-									toString(value), ClassUtil.beautifyName(fieldName)));
+			if (m_parentEditor != null) {
+				Object modelObject = m_parentEditor.getEditObject();
+				String fieldName = m_parentEditor.getFieldNameFor(this);
+				m_parentEditor.highlightFieldWithError(fieldName);
+				SelectionManager.getInstance().getStatusPanel().writeErrorLink(
+						// Error in <objectType>
+						MessageFormat.format(s_res.getString("AdvancedListField.errorInObjectFormat"),
+								ClassUtil.beautifyName(m_parentEditor.getObjectClass())), 
+								new LinkedObject(modelObject, m_parentEditor.getModelName(modelObject)),
+								// - <value> is not a valid choice for <field name>
+								MessageFormat.format(s_res.getString("AdvancedListField.itemNotFoundFormat"),
+										toString(value), ClassUtil.beautifyName(fieldName)));
+			}
 		}
 	}
 
