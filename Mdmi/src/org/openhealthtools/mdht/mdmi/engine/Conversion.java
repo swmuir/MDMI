@@ -377,8 +377,7 @@ public class Conversion {
 	}
 
 	// given a BER get a list of all SEs that have a ToBusinessElement rule for
-	// it
-	// and if none get a name match
+	// it and if none get a name match
 	private ArrayList<SemanticElement> getSourceSESforBER( MessageModel model, MdmiBusinessElementReference ber ) {
 		ArrayList<SemanticElement> a = new ArrayList<SemanticElement>();
 		Collection<SemanticElement> srcSEs = model.getElementSet().getSemanticElements();
