@@ -35,7 +35,7 @@ import org.openhealthtools.mdht.mdmi.util.ICloneable;
 /**
  * Internal class, defines a conversion for a transfer request, within a unit of
  * work.
- *
+ * 
  * @author goancea
  */
 public class Conversion {
@@ -45,9 +45,8 @@ public class Conversion {
 
 	/**
 	 * Construct an instance from the given unit of work.
-	 *
-	 * @param owner
-	 *           The UoW owner.
+	 * 
+	 * @param owner The UoW owner.
 	 */
 	Conversion( MdmiUow owner ) {
 		if( owner == null || owner.transferInfo == null || owner.transferInfo.targetElements == null )
@@ -72,9 +71,8 @@ public class Conversion {
 	 * Construct a ConversionInfo for each element in the
 	 * m_transferInfo.targetElements. The names in the
 	 * m_transferInfo.targetElements are target BusinessElementRefecence names.
-	 *
-	 * @param elements
-	 *           The elements to use, a list of strings.
+	 * 
+	 * @param elements The elements to use, a list of strings.
 	 */
 	private void initFromDictionaryElements( ArrayList<MdmiBusinessElementReference> elements ) {
 		MessageModel trgModel = m_transferInfo.targetModel.getModel();
@@ -106,13 +104,13 @@ public class Conversion {
 				if( srcSes.size() <= 0 ) {
 					throw new MdmiException("Conversion: invalid mapping, missing source SEs, source BER is " + ci.srcBER.getName());
 				}
-				for( int k = 0; k < srcSes.size(); k++ ) {			
+				for( int k = 0; k < srcSes.size(); k++ ) {
 					SemanticElement ses = srcSes.get(k);
 					for( ToBusinessElement tme : ses.getFromMdmi() ) {
 						// Only add to the source if the business element match and the semantic elements match
 						// Check to see if isomorphic - this is a kludge for ken
 						if( trgModel.getGroup().getName().equals(srcModel.getGroup().getName()) ) {
-							if(tme.getOwner().equals(target) && trgBER.getUniqueIdentifier().equals(tme.getBusinessElement().getUniqueIdentifier()) ) {
+							if( tme.getOwner().equals(target) && trgBER.getUniqueIdentifier().equals(tme.getBusinessElement().getUniqueIdentifier()) ) {
 								ci.source.add(ses);
 								break;
 							}
@@ -135,9 +133,8 @@ public class Conversion {
 	 * Construct a ConversionInfo for each element in the
 	 * m_transferInfo.targetElements. The names in the
 	 * m_transferInfo.targetElements are target SemanticElement names.
-	 *
-	 * @param elements
-	 *           The elements to use, a list of strings.
+	 * 
+	 * @param elements The elements to use, a list of strings.
 	 */
 	private void initFromTargetElements( ArrayList<MdmiBusinessElementReference> elements ) {
 		MessageModel trgModel = m_transferInfo.targetModel.getModel();
@@ -189,7 +186,7 @@ public class Conversion {
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
 				if( MdmiUow.OUTPUT_TO_CONSOLE )
-					System.out.println("Conversion[" + (i+1) + "] " + ci.toString());
+					System.out.println("Conversion[" + (i + 1) + "] " + ci.toString());
 				for( int j = 0; j < ci.source.size(); j++ ) {
 					SemanticElement source = ci.source.get(j);
 					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
@@ -235,15 +232,15 @@ public class Conversion {
 			throw new MdmiException(e.getMessage());
 		}
 	}
-	
-	HashMap <String,ArrayList<IElementValue>> globalSources = new HashMap <String,ArrayList<IElementValue>> ();
+
+	HashMap<String, ArrayList<IElementValue>> globalSources = new HashMap<String, ArrayList<IElementValue>>();
 
 	private void execute( XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner ) {
 		try {
 			ConversionImpl impl = ConversionImpl.Instance;
 
 			impl.logging = m_owner.owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue();
-		 
+
 			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
 			for( int i = 0; i < cis.size(); i++ ) {
 				ConversionInfo ci = cis.get(i);
@@ -252,9 +249,10 @@ public class Conversion {
 					SemanticElement seParent = source.getParent();
 					SemanticElement seParentOwner = srcOwner.getSemanticElement();
 					ArrayList<IElementValue> srcs = null;
-					// if the owner SE is not the same as the source parent SE, use all elements, otherwise get only children
-					if( seParent != seParentOwner ) {			
-						if (!globalSources.containsKey(source.getName())) {
+					// if the owner SE is not the same as the source parent SE, use
+					// all elements, otherwise get only children
+					if( seParent != seParentOwner ) {
+						if( !globalSources.containsKey(source.getName()) ) {
 							globalSources.put(source.getName(), m_owner.srcSemanticModel.getElementValuesByType(source));
 						}
 						srcs = globalSources.get(source.getName());
@@ -351,15 +349,20 @@ public class Conversion {
 		return null;
 	}
 
-	// get the CIs for which the target SE's are top level, i.e. have no parent
-	// or have a LOCAL parent
+	// get the CIs for which the target SE's are top level, i.e. have no parent or have a LOCAL parent
 	private ArrayList<ConversionInfo> getTopLevelCis() {
 		ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
-			if( parent == null || parent.getSemanticElementType() == SemanticElementType.LOCAL ) {
+			if( null == parent || parent.getSemanticElementType() == SemanticElementType.LOCAL ) {
 				cis.add(ci);
+			}
+			else if( null != parent && parent.getDatatype().getName().equalsIgnoreCase("container") ) {
+				SemanticElement grandParent = parent.getParent();
+				if( null == grandParent || grandParent.getSemanticElementType() == SemanticElementType.LOCAL ) {
+					cis.add(ci);
+				}
 			}
 		}
 		return cis;
@@ -376,8 +379,7 @@ public class Conversion {
 		return cis;
 	}
 
-	// given a BER get a list of all SEs that have a ToBusinessElement rule for
-	// it and if none get a name match
+	// given a BER get a list of all SEs that have a ToBusinessElement rule for it and if none get a name match
 	private ArrayList<SemanticElement> getSourceSESforBER( MessageModel model, MdmiBusinessElementReference ber ) {
 		ArrayList<SemanticElement> a = new ArrayList<SemanticElement>();
 		Collection<SemanticElement> srcSEs = model.getElementSet().getSemanticElements();
@@ -488,7 +490,7 @@ public class Conversion {
 	/**
 	 * Each instance of this class wraps one conversion, from one source SE to
 	 * one or more target SEs, through a source and target BER.
-	 *
+	 * 
 	 * @author goancea
 	 */
 	static public class ConversionInfo implements ICloneable<ConversionInfo> {
@@ -509,7 +511,7 @@ public class Conversion {
 			target = src.target;
 			trgBER = src.trgBER;
 			srcBER = src.srcBER;
-			source = (ArrayList<SemanticElement>)src.source.clone();
+			source = (ArrayList<SemanticElement>) src.source.clone();
 		}
 
 		@Override
@@ -538,14 +540,14 @@ public class Conversion {
 			return sb.toString();
 		}
 	} // Conversion$ConversionInfo
-	
+
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
-	      ConversionInfo ci = m_conversionInfos.get(i);
-	      sb.append(ci.toString()).append("\r\n");
-      }
+			ConversionInfo ci = m_conversionInfos.get(i);
+			sb.append(ci.toString()).append("\r\n");
+		}
 		return sb.toString();
 	}
 } // Conversion

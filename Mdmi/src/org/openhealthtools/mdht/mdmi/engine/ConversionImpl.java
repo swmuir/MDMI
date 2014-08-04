@@ -51,7 +51,8 @@ class ConversionImpl {
 		}
 	}
 
-	private void logObject( String name, Object object ) {
+	@SuppressWarnings( "unused" )
+   private void logObject( String name, Object object ) {
 		if( MdmiUow.OUTPUT_TO_CONSOLE && !"conversionInfo".equals(name) )
 			System.out.println(name + ": " + object.toString());
 		if( logging ) {
