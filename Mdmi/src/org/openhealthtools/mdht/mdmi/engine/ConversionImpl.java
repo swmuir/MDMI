@@ -56,10 +56,8 @@ class ConversionImpl {
 		if( MdmiUow.OUTPUT_TO_CONSOLE && !"conversionInfo".equals(name) )
 			System.out.println(name + ": " + object.toString());
 		if( logging ) {
-			if( conversionNode == null ) {
+			if( conversionNode == null )
 				conversionNode = mapper.createObjectNode().putObject("conversion");
-				;
-			}
 			conversionNode.putPOJO(name, object);
 		}
 	}

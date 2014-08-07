@@ -274,6 +274,14 @@ public class SemanticElement implements IClassifier {
       m_relationships.add(relationship);
    }
 
+   public SemanticElementRelationship getRelationshipByName( String name ) {
+   	for( SemanticElementRelationship r : m_relationships ) {
+   		if( r.getName().equalsIgnoreCase(name) )
+   			return r;
+   	}
+      return null;
+   }
+
    public boolean isComputed() {
       if( m_computedValue == null )
          return false;

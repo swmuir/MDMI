@@ -81,6 +81,7 @@ public class JsAdapter implements IExpressionInterpreter  {
       rule = addPackages(rule);
       boolean returnValue = false;
       try {
+      	//test( (XElementValue)context, m_value );
          engine.put("value", context);
          if( null != m_name && 0 < m_name.length() )
             engine.put(m_name, m_value);
@@ -91,6 +92,23 @@ public class JsAdapter implements IExpressionInterpreter  {
          lex.add(ex);
       }
       return returnValue;
+   }
+   
+   private void test( XElementValue value, XValue xv ) {
+   	Object v = xv.getValue();
+   	if( null == v ) return;
+
+   	value.setValue(v);
+   	XElementValue key = value.getRelation("Key");
+   	if( null == key ) {
+   	   SemanticElement se = value.getSemanticElement();
+   	   SemanticElementRelationship re = se.getRelationshipByName("Key");
+   	   SemanticElement te = re.getRelatedSemanticElement();
+   	   XElementValue owner = (XElementValue)value.getParent();
+   	   key = new XElementValue(te, value.getOwner());
+   	   owner.addChild(key);
+   	}
+   	key.setValue("Claim");
    }
 
    private String addPackages( String rule ) {

@@ -28,9 +28,19 @@ public class XElementValue implements IElementValue {
    private SemanticElement          m_semanticElement;
    private XElementValue            m_parent;
    private ArrayList<XElementValue> m_children;
-   private ArrayList<XElementValue> m_relations;
+   private ArrayList<RelElement>    m_relations;
    private XValue                   m_xvalue;
    private ElementValueSet          m_owner;
+   
+   public static class RelElement {
+   	public String        name;
+   	public XElementValue relatedElement;
+
+   	public RelElement( String name, XElementValue relatedElement ) {
+	      this.name = name;
+	      this.relatedElement = relatedElement;
+      }
+   }
 
    /**
     * Construct one from the SemanticElement model instance and its owner set.
@@ -43,7 +53,7 @@ public class XElementValue implements IElementValue {
          throw new IllegalArgumentException("Null argument!");
       m_semanticElement = semanticElement;
       m_children = new ArrayList<XElementValue>();
-      m_relations = new ArrayList<XElementValue>();
+      m_relations = new ArrayList<RelElement>();
       m_xvalue = new XValue(this);
       m_owner = eset;
       m_owner.addElementValue(this);
@@ -58,10 +68,11 @@ public class XElementValue implements IElementValue {
             XElementValue e = src.m_children.get(i);
             m_children.add(e.clone(true));
          }
-         m_relations = new ArrayList<XElementValue>();
+         m_relations = new ArrayList<RelElement>();
          for( int i = 0; i < src.m_relations.size(); i++ ) {
-            XElementValue e = src.m_relations.get(i);
-            m_relations.add(e.clone(true));
+   			RelElement e = src.m_relations.get(i);
+         	RelElement t = new RelElement(e.name, e.relatedElement.clone(true));
+         	m_relations.add(t);
          }
          m_xvalue = src.m_xvalue.clone(true);
       }
@@ -113,7 +124,7 @@ public class XElementValue implements IElementValue {
       }
       return a;
    }
-
+   
    @Override
    public int getChildCount() {
       return m_children.size();
@@ -128,10 +139,22 @@ public class XElementValue implements IElementValue {
    @Override
    public ArrayList<IElementValue> getRelations() {
       ArrayList<IElementValue> a = new ArrayList<IElementValue>();
-      for( XElementValue e : m_relations ) {
-         a.add(e);
+      for( RelElement e : m_relations ) {
+         a.add(e.relatedElement);
       }
       return a;
+   }
+
+   public void addRelation( String name, IElementValue relation ) {
+      m_relations.add(new RelElement(name, (XElementValue)relation));
+   }
+
+   public XElementValue getRelation( String name ) {
+   	for( RelElement re : m_relations ) {
+   		if( re.name.equalsIgnoreCase(name) ) 
+   			return re.relatedElement;
+   	}
+   	return null;
    }
 
    @Override
@@ -142,6 +165,10 @@ public class XElementValue implements IElementValue {
    @Override
    public XValue getXValue() {
       return m_xvalue;
+   }
+
+   public void setValue( Object value ) {
+      m_xvalue.setValue(value);
    }
 
    @Override
@@ -189,8 +216,8 @@ public class XElementValue implements IElementValue {
       if( m_relations.size() > 0 ) {
          sb.append(indent + "relations:\r\n");
          for( int i = 0; i < m_relations.size(); i++ ) {
-            XElementValue xe = m_relations.get(i);
-            sb.append(indent + "  " + xe.getName() + " [" + xe.toStringShort() + "]\r\n");
+            RelElement re = m_relations.get(i);
+            sb.append(indent + "  " + re.name + " [" + re.relatedElement.toStringShort() + "]\r\n");
          }
       }
       sb.append(m_xvalue.toString(indent));

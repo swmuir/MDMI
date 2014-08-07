@@ -504,18 +504,24 @@ public class DefaultSemanticParser implements ISemanticParser {
 			// 1. Check child elements
 			ArrayList<IElementValue> xevs = valueSet.getChildElementValuesByType(trg, xe);
 			if( xevs != null && 0 < xevs.size() ) {
-				xe.getRelations().addAll(xevs);
+				for( IElementValue xev : xevs ) {
+					xe.addRelation(rel.getName(), xev);
+				}
 				return;
 			}
 			// 2. Check child elements of the owner
 			xevs = valueSet.getOwnerElementValuesByType(trg, xe);
 			if( xevs != null && 0 < xevs.size() ) {
-				xe.getRelations().addAll(xevs);
+				for( IElementValue xev : xevs ) {
+					xe.addRelation(rel.getName(), xev);
+				}
 				return;
 			}
 			// 3. Last resort: get all
 			xevs = valueSet.getElementValuesByType(trg);
-			xe.getRelations().addAll(xevs);
+			for( IElementValue xev : xevs ) {
+				xe.addRelation(rel.getName(), xev);
+			}
 		}
 	}
 
