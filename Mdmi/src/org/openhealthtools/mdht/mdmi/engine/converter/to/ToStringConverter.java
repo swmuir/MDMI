@@ -22,11 +22,16 @@ import org.openhealthtools.mdht.mdmi.engine.converter.DateWrapper;
 import org.openhealthtools.mdht.mdmi.util.DateUtil;
 
 public class ToStringConverter implements IConvertToString {
+	private String originalFormat = null;
+
    @Override
    public String convertToString( Object obj, String format ) {
 	   if (format!=null && format.length()>0) {
 	    if (obj instanceof Date) return convertStringSplit(obj, format);
-	    if (obj instanceof DateWrapper) return convertStringSplit(((DateWrapper)obj).getDate(),format);
+	    if (obj instanceof DateWrapper) {
+	   	 originalFormat = ((DateWrapper)obj).getOriginalFormat();
+	   	 return convertStringSplit(((DateWrapper)obj).getDate(),format);
+	    }
 	   }
       return obj.toString();
    }
@@ -41,7 +46,7 @@ public class ToStringConverter implements IConvertToString {
    private String convert(Object obj, String format) {
 	   if (obj==null) return "ERROR";
        try {
-    	   return DateUtil.formatDate(format, (Date)obj);
+    	   return DateUtil.formatDate(format, (Date)obj,originalFormat);
        } catch (IllegalArgumentException ignored) {
        }
        return null;

@@ -29,14 +29,16 @@ public class ToDateTimeConverter implements IConvertToString {
 	HashMap <String,SimpleDateFormat> formats = new HashMap<String,SimpleDateFormat>();
     @Override
     public String convertToString(Object obj, String format) {
+   	  String originalFormat = null;
         if (!((obj instanceof Date) || obj instanceof DateWrapper))
             throw new IllegalArgumentException("Object is not a java.util.Date type.");
         if (obj instanceof DateWrapper) {
             DateWrapper dateWrapper = (DateWrapper) obj;
             obj = dateWrapper.getDate();
+            originalFormat = dateWrapper.getOriginalFormat();
         }
         try {
-        	return DateUtil.formatDate(format==null?null:DateUtil.getLongestWithoutSemiColons(format), (Date)obj);
+        	return DateUtil.formatDate(format==null?null:DateUtil.getLongestWithoutSemiColons(format), (Date)obj,originalFormat);
         } catch (Exception ex) {
             throw new MdmiException(ex, "ToDateTimeConverter.convertToString({0}, {1}) failed.", obj, format);
         }

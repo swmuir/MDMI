@@ -7,20 +7,26 @@
 * Contributors:
 *     Jeff Klann - initial API and implementation
 *
+* Changelog:
+*    Jeff Klann - 1.0 - initial implementation
+*    Jeff Klann - 1.1 - now handles quoted literals more fully and retains precision of input
+*     when outputting
+*
 * Author:
 *     Jeff Klann, PhD
 *
 * This contributes to a reimaining of Dates in MDMI. Also see DateWrapper,
 * DateTimeConverter, ToStringConverter, and ToDateTimeConverter. Currently allows values that are
-* shorter than the specified format and uses either HL7 or ISO as default,
-* depending on the input string. Does not allow values that are *longer*
-* than the input format, optional timezones with shorter strings, or retained
-* precision of output. Also does not validate that the parsed string makes sense -
+* shorter or longer than the specified format and supports quoted literals in the format string.
+* Uses either HL7 or ISO as default, depending on the input string. Retains output precision correctly.
+* Does not support optional timezones with shorter strings.
+* Also does not validate that the parsed string makes sense -
 * this seems to only affect the year, which can be very strange if a bad value is passed
 * for certain date formats.
 *
 *
 * @author jklann
+* @version 1.1
 *
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.util;
@@ -34,6 +40,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openhealthtools.mdht.mdmi.engine.converter.DateWrapper;
+
+import com.google.common.base.CharMatcher;
 
 
 public class DateUtil {
@@ -59,11 +67,26 @@ public class DateUtil {
 		return sdf;
 	}
 
-	public static String formatDate(String format, Date value) {
+	/***
+	 * Format the date as a string using cached SimpleDateFormats.
+	 * Follows the MDMI convention of using
+	 * ISO format if format is null, empty, or "DATE". Adds a colon after character 26, because
+	 * XmlUtil used to, so I preserved it. Probably should be removed if it's not needed.
+	 *
+	 * Now will try to preserve formatting precision if originalFormat is not null, empty,
+	 * or "DATE".
+	 *
+	 * @param format Output format
+	 * @param value Date object
+	 * @param originalFormat Optional, original format for precision matching
+	 * @return
+	 */
+	public static String formatDate(String format, Date value, String originalFormat) {
 		if (value==null) return "";
 		String myFormat = format;
 		if (format==null || format.equals("") || format.equals("DATE"))
 			myFormat = fmtISO;
+		myFormat = matchPrecision(myFormat,originalFormat);
 		SimpleDateFormat sdf = getDateFormatCached(myFormat);
 		String dateString = sdf.format(value);
 
@@ -81,9 +104,8 @@ public class DateUtil {
 	 * sans quotes. This works because each character in the format string
 	 * represents at least one character in the value string. The other way around
 	 * is not possible without complex logic.
-	 * TODO: Truncation could create an invalid substring. I don't think
-	 * that it matters if used in conjunction with parseDateImplicitOptional,
-	 * but should be tested further.
+	 * The bug with truncation resulting in invalid substrings due to quoted
+	 * literals has been fixed.
 	 */
 	public static String pickDateFormat(String format, String value) {
 		if (value==null) return "";
@@ -93,6 +115,18 @@ public class DateUtil {
 		}
 		int fmtLen = format.replace("\'", "").length();
 		if (fmtLen>value.length()) {
+			String truncatedFormat = format.substring(0,value.length());
+			// 8/8/14 bugfix: wasn't properly dealing with quoted strings
+			int addlChars=0;
+			if (truncatedFormat.contains("\'")) {
+				// If quoted strings are complete, just add the right number of chars
+				addlChars = CharMatcher.is('\'').countIn(truncatedFormat);
+				// If incomplete, find the end of the quoted string
+				if (addlChars%2==1) {
+					return format.substring(0,format.substring(value.length()+1).indexOf('\''));
+				}
+				return format.substring(0,value.length()+addlChars);
+			}
 			return format.substring(0, value.length());
 		}
 		else return format;
@@ -247,5 +281,66 @@ public class DateUtil {
 	    //System.out.println("Slower date parsing:"+output+","+originalFormat);
 
 	    return new DateWrapper(output, originalFormat,value);
+	}
+
+	/* Define synonymous components of date format. */
+	public static CharMatcher[] dateParts = new CharMatcher[10];
+	static {
+		dateParts[0]=CharMatcher.anyOf("G");
+		dateParts[1]=CharMatcher.anyOf("yY");
+		dateParts[2]=CharMatcher.anyOf("M");
+		dateParts[3]=CharMatcher.anyOf("wW");
+		dateParts[4]=CharMatcher.anyOf("DdFEu");
+		dateParts[5]=CharMatcher.anyOf("aHkKh");
+		dateParts[6]=CharMatcher.anyOf("m");
+		dateParts[7]=CharMatcher.anyOf("s");
+		dateParts[8]=CharMatcher.anyOf("S");
+		dateParts[9]=CharMatcher.anyOf("zZX");
+	}
+
+	/**
+	 * For outputting dates, tries to match the output precision with the input precision.
+	 * This has been tested with quoted and unquoted literals and supports varying expressions
+	 * of the same precision.
+	 * TODO: Differing expressions of precision (e.g., from day as digit to day as name)
+	 *  has not been tested because the engine has a bug in which it always passes the destination
+	 *  format string, not the source.
+	 *
+	 * @param outFormat The maximal precision output format.
+	 * @param originalFormat The orginalFormat of the date, from the date wrapper.
+	 * @return A truncation of outFormat to match the precision of the originalFormat
+	 */
+	public static String matchPrecision(String outFormat, String originalFormat) {
+		// Check for nulls
+		if (originalFormat==null || originalFormat.equals("") || originalFormat.equals("DATE"))
+			return outFormat;
+
+		// Use our static data and a string matcher to add all the weird precision overlaps
+		originalFormat = originalFormat.replaceAll("'.*'", ""); // Remove quoted literals
+		String newOF_src = outFormat.replaceAll("'.*'", "");
+		StringBuilder newOF_trg = new StringBuilder();
+		for (int i=0;i<dateParts.length;i++) {
+			if (dateParts[i].matchesAnyOf(originalFormat)) newOF_trg.append(dateParts[i].retainFrom(newOF_src));
+		}
+
+
+		// Use Guava's charmatcher to deal with everything but single-quoted literals
+		CharMatcher matcher = CharMatcher.anyOf(newOF_trg)
+				.or(CharMatcher.JAVA_LETTER.negate());
+		if (!outFormat.contains("'")) return matcher.retainFrom(outFormat);
+		else {
+			// There are single-quoted literals. Yuck.
+			StringBuilder newOut = new StringBuilder();
+			boolean instring = false;
+			for (int i=0;i<outFormat.length();i++) {
+				char current = outFormat.charAt(i);
+				if (current=='\'') {
+					if (instring==false) instring=true;
+					else instring=false;
+				}
+				if (instring || matcher.matches(current)) newOut.append(current);
+			}
+			return newOut.toString();
+		}
 	}
 }
