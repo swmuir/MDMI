@@ -729,8 +729,13 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 						YLeaf yleaf = (YLeaf) ynode;
 						String value = yleaf.getValue();
 					
-					
-						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), ynode.getNode().getMaxOccurs() != 1);
+					/*
+					 * TODO FIX!!! Passing in a default of true - ynode.getNode().getMaxOccurs() != 1 is not working
+					 * All data type attributes are returning 0..1 regardless of the model
+					 * The createElement handles attributes but could have other unforseen issues
+					 * 
+					 */
+						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), true);
 						
 						if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
 							Attr o = (Attr) xmlNode;
