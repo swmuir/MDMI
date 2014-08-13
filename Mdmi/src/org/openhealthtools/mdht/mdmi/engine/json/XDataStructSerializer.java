@@ -29,8 +29,21 @@ public class XDataStructSerializer extends JsonSerializer<XDataStruct> {
 			
 			jgen.writeStartObject();
 			jgen.writeObjectField("name", xv.getName());
+			
+			
+			
+		
 
+			if (xv.size() > 1) {
+				String s="";
+				for (Object o : xv.getValues()) {
+					s = s + o;
+				}
+				jgen.writeObjectField("value", s);
+			} else {
 			jgen.writeObjectField("value", xv.getValue());
+			}
+			 
 			jgen.writeEndObject();
 			
 			
