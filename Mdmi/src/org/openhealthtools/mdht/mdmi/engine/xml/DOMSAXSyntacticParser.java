@@ -118,6 +118,8 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 					} else {
 						Element currentElement = (Element) node;
 						NodeList nodeList = currentElement.getElementsByTagName(ctx.getText());
+						
+						
 						if( nodeList.getLength() == 1 ) {
 							childElement = (Element) nodeList.item(0);
 						}
@@ -726,8 +728,10 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 
 						YLeaf yleaf = (YLeaf) ynode;
 						String value = yleaf.getValue();
-						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), false);
-
+					
+					
+						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), ynode.getNode().getMaxOccurs() != 1);
+						
 						if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
 							Attr o = (Attr) xmlNode;
 							o.setTextContent(value);
