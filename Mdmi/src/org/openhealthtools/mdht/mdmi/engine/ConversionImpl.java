@@ -67,7 +67,7 @@ class ConversionImpl {
 
 	void convert( XElementValue src, ConversionInfo ci, XElementValue trg ) throws Exception {
 		logObject("conversionInfo", ci);
-		logObject("xElementValue", trg);
+		logObject("targetXElementValue", trg);
 
 		ToBusinessElement toBE = Conversion.getToBE(src.getSemanticElement(), ci.srcBER);
 		logObject("toBusinessElement", toBE);
@@ -76,15 +76,19 @@ class ConversionImpl {
 		logObject("toMessageElement", toSE);
 
 		XValue v = new XValue("v", toBE.getBusinessElement().getReferenceDatatype());
-		logObject("initialXValue", v);
+		//logObject("initialXValue", v); // this is always empty at this point, moved the log below
 
-		if( !hasTrgRule(toSE) )
+		if( !hasTrgRule(toSE) && !trg.getXValue().isEmpty() ) {
+			// set the start value of v to the initial value of the target XValue, if it has one
 			cloneValue(trg.getXValue(), v, false);
+			logObject("initialXValue", v); // it was cloned
+		}
 		execSrcRule(src, trg, toBE, v);
-
-		logObject("toXValue", v);
+		logObject("intermediateXValue", v);
 		execTrgRule(v, trg, toSE);
 		logObject("finalXValue", trg);
+		if( MdmiUow.OUTPUT_TO_CONSOLE )
+			System.out.println("----------");
 		logToJson();
 	}
 

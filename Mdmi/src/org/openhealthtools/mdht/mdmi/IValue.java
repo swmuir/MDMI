@@ -109,6 +109,13 @@ public interface IValue {
    public void setValue( Object value, int index );
 
    /**
+    * Returns true if this instance holds no values at all.
+    * 
+    * @return True if this instance holds no values at all, false otherwise.
+    */
+   public boolean isEmpty();
+   
+   /**
     * Add the new value at the end of the list.
     * 
     * @param value The new value.
@@ -124,10 +131,16 @@ public interface IValue {
     */
    public void addValue( Object value, int index );
 
-   
-   
+
+   /**
+    * Shortcut method, assumes the datatype is a struct, and if it is
+    * will set the field to the given value. Note that it will set the value of
+    * all structs if this is an array. Use with care!
+    *  
+    * @param field Field name in the struct value.
+    * @param value Value to set it to.
+    */
    public void addValue( String field, Object value);
-   
    
    /**
     * Remove the given value, if found.

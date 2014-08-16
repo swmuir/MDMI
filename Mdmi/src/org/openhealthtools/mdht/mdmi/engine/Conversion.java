@@ -358,7 +358,15 @@ public class Conversion {
 			if( null == parent || parent.getSemanticElementType() == SemanticElementType.LOCAL ) {
 				cis.add(ci);
 			}
-			else if( null != parent && parent.getDatatype().getName().equalsIgnoreCase("container") ) {
+		}
+		// check for the case where the parent is a container and is not mapped and the grand parent is a local SE
+		// this case is to fix a different hierarchy depth mapping (Ken)
+		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
+			ConversionInfo ci = m_conversionInfos.get(i);
+			SemanticElement parent = ci.target.getParent();
+			if( arrayHasConversionForSourceSE(cis, parent) )
+				continue; // the parent is already in conversions list
+			if( null != parent && parent.getDatatype().getName().equalsIgnoreCase("container") ) {
 				SemanticElement grandParent = parent.getParent();
 				if( null == grandParent || grandParent.getSemanticElementType() == SemanticElementType.LOCAL ) {
 					cis.add(ci);
@@ -366,6 +374,16 @@ public class Conversion {
 			}
 		}
 		return cis;
+	}
+
+	// return true if the array has a conversion which the source SE is the same as the one given
+	private static boolean arrayHasConversionForSourceSE( ArrayList<ConversionInfo> cis, SemanticElement se ) {
+		for( int i = 0; i < cis.size(); i++ ) {
+			ConversionInfo ci = cis.get(i);
+			if( ci.source.contains(se) )
+				return true;
+		}
+		return false;
 	}
 
 	// get the CIs for which the target SE is a child of the given SE

@@ -217,6 +217,11 @@ public final class XValue implements IValue {
 	public void setValue( Object value ) {
 		setValue(value, 0);
 	}
+	
+	@Override
+	public boolean isEmpty() {
+		return m_values.isEmpty();
+	}
 
 	@Override
 	public void setValue( Object value, int index ) {
@@ -228,17 +233,16 @@ public final class XValue implements IValue {
 
 	@Override
 	public void addValue( String field, Object value ) {
-
-		if (this.m_values.isEmpty()) {
+		// this is a dangerous shortcut, will set the field in all structs if this is an array
+		if( this.m_values.isEmpty() ) {
 			this.intializeStructs();
 		}
 		for( Object object : m_values ) {
 			if( object instanceof XDataStruct ) {
-				XDataStruct xds = (XDataStruct) object;
+				XDataStruct xds = (XDataStruct)object;
 				xds.setValue(field, value);
 			}
 		}
-
 	}
 
 	@Override
