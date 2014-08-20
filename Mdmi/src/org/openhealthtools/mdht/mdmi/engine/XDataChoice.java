@@ -145,7 +145,7 @@ public class XDataChoice extends XData {
    protected String toString( String indent ) {
       XValue v = (XValue)m_value;
       StringBuffer sb = new StringBuffer();
-      sb.append( v.toString(indent + "  ") );
+      sb.append( v.toString(indent) );
       sb.append("\r\n");
       return sb.toString();
    }
