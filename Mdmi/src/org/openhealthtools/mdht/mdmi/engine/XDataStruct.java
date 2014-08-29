@@ -147,6 +147,21 @@ public class XDataStruct extends XData {
 		return xv.getValue();
 	}
 
+	
+	/**
+	 * Get the value of the given field.
+	 * 
+	 * @param fieldName The name of the field to get.
+	 * @return The value of the field.
+	 */
+	public Object getValueByIndex( String fieldName, int index ) {
+		XValue xv = getXValue(fieldName);
+		if( xv == null )
+			throw new MdmiException("Invalid fieldName: " + fieldName);
+		return xv.getValue(index);
+	}
+
+	
 	/**
 	 * Clear the specified value, setting it to null in effect.
 	 * 
