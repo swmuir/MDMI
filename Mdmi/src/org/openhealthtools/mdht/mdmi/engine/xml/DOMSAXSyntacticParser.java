@@ -735,7 +735,21 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 					 * The createElement handles attributes but could have other unforseen issues
 					 * 
 					 */
-						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), true);
+						
+						/*
+						 *  treatAsContainer - If the leaf node has a "/" in its definition, combine all "/" of similiar types
+						 *  we set treat as container to false - this will cause the createElement process to search for existing elements before creating new ones
+						 *  SWM
+						 *  
+						 */
+						boolean treatAsContainer = true;
+						
+						if (ynode.getNode().getLocation().contains("/")) {
+							treatAsContainer = false;
+						}
+						
+						
+						org.w3c.dom.Node xmlNode = createElement(element, ynode.getNode().getLocation(), treatAsContainer);
 						
 						if( xmlNode.getNodeType() == org.w3c.dom.Node.ATTRIBUTE_NODE ) {
 							Attr o = (Attr) xmlNode;
