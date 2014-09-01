@@ -219,7 +219,7 @@ public class DateUtil {
     	// All the complex logic to try subparts of the dateformat, in chunks.
 		int vLen = value.length();
 		int outLen = 0;
-		ArrayList<String> dateParts = new ArrayList<String>();
+		ArrayList<String> dateparts = new ArrayList<String>();
 		StringBuilder datePart = new StringBuilder();
 		char charAt = '~';
 		boolean inQuote = false,buffering=true;
@@ -233,7 +233,7 @@ public class DateUtil {
 			if(currChar!=charAt) {
 				// If we've just finished buffering, output dateformat to the list
 				if (datePart.length()>0 && buffering) {
-					dateParts.add(datePart.toString());
+					dateparts.add(datePart.toString());
 					buffering=false;
 				}
 				// Buffer
@@ -258,19 +258,19 @@ public class DateUtil {
 				outLen++;
 			}
 		}
-		if (vLen>=outLen) dateParts.add(datePart.toString());
+		if (vLen>=outLen) dateparts.add(datePart.toString());
 		//System.out.println(dateParts);
 
 		// Loop through our list of formats, from longest to shortest...
 	    output = null;
 	    String originalFormat = null;
-	    for (int i=dateParts.size()-1;i>=0;i--) {
-	    	sdf = getDateFormatCached(dateParts.get(i));
+	    for (int i=dateparts.size()-1;i>=0;i--) {
+	    	sdf = getDateFormatCached(dateparts.get(i));
 	    	sdf.setLenient(false);
 	    	 // Otherwise crazy dates crop up if the string is longer than the format
 	    	try {
 	    		output = sdf.parse(value);
-	    		originalFormat = dateParts.get(i);
+	    		originalFormat = dateparts.get(i);
 	    		break;
 	    	}
 	    	catch(ParseException e) {

@@ -48,6 +48,7 @@ import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 import org.openhealthtools.mdht.mdmi.model.SemanticElementRelationship;
 import org.openhealthtools.mdht.mdmi.model.SemanticElementSet;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
+import org.openhealthtools.mdht.mdmi.model.enums.SemanticElementType;
 
 public class DefaultSemanticParser implements ISemanticParser {
 
@@ -60,11 +61,10 @@ public class DefaultSemanticParser implements ISemanticParser {
 		ObjectMapper mapper = new ObjectMapper();
 
 		try {
-			nullFlavorMethods = mapper.readValue(new File("nullflavormethods.json"), new TypeReference<HashMap<String, String>>() {
-			});
-
-			nullFlavorValues = mapper.readValue(new File("nullflavorvalues.json"), new TypeReference<HashMap<String, String>>() {
-			});
+			nullFlavorMethods = mapper.readValue(
+					new File("nullflavormethods.json"), new TypeReference<HashMap<String, String>>() {});
+			nullFlavorValues = mapper.readValue(
+					new File("nullflavorvalues.json"), new TypeReference<HashMap<String, String>>() {});
 		}
 		catch( Exception e ) {
 			// Continue to process as the run time does not necessarily require the null flavor files
@@ -109,7 +109,6 @@ public class DefaultSemanticParser implements ISemanticParser {
 			else if( nullFlavors ) {
 				setNullFlavorOut(se);
 			}
-
 		}
 	}
 
@@ -1062,6 +1061,11 @@ public class DefaultSemanticParser implements ISemanticParser {
 				needsChildEV.addChild(childEV);
 				childEV.setParent(needsChildEV);
 			}
+		}
+		else if( se.getSemanticElementType() != SemanticElementType.NORMAL ) {
+			ArrayList<IElementValue> a = valueSet.getElementValuesByType(se);
+			if( a.size() <= 0 )
+				new XElementValue(se, valueSet);
 		}
 
 		ArrayList<IElementValue> axs = valueSet.getElementValuesByType(se);
