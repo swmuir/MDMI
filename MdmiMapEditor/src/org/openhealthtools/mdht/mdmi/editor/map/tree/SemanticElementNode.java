@@ -485,7 +485,7 @@ public class SemanticElementNode extends EditableObjectNode {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Frame frame = SystemContext.getApplicationFrame();
-				GenerateToFromRelationshipRuleDialog dlg = new GenerateToFromRelationshipRuleDialog(frame, semanticElement, true);
+				GenerateToFromRelationshipRuleDialog dlg = new GenerateToFromRelationshipRuleDialog(frame, semanticElement);
 				dlg.display(frame);
 			}
 			
