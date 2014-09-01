@@ -52,6 +52,7 @@ import org.openhealthtools.mdht.mdmi.editor.map.editor.SyntaxNodeField;
 import org.openhealthtools.mdht.mdmi.editor.map.editor.ValueSetData;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateComputedInValuesDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateToFromElementsDialog;
+import org.openhealthtools.mdht.mdmi.editor.map.tools.GenerateToFromRelationshipRuleDialog;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewDatatypeSyntax;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElement;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ViewSemanticElementFromTo;
@@ -478,6 +479,22 @@ public class SemanticElementNode extends EditableObjectNode {
 			}
 			
 		}));
+		
+		// Generate From/To Relationships
+		JMenuItem menuItem = new JMenuItem(new AbstractAction(s_res.getString("SemanticElementNode.generateToFromRelationships")) {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Frame frame = SystemContext.getApplicationFrame();
+				GenerateToFromRelationshipRuleDialog dlg = new GenerateToFromRelationshipRuleDialog(frame, semanticElement, true);
+				dlg.display(frame);
+			}
+			
+		});
+		// disable if no relationships
+		if (semanticElement.getRelationships().isEmpty()) {
+			menuItem.setEnabled(false);
+		}
+		menus.add(menuItem);
 		
 		// View Datatype/Syntax Nodes
 		if (semanticElement.getSyntaxNode() != null && semanticElement.getDatatype() != null
