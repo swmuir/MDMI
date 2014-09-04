@@ -115,6 +115,9 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 
 	private JRadioButton m_prevButton = null;
 	///////////////////////////////////////
+	private static boolean s_append = true;	// last state
+	private JRadioButton m_appendBtn = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.append"), true);
+	private JRadioButton m_replaceBtn = new JRadioButton(s_res.getString("GenerateToFromElementsDialog.replace"), false);
 
 	// these are only used if selectRelationship is set
 	private boolean m_selectRelationship = false;
@@ -151,6 +154,7 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		//                       [_______________________|v]
 		// Name:                 [                    ]
 		// Relationship:         [_________________|v]
+		// (0) Append   ( ) Replace
 		//  -- Semantic Element ------------------------
 		// | Data Type:         text                    |
 		// | Field Name:       [__________________|v]   |
@@ -176,6 +180,13 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		m_directionGroup.add(m_isoButton);
 		m_directionGroup.add(m_fromBERButton);
 		m_directionGroup.add(m_toBERButton);
+		
+		// for Relationship - there's no Isomorphic case
+		if (m_selectRelationship) {
+			m_isoButton.setVisible(false);
+			m_toBERButton.setSelected(true);
+			m_filterByDatatypeButton.setSelected(false);
+		}
 
 		// get all fields in the SE's datatype
 		m_SEfieldNameSelector.addItem(AdvancedSelectionField.BLANK_ENTRY);
@@ -227,33 +238,43 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		mainPanel.add(buttons, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
 
-		// Filter by BE
+		// Business element: [x] Filter by Datatype 
+		//                   [___________________|v]
+		// or
+		//
+		// Business element:  [___________________|v]
 		gbc.gridx = 0;
 		gbc.gridy++;
 		gbc.weightx = 0;
-		gbc.insets.bottom = 0;	// make this group closer to the next (BE LIst)
+		gbc.insets.bottom = 0;	// make this group closer to the next (BE List)
 		gbc.fill = GridBagConstraints.NONE;
 		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.businessElementLabel")), gbc);
+
+		if (!m_selectRelationship) {
+			// Filter by Datatype checkbox
+			gbc.gridx++;
+			gbc.weightx = 1;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.insets.left = 0;
+			mainPanel.add(m_filterByDatatypeButton, gbc);
+
+
+			// want Business Element List on new row
+			gbc.gridx = 0;
+			gbc.gridy++;
+			gbc.insets.left = Standards.LEFT_INSET;
+			gbc.insets.bottom = 2*Standards.BOTTOM_INSET;
+			gbc.weightx = 0;
+			gbc.fill = GridBagConstraints.NONE;
+			mainPanel.add(new JLabel(" "), gbc);	// space
+			gbc.insets.top = 0;
+		}
+		
 		gbc.gridx++;
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets.left = 0;
-		mainPanel.add(m_filterByDatatypeButton, gbc);
-		gbc.insets.left = Standards.LEFT_INSET;
 		gbc.insets.bottom = 2*Standards.BOTTOM_INSET;
-
-
-		// Business Element List
-		gbc.gridx = 0;
-		gbc.gridy++;
-		gbc.weightx = 0;
-		gbc.fill = GridBagConstraints.NONE;
-		mainPanel.add(new JLabel(" "), gbc);
-		gbc.gridx++;
-		gbc.weightx = 1;
-		gbc.insets.top = 0;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets.left = 0;
 		mainPanel.add(m_businessElementSelector, gbc);
 		gbc.insets.left = Standards.LEFT_INSET;
 		gbc.insets.top = Standards.TOP_INSET;
@@ -286,6 +307,29 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 
 			populateRelationships();
 		}
+		
+		// (0) Append   ( ) Replace
+		gbc.gridx = 0;
+		gbc.gridy++;
+		ButtonGroup group = new ButtonGroup();
+		m_appendBtn.setSelected(s_append);	// use last state
+		m_replaceBtn.setSelected(!m_appendBtn.isSelected());
+		group.add(m_appendBtn);
+		group.add(m_replaceBtn);
+		JPanel appendReplace = new JPanel(new FlowLayout(FlowLayout.LEFT, Standards.LEFT_INSET, 0));
+		appendReplace.add(m_appendBtn);
+		appendReplace.add(m_replaceBtn);
+
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		mainPanel.add(new JLabel(s_res.getString("GenerateToFromElementsDialog.rule")), gbc);
+		gbc.gridx++;
+		gbc.weightx = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets.left = 0;
+		gbc.insets.right = 0;	// don't need insets since the next component has FlowLayout padding
+		mainPanel.add(appendReplace, gbc);
+		gbc.insets.left = Standards.LEFT_INSET;
 
 		//////////////////////////////////////////
 		//  Semantic Element Data
@@ -642,6 +686,9 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 	private boolean createToFromElements() {
 		boolean created = false;
 		String ruleName = m_name.getText().trim();
+		
+		//save button state for next time
+		s_append = m_appendBtn.isSelected();
 
 		if (m_isoButton.isSelected()) {
 			// both
@@ -736,6 +783,12 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 
 		}
 
+		if (m_replaceBtn.isSelected()) {
+			// wipe out existing rule
+			conversionRule.setRule(new String());
+		}
+		String rule = conversionRule.getRule();
+
 		// if Isomorphic, the rule should be left blank
 		if (!m_isoButton.isSelected()) {
 			String language = m_ruleLanguageSelector.getLanguage();
@@ -744,7 +797,6 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 					getSemanticElementRelationshpName(), getRelationshpValue());
 
 			// append new rule to existing rule
-			String rule = conversionRule.getRule();
 			if (rule != null && rule.length() > 0) {
 				StringBuilder buf = new StringBuilder(rule);
 				buf.append(CR_LF).append(newRule);
@@ -920,7 +972,7 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		String targetFieldPath;
 		
 		MdmiDatatype srcDatatype = null;
-		MdmiDatatype targetDatatype = null;
+//		MdmiDatatype targetDatatype = null;
 
 		// create variables and fields
 		//   To BER                                To SE
@@ -941,7 +993,7 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 				targetVar = "var target = " + ruleName + ".getValue();";
 			}
 			srcDatatype = seDatatype;
-			targetDatatype = beDatatype;
+//			targetDatatype = beDatatype;
 			srcFieldPath = seFieldName;
 			targetFieldPath = beFieldName;
 
@@ -963,15 +1015,9 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 			}
 
 			srcDatatype = beDatatype;
-			targetDatatype = seDatatype;
+//			targetDatatype = seDatatype;
 			srcFieldPath = beFieldName;
 			targetFieldPath = seFieldName;
-		}
-		
-		// easy case -
-		// Same datatypes: No code needed.
-		if (beDatatype == seDatatype) {
-			return newRule.toString();
 		}
 
 		String existingRule = theRule.getRule();
@@ -989,13 +1035,24 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 				relationshipValue != null && !relationshipValue.isEmpty())
 		{
 			hasRelationship = true;
+		}
+		
+		if (hasRelationship) {
+			// start new scope
 			newRule.append("var key = value.getRelation(\"").append(relationshipName).append("\");").append(CR_LF);
 			newRule.append("if (key != null && key.value() == \"").append(relationshipValue).append("\") {").append(CR_LF);
 			
 			depth++;	// gets own scope
-			existingRule = new String();
+			existingRule = new String();	// do this so we don't check for the existence of the variables
+			
+		} else if (beDatatype == seDatatype) {
+			// easy case -
+			// Same datatypes: No code needed.
+			return newRule.toString();
 		}
-		else if (existingRule == null) {
+		
+		// make sure rule is non-null
+		if (existingRule == null) {
 			existingRule = new String();
 		}
 
@@ -1024,38 +1081,49 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		}
 
 		indent = getIndent(depth);
-		for (int s=0; s<srcFieldNames.length; s++) {
 
-			String srcFieldName = srcFieldNames[s];
-			if (srcDatatype instanceof DTComplex && !srcFieldName.isEmpty()) {
-				// get field's datatype
-				Field field = ((DTComplex)srcDatatype).getField(srcFieldName);
-				if (field != null) {
-					srcDatatype = field.getDatatype();
-				} else {
-					srcDatatype = null;
-				}
-			}
-			String srcVarName = "from_" + srcFieldName;
-
-			// we need to walk intermediate fields
-			if (s < srcFieldNames.length-1) {
-				//		var s2 = s1.getXValue('s2').getValue();
-				//	    if (null != s2) {
-				if (s > 0) newRule.append(CR_LF);
-				newRule.append(indent).append("var ").append(srcVarName).append(" = ")
-				.append(prevSrcVarName).append(".getXValue('").append(srcFieldName).append("').getValue();")
-				.append(CR_LF);
-				newRule.append(indent).append("if (").append(srcVarName).append(" != null) {").append(CR_LF);
-
-			} else {
-				newRule.append( buildTargetJSInfo(depth, seDatatype, beDatatype,
-						prevSrcVarName, srcDatatype, srcFieldName, targetFieldNames) );
-			}
-
-
+		if (beDatatype == seDatatype) {
+			// this can only happen within a relationship
+			//		 target.setValue(source);
+			newRule.append(indent).append("target.setValue(source);").append(CR_LF);
 			depth++;
-			prevSrcVarName = srcVarName;
+		} else {
+			// look at each field name in the hierarchy
+			//  (e.g. user.address.street)
+			for (int s=0; s<srcFieldNames.length; s++) {
+
+				String srcFieldName = srcFieldNames[s];
+				if (srcDatatype instanceof DTComplex && !srcFieldName.isEmpty()) {
+					// get field's datatype
+					Field field = ((DTComplex)srcDatatype).getField(srcFieldName);
+					if (field != null) {
+						srcDatatype = field.getDatatype();
+					} else {
+						srcDatatype = null;
+					}
+				}
+				String srcVarName = "from_" + srcFieldName;
+
+				// we need to walk intermediate fields
+				if (s < srcFieldNames.length-1) {
+					//		var s2 = s1.getXValue('s2').getValue();
+					//	    if (null != s2) {
+					if (s > 0) newRule.append(CR_LF);
+					newRule.append(indent).append("var ").append(srcVarName).append(" = ")
+					.append(prevSrcVarName).append(".getXValue('").append(srcFieldName).append("').getValue();")
+					.append(CR_LF);
+					newRule.append(indent).append("if (").append(srcVarName).append(" != null) {").append(CR_LF);
+
+
+				} else {
+					newRule.append( buildTargetJSInfo(depth, seDatatype, beDatatype,
+							prevSrcVarName, srcDatatype, srcFieldName, targetFieldNames) );
+				}
+
+
+				depth++;
+				prevSrcVarName = srcVarName;
+			}
 		}
 
 		// close parentheses
