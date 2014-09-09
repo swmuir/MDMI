@@ -965,8 +965,8 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		MdmiDatatype seDatatype = theRule.getOwner().getDatatype();
 		MdmiDatatype beDatatype = null;
 
-		String srcVar;
-		String targetVar;
+		String srcVarDefinition;	// var source=....
+		String targetVarDefinition;	// var target=....
 
 		String srcFieldPath;
 		String targetFieldPath;
@@ -984,13 +984,13 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		if (theRule instanceof ToBusinessElement) {
 			beDatatype = ((ToBusinessElement)theRule).getBusinessElement().getReferenceDatatype();
 
-			srcVar = "var source = value.value();";
+			srcVarDefinition = "var source = value.value();";
 
 			// if BE is a simple data type and SE is a complex type, just use name
 			if (!isComplex(beDatatype) && isComplex(seDatatype)) {
-				targetVar = "var target = " + ruleName + ";";
+				targetVarDefinition = "var target = " + ruleName + ";";
 			} else {
-				targetVar = "var target = " + ruleName + ".getValue();";
+				targetVarDefinition = "var target = " + ruleName + ".getValue();";
 			}
 			srcDatatype = seDatatype;
 //			targetDatatype = beDatatype;
@@ -1002,16 +1002,16 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 
 			// if BE is a simple data type and SE is a complex type, just use name
 			if (!isComplex(beDatatype) && isComplex(seDatatype)) {
-				srcVar = "var source = " + ruleName + ";";
+				srcVarDefinition = "var source = " + ruleName + ";";
 			} else {
-				srcVar = "var source = " + ruleName + ".getValue();";
+				srcVarDefinition = "var source = " + ruleName + ".getValue();";
 			}
 
 			// if BE is a complex data type and SE is a simple type, use "getXValue"
 			if (isComplex(beDatatype) && !isComplex(seDatatype)) {
-				targetVar = "var target = value.getXValue();";
+				targetVarDefinition = "var target = value.getXValue();";
 			} else {
-				targetVar = "var target = value.value();";
+				targetVarDefinition = "var target = value.value();";
 			}
 
 			srcDatatype = beDatatype;
@@ -1046,8 +1046,7 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 			existingRule = new String();	// do this so we don't check for the existence of the variables
 			
 		} else if (beDatatype == seDatatype) {
-			// easy case -
-			// Same datatypes: No code needed.
+			// easy case - Same datatypes: No code needed.
 			return newRule.toString();
 		}
 		
@@ -1058,11 +1057,12 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 
 		// 1. Create source and target variables (if they don't already exist)
 		String indent = getIndent(depth);
-		if (!existingRule.contains(srcVar)) {
-			newRule.append(indent).append(srcVar).append(CR_LF);
+		if (!existingRule.contains(srcVarDefinition)) {
+			newRule.append(indent).append(srcVarDefinition).append(CR_LF);
 		}
-		if (!existingRule.contains(targetVar)) {
-			newRule.append(indent).append(targetVar).append(CR_LF);
+		if (beDatatype != seDatatype && !existingRule.contains(targetVarDefinition)) {
+			// if isomorphic (and relationship), we don't need a target
+			newRule.append(indent).append(targetVarDefinition).append(CR_LF);
 		}
 
 		// parse field names on "." separator
@@ -1084,8 +1084,8 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 
 		if (beDatatype == seDatatype) {
 			// this can only happen within a relationship
-			//		 target.setValue(source);
-			newRule.append(indent).append("target.setValue(source);").append(CR_LF);
+			//		 {ruleName}.setValue(source);
+			newRule.append(indent).append(ruleName).append(".setValue(source);").append(CR_LF);
 			depth++;
 		} else {
 			// look at each field name in the hierarchy
