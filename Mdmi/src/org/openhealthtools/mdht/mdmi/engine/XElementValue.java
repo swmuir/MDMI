@@ -113,7 +113,7 @@ public class XElementValue implements IElementValue {
 
    @Override
    public void setParent( IElementValue parent ) {
-      m_parent = (XElementValue)parent;
+      m_parent = null == parent ? null : (XElementValue)parent;
    }
 
    @Override
@@ -143,6 +143,11 @@ public class XElementValue implements IElementValue {
          a.add(e.relatedElement);
       }
       return a;
+   }
+
+   public void removeChild( IElementValue child ) {
+      m_children.remove((XElementValue)child);
+      child.setParent(null);
    }
 
    public void addRelation( String name, IElementValue relation ) {

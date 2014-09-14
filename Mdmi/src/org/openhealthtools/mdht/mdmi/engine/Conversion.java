@@ -39,8 +39,8 @@ import org.openhealthtools.mdht.mdmi.util.ICloneable;
  * @author goancea
  */
 public class Conversion {
-	MdmiUow m_owner;
-	MdmiTransferInfo m_transferInfo;
+	MdmiUow                   m_owner;
+	MdmiTransferInfo          m_transferInfo;
 	ArrayList<ConversionInfo> m_conversionInfos = new ArrayList<ConversionInfo>();
 
 	/**
@@ -188,11 +188,14 @@ public class Conversion {
 				if( MdmiUow.OUTPUT_TO_CONSOLE )
 					System.out.println("Conversion[" + (i + 1) + "] " + ci.toString());
 				for( int j = 0; j < ci.source.size(); j++ ) {
+					boolean deleteOnNull = false;
+					boolean generateParent = false;
 					SemanticElement source = ci.source.get(j);
 					ArrayList<IElementValue> srcs = m_owner.srcSemanticModel.getElementValuesByType(source);
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getElementValuesByType(ci.target);
 					if( ci.target.isMultipleInstances() ) {
 						for( int k = 0; k < srcs.size(); k++ ) {
+							XElementValue parentContainer = null;
 							XElementValue src = (XElementValue) srcs.get(k);
 							XElementValue trg = null;
 							if( k < trgs.size() ) {
@@ -200,27 +203,41 @@ public class Conversion {
 							}
 							else {
 								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-								if( trgs.size() > 0 ) {
-									IElementValue parentContainer = trgs.get(0).getParent();
+								if( 0 < trgs.size() ) {
+									parentContainer = (XElementValue)trgs.get(0).getParent();
 									generateTargetValue(trg, parentContainer);
+									generateParent = true;
 								}
+								deleteOnNull = true;
 							}
-							impl.convert(src, ci, trg);
-							execute(src, ci, trg);
+							if( impl.convert(src, ci, trg) )
+								execute(src, ci, trg);
+							else if( deleteOnNull ) {
+								if( generateParent )
+									removeGeneratedTargetValue(trg, parentContainer);
+								m_owner.trgSemanticModel.removeElementValue(trg);
+							}
 						}
 					}
 					else {
 						XElementValue trg = null;
 						if( trgs.size() <= 0 ) {
 							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+							deleteOnNull = true;
 						}
 						else {
 							trg = (XElementValue) trgs.get(0);
 						}
+						boolean targetSet = false;
 						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
-							impl.convert(src, ci, trg);
-							execute(src, ci, trg);
+							if( impl.convert(src, ci, trg) ) {
+								targetSet = true;
+								execute(src, ci, trg);
+							}
+						}
+						if( !targetSet && deleteOnNull ) {
+							m_owner.trgSemanticModel.removeElementValue(trg);
 						}
 					}
 				}
@@ -231,6 +248,16 @@ public class Conversion {
 			e.printStackTrace();
 			throw new MdmiException(e.getMessage());
 		}
+		// NOTE: this may have side effects! Added temporary.
+		// Check for any empty Containers and remove them
+		ArrayList<IElementValue> xevs = m_owner.trgSemanticModel.getAllElementValues();
+		for( int i = xevs.size() - 1; 0 <= i; i-- ) {
+	      IElementValue xev = xevs.get(i);
+	      if( xev.getSemanticElement().getDatatype().getName().equals("Container") ) {
+	      	if( xev.getChildCount() <= 0 )
+	      		m_owner.trgSemanticModel.removeElementValue(xev);
+	      }
+      }
 	}
 
 	HashMap<String, ArrayList<IElementValue>> globalSources = new HashMap<String, ArrayList<IElementValue>>();
@@ -263,19 +290,25 @@ public class Conversion {
 
 					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
 
+					boolean deleteOnNull = false;
 					if( ci.target.isMultipleInstances() ) {
 						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue src = (XElementValue) srcs.get(k);
 							XElementValue trg = null;
 							if( k < trgs.size() ) {
-								trg = (XElementValue) trgs.get(k);
+								trg = (XElementValue)trgs.get(k);
 							}
 							else {
 								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
 								trgOwner.addChild(trg);
+								deleteOnNull = true;
 							}
-							impl.convert(src, ci, trg);
-							execute(src, ci, trg);
+							if( impl.convert(src, ci, trg) )
+								execute(src, ci, trg);
+							else if( deleteOnNull ) {
+								trgOwner.removeChild(trg);
+								m_owner.trgSemanticModel.removeElementValue(trg);
+							}
 						}
 					}
 					else {
@@ -283,14 +316,22 @@ public class Conversion {
 						if( trgs.size() <= 0 ) {
 							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
 							trgOwner.addChild(trg);
+							deleteOnNull = true;
 						}
 						else {
-							trg = (XElementValue) trgs.get(0);
+							trg = (XElementValue)trgs.get(0);
 						}
+						boolean targetSet = false;
 						for( int k = 0; k < srcs.size(); k++ ) {
-							XElementValue src = (XElementValue) srcs.get(k);
-							impl.convert(src, ci, trg);
-							execute(src, ci, trg);
+							XElementValue src = (XElementValue)srcs.get(k);
+							if( impl.convert(src, ci, trg) ) {
+								targetSet = true;
+								execute(src, ci, trg);
+							}
+						}
+						if( !targetSet && deleteOnNull ) {
+							trgOwner.removeChild(trg);
+							m_owner.trgSemanticModel.removeElementValue(trg);
 						}
 					}
 				}
@@ -308,16 +349,31 @@ public class Conversion {
 	private void generateTargetValue( IElementValue targetValue, IElementValue parentContainer ) {
 		if( parentContainer == null )
 			return;
-		if( !targetValue.getSemanticElement().getSyntaxNode().isSingle() ) {
-			parentContainer.addChild(targetValue);
-		}
-		else {
+		if( targetValue.getSemanticElement().getSyntaxNode().isSingle() ) {
 			IElementValue parentTargetValue = new XElementValue(targetValue.getSemanticElement().getParent(), m_owner.trgSemanticModel);
 			((XValue) parentTargetValue.getXValue()).intializeStructs();
 			parentTargetValue.addChild(targetValue);
 
 			generateRequiredSEValues(parentTargetValue.getSemanticElement(), parentTargetValue);
 			generateTargetValue(parentTargetValue, parentContainer.getParent());
+			m_owner.trgSemanticModel.removeElementValue(parentTargetValue);
+		}
+		else {
+			parentContainer.addChild(targetValue);
+		}
+	}
+
+	// remove generated parent tree
+	private void removeGeneratedTargetValue( XElementValue targetValue, XElementValue parentContainer ) {
+		if( parentContainer == null )
+			return;
+		if( targetValue.getSemanticElement().getSyntaxNode().isSingle() ) {
+			XElementValue parentTargetValue = (XElementValue)targetValue.getParent();
+			removeGeneratedRequiredSEValues(parentTargetValue.getSemanticElement(), parentTargetValue);
+			removeGeneratedTargetValue((XElementValue)parentTargetValue, (XElementValue)parentContainer.getParent());
+		}
+		else {
+			parentContainer.removeChild(targetValue);
 		}
 	}
 
@@ -333,6 +389,19 @@ public class Conversion {
 
 			if( childSE.getChildren().size() > 0 )
 				generateRequiredSEValues(childSE, getChildElementValue(sourceEV, childSE));
+		}
+	}
+
+	// remove generated target element values for required SNs
+	private void removeGeneratedRequiredSEValues( SemanticElement sourceSE, XElementValue sourceEV ) {
+		for( SemanticElement childSE : sourceSE.getChildren() ) {
+			if( childSE.getSyntaxNode().isRequired() ) {
+				XElementValue child = (XElementValue)getChildElementValue(sourceEV, childSE); 
+				if( childSE.getChildren().size() > 0 )
+					removeGeneratedRequiredSEValues(childSE, child);
+				m_owner.trgSemanticModel.removeElementValue(child);
+				sourceEV.removeChild(child);
+			}
 		}
 	}
 
@@ -364,7 +433,7 @@ public class Conversion {
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
-			if( arrayHasConversionForSourceSE(cis, parent) )
+			if( arrayHasConversionForTargetSE(cis, parent) )
 				continue; // the parent is already in conversions list
 			if( null != parent && parent.getDatatype().getName().equalsIgnoreCase("container") ) {
 				SemanticElement grandParent = parent.getParent();
@@ -377,10 +446,10 @@ public class Conversion {
 	}
 
 	// return true if the array has a conversion which the source SE is the same as the one given
-	private static boolean arrayHasConversionForSourceSE( ArrayList<ConversionInfo> cis, SemanticElement se ) {
+	private static boolean arrayHasConversionForTargetSE( ArrayList<ConversionInfo> cis, SemanticElement se ) {
 		for( int i = 0; i < cis.size(); i++ ) {
 			ConversionInfo ci = cis.get(i);
-			if( ci.source.contains(se) )
+			if( ci.target == se )
 				return true;
 		}
 		return false;

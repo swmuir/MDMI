@@ -141,6 +141,15 @@ public final class ElementValueSet {
          xse.xelements.add(xelement);
    }
 
+   public void removeElementValue( IElementValue xelement ) {
+      SEVS xse = m_xelements.get(xelement.getSemanticElement().getName());
+      if( xse != null ) {
+      	xse.xelements.remove(xelement);
+      	if( xse.xelements.size() <= 0 )
+      		m_xelements.remove(xse.getName());
+      }
+   }
+   
    /**
     * Add the given element values to this set.
     * 

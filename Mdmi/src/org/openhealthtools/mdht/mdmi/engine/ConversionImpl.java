@@ -65,7 +65,7 @@ class ConversionImpl {
 	private ConversionImpl() {
 	}
 
-	void convert( XElementValue src, ConversionInfo ci, XElementValue trg ) throws Exception {
+	boolean convert( XElementValue src, ConversionInfo ci, XElementValue trg ) throws Exception {
 		logObject("conversionInfo", ci);
 		logObject("targetXElementValue", trg);
 
@@ -75,21 +75,24 @@ class ConversionImpl {
 		ToMessageElement toSE = Conversion.getToSE(trg.getSemanticElement(), ci.trgBER);
 		logObject("toMessageElement", toSE);
 
-		XValue v = new XValue("v", toBE.getBusinessElement().getReferenceDatatype());
+		XValue xv = new XValue("v", toBE.getBusinessElement().getReferenceDatatype());
 		//logObject("initialXValue", v); // this is always empty at this point, moved the log below
 
 		if( !hasTrgRule(toSE) && !trg.getXValue().isEmpty() ) {
 			// set the start value of v to the initial value of the target XValue, if it has one
-			cloneValue(trg.getXValue(), v, false);
-			logObject("initialXValue", v); // it was cloned
+			cloneValue(trg.getXValue(), xv, false);
+			logObject("initialXValue", xv); // it was cloned
 		}
-		execSrcRule(src, trg, toBE, v);
-		logObject("intermediateXValue", v);
-		execTrgRule(v, trg, toSE);
-		logObject("finalXValue", trg);
+		execSrcRule(src, trg, toBE, xv);
+		logObject("intermediateXValue", xv);
+		if( null != xv.getValue() ) {
+			execTrgRule(xv, trg, toSE);
+			logObject("finalXValue", trg);
+		}
 		if( MdmiUow.OUTPUT_TO_CONSOLE )
 			System.out.println("----------");
 		logToJson();
+		return null != xv.getValue(); 
 	}
 
 	boolean hasSrcRule( ToBusinessElement toBE ) {
