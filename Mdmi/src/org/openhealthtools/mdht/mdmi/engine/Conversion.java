@@ -421,11 +421,25 @@ public class Conversion {
 	// get the CIs for which the target SE's are top level, i.e. have no parent or have a LOCAL parent
 	private ArrayList<ConversionInfo> getTopLevelCis() {
 		ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
+		
+		
+		// Hashmap to make sure ConversionInfo is only add once
+		HashMap<String,String> hm = new HashMap<String,String>();
+		
+		
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
+			
+			
+			
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
+			
+			System.out.println("CI Target "+ci.target.getName());
+			
 			if( null == parent || parent.getSemanticElementType() == SemanticElementType.LOCAL ) {
+				System.out.println("CI Parent Target "+parent.getName());
 				cis.add(ci);
+			hm.put(String.valueOf(i),String.valueOf(i));
 			}
 		}
 		// check for the case where the parent is a container and is not mapped and the grand parent is a local SE
@@ -433,10 +447,11 @@ public class Conversion {
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
-			if( arrayHasConversionForTargetSE(cis, parent) )
+			if( hm.containsKey(String.valueOf(i)) || arrayHasConversionForTargetSE(cis, parent) )
 				continue; // the parent is already in conversions list
 			if( null != parent && parent.getDatatype().getName().equalsIgnoreCase("container") ) {
 				SemanticElement grandParent = parent.getParent();
+				System.out.println("CI Grand Parent Target "+grandParent.getName());
 				if( null == grandParent || grandParent.getSemanticElementType() == SemanticElementType.LOCAL ) {
 					cis.add(ci);
 				}
