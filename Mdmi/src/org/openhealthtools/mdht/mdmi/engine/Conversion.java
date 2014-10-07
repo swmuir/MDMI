@@ -422,24 +422,14 @@ public class Conversion {
 	private ArrayList<ConversionInfo> getTopLevelCis() {
 		ArrayList<ConversionInfo> cis = new ArrayList<ConversionInfo>();
 		
-		
-		// Hashmap to make sure ConversionInfo is only add once
-		HashMap<String,String> hm = new HashMap<String,String>();
-		
-		
+		// Hashmap to make sure ConversionInfo is only added once
+		HashMap<String,ConversionInfo> hm = new HashMap<String,ConversionInfo>();
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
-			
-			
-			
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
-			
-			System.out.println("CI Target "+ci.target.getName());
-			
 			if( null == parent || parent.getSemanticElementType() == SemanticElementType.LOCAL ) {
-				System.out.println("CI Parent Target "+parent.getName());
 				cis.add(ci);
-			hm.put(String.valueOf(i),String.valueOf(i));
+				hm.put(String.valueOf(i), ci);
 			}
 		}
 		// check for the case where the parent is a container and is not mapped and the grand parent is a local SE
@@ -447,24 +437,25 @@ public class Conversion {
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
-			if( hm.containsKey(String.valueOf(i)) || arrayHasConversionForTargetSE(cis, parent) )
-				continue; // the parent is already in conversions list
-			if( null != parent && parent.getDatatype().getName().equalsIgnoreCase("container") ) {
-				SemanticElement grandParent = parent.getParent();
-				System.out.println("CI Grand Parent Target "+grandParent.getName());
-				if( null == grandParent || grandParent.getSemanticElementType() == SemanticElementType.LOCAL ) {
-					cis.add(ci);
-				}
+			if( null == parent || !parent.getDatatype().getName().equalsIgnoreCase("container") )
+				continue; // parent is either null or not a container
+			if( hm.containsKey(String.valueOf(i)) )
+				continue; // CI is already in the list as a top level conversion
+			if( parentHasConversion(cis, parent) )
+				continue; // a CI with the target = the parent is in conversions list already, do not add twice
+			SemanticElement grandParent = parent.getParent(); // check if the grandparent is null or local
+			if( null == grandParent || grandParent.getSemanticElementType() == SemanticElementType.LOCAL ) {
+				cis.add(ci);
 			}
 		}
 		return cis;
 	}
 
-	// return true if the array has a conversion which the source SE is the same as the one given
-	private static boolean arrayHasConversionForTargetSE( ArrayList<ConversionInfo> cis, SemanticElement se ) {
+	// true if a CI with the parent as target is already in the list
+	private static boolean parentHasConversion( ArrayList<ConversionInfo> cis, SemanticElement parent ) {
 		for( int i = 0; i < cis.size(); i++ ) {
 			ConversionInfo ci = cis.get(i);
-			if( ci.target == se )
+			if( parent == ci.target )
 				return true;
 		}
 		return false;
