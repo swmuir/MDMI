@@ -196,10 +196,13 @@ public class Conversion {
 					if( ci.target.isMultipleInstances() ) {
 						for( int k = 0; k < srcs.size(); k++ ) {
 							XElementValue parentContainer = null;
-							XElementValue src = (XElementValue) srcs.get(k);
+							XElementValue src = (XElementValue)srcs.get(k);
 							XElementValue trg = null;
+							ArrayList<XElementValue> trgXes = new ArrayList<XElementValue>();
+							CWMM cwmm = null;
 							if( k < trgs.size() ) {
-								trg = (XElementValue) trgs.get(k);
+								trg = (XElementValue)trgs.get(k);
+								trgXes.add(trg);
 							}
 							else {
 								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
@@ -209,13 +212,44 @@ public class Conversion {
 									generateParent = true;
 								}
 								deleteOnNull = true;
+								trgXes.add(trg);
+								cwmm = getChildWithMultipleMaps(ci);
+								if( null != cwmm ) {
+									for( int l = 1; l < cwmm.count; l++ ) {
+										trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+										if( 0 < trgs.size() ) {
+											parentContainer = (XElementValue)trgs.get(0).getParent();
+											generateTargetValue(trg, parentContainer);
+											generateParent = true;
+										}
+										trgXes.add(trg);
+									}
+								}
 							}
-							if( impl.convert(src, ci, trg) )
-								execute(src, ci, trg);
-							else if( deleteOnNull ) {
-								if( generateParent )
-									removeGeneratedTargetValue(trg, parentContainer);
-								m_owner.trgSemanticModel.removeElementValue(trg);
+							if( null != cwmm ) {
+								boolean failed = false;
+								for( int l = 1; l < trgXes.size(); l++ ) {
+									trg = trgXes.get(l);
+									if( !impl.convert(src, ci, trg) ) {
+										failed = true;
+										if( deleteOnNull ) {
+											if( generateParent )
+												removeGeneratedTargetValue(trg, parentContainer);
+											m_owner.trgSemanticModel.removeElementValue(trg);
+										}
+									}
+									if( !failed )
+										execute(src, ci, trgXes, cwmm);
+								}
+							}
+							else {
+								if( impl.convert(src, ci, trg) )
+									execute(src, ci, trg);
+								else if( deleteOnNull ) {
+									if( generateParent )
+										removeGeneratedTargetValue(trg, parentContainer);
+									m_owner.trgSemanticModel.removeElementValue(trg);
+								}
 							}
 						}
 					}
@@ -226,11 +260,11 @@ public class Conversion {
 							deleteOnNull = true;
 						}
 						else {
-							trg = (XElementValue) trgs.get(0);
+							trg = (XElementValue)trgs.get(0);
 						}
 						boolean targetSet = false;
 						for( int k = 0; k < srcs.size(); k++ ) {
-							XElementValue src = (XElementValue) srcs.get(k);
+							XElementValue src = (XElementValue)srcs.get(k);
 							if( impl.convert(src, ci, trg) ) {
 								targetSet = true;
 								execute(src, ci, trg);
@@ -262,47 +296,146 @@ public class Conversion {
 
 	HashMap<String, ArrayList<IElementValue>> globalSources = new HashMap<String, ArrayList<IElementValue>>();
 
+	// Child With Multiple Maps
+	private static class CWMM {
+		public SemanticElement semanticElement;
+		public int count;
+		
+		public CWMM( SemanticElement se, int cnt ) {
+			semanticElement = se;
+			count = cnt;
+		}
+	}
+	
+	// returns null if there is no child with multiple maps
+	private CWMM getChildWithMultipleMaps( ConversionInfo parent ) {
+		ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
+		HashMap<String, CWMM> ses = new HashMap<String, CWMM>();
+		CWMM max = null;
+		for( int i = 0; i < cis.size(); i++ ) {
+	      ConversionInfo ci = cis.get(i);
+	      CWMM cwmm = ses.get(ci.target.getName());
+	      if( null == cwmm )
+	      	ses.put(ci.target.getName(), new CWMM(ci.target, 1));
+	      else {
+	      	cwmm.count++;
+	      	max = cwmm;
+	      }
+      }
+		return max;
+	}
+	
 	private void execute( XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner ) {
 		try {
 			ConversionImpl impl = ConversionImpl.Instance;
-
 			impl.logging = m_owner.owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue();
 
 			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
-			for( int i = 0; i < cis.size(); i++ ) {
-				ConversionInfo ci = cis.get(i);
-				for( int j = 0; j < ci.source.size(); j++ ) {
-					SemanticElement source = ci.source.get(j);
-					SemanticElement seParent = source.getParent();
-					SemanticElement seParentOwner = srcOwner.getSemanticElement();
-					ArrayList<IElementValue> srcs = null;
-					// if the owner SE is not the same as the source parent SE, use
-					// all elements, otherwise get only children
-					if( seParent != seParentOwner ) {
-						if( !globalSources.containsKey(source.getName()) ) {
-							globalSources.put(source.getName(), m_owner.srcSemanticModel.getElementValuesByType(source));
+			executeCis(srcOwner, parent, trgOwner, cis);
+		}
+		catch( Exception e ) {
+			e.printStackTrace();
+			throw new MdmiException(e.getMessage());
+		}
+	}
+	
+	private void execute( XElementValue srcOwner, ConversionInfo parent, ArrayList<XElementValue> trgOwners, CWMM cwmm ) {
+		try {
+			ConversionImpl impl = ConversionImpl.Instance;
+			impl.logging = m_owner.owner.getOwner().getConfig().getLogInfo().logLevel.intValue() <= Level.FINE.intValue();
+
+			ArrayList<ConversionInfo> cis = getCisForSE(parent.target);
+			ArrayList<ConversionInfo> procs = new ArrayList<ConversionInfo>();
+			for( int i = 0; i < trgOwners.size(); i++ ) {
+				// generate an array of CIs that for each owners has only obe CI of the multiple-mapped child
+				XElementValue trgOwner = trgOwners.get(i);
+				ArrayList<ConversionInfo> cisProc = new ArrayList<Conversion.ConversionInfo>();
+				boolean added = false;
+				for( int j = 0; j < cis.size(); j++ ) {
+	            ConversionInfo ci = cis.get(j);
+	            if( ci.target == cwmm.semanticElement ) {
+	            	if( !procs.contains(ci) && !added ) {
+	            		cisProc.add(ci);
+	            		procs.add(ci);
+	            		added = true;
+	            	}
+	            }
+	            else
+	            	cisProc.add(ci);
+            }
+				executeCis(srcOwner, parent, trgOwner, cisProc);
+         }
+		}
+		catch( Exception e ) {
+			e.printStackTrace();
+			throw new MdmiException(e.getMessage());
+		}
+	}
+
+	private void executeCis( XElementValue srcOwner, ConversionInfo parent, XElementValue trgOwner, ArrayList<ConversionInfo> cis ) throws Exception {
+		ConversionImpl impl = ConversionImpl.Instance;
+		for( int i = 0; i < cis.size(); i++ ) {
+			ConversionInfo ci = cis.get(i);
+			for( int j = 0; j < ci.source.size(); j++ ) {
+				SemanticElement source = ci.source.get(j);
+				SemanticElement seParent = source.getParent();
+				SemanticElement seParentOwner = srcOwner.getSemanticElement();
+				ArrayList<IElementValue> srcs = null;
+				// if the owner SE is not the same as the source parent SE, use
+				// all elements, otherwise get only children
+				if( seParent != seParentOwner ) {
+					if( !globalSources.containsKey(source.getName()) ) {
+						globalSources.put(source.getName(), m_owner.srcSemanticModel.getElementValuesByType(source));
+					}
+					srcs = globalSources.get(source.getName());
+				}
+				else {
+					srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
+				}
+	
+				ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
+	
+				boolean deleteOnNull = false;
+				if( ci.target.isMultipleInstances() ) {
+					for( int k = 0; k < srcs.size(); k++ ) {
+						XElementValue src = (XElementValue) srcs.get(k);
+						XElementValue trg = null;
+						ArrayList<XElementValue> trgXes = new ArrayList<XElementValue>();
+						CWMM cwmm = null;
+						if( k < trgs.size() ) {
+							trg = (XElementValue)trgs.get(k);
+							trgXes.add(trg);
 						}
-						srcs = globalSources.get(source.getName());
-					}
-					else {
-						srcs = m_owner.srcSemanticModel.getDirectChildValuesByType(source, srcOwner);
-					}
-
-					ArrayList<IElementValue> trgs = m_owner.trgSemanticModel.getDirectChildValuesByType(ci.target, trgOwner);
-
-					boolean deleteOnNull = false;
-					if( ci.target.isMultipleInstances() ) {
-						for( int k = 0; k < srcs.size(); k++ ) {
-							XElementValue src = (XElementValue) srcs.get(k);
-							XElementValue trg = null;
-							if( k < trgs.size() ) {
-								trg = (XElementValue)trgs.get(k);
+						else {
+							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+							trgOwner.addChild(trg);
+							trgXes.add(trg);
+							deleteOnNull = true;
+							cwmm = getChildWithMultipleMaps(ci);
+							if( null != cwmm ) {
+								for( int l = 1; l < cwmm.count; l++ ) {
+									trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+									trgOwner.addChild(trg);
+									trgXes.add(trg);
+								}
 							}
-							else {
-								trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-								trgOwner.addChild(trg);
-								deleteOnNull = true;
+						}
+						if( null != cwmm ) {
+							boolean failed = false;
+							for( int l = 1; l < trgXes.size(); l++ ) {
+								trg = trgXes.get(l);
+								if( !impl.convert(src, ci, trg) ) {
+									failed = true;
+									if( deleteOnNull ) {
+										trgOwner.removeChild(trg);
+										m_owner.trgSemanticModel.removeElementValue(trg);
+									}
+								}
+								if( !failed )
+									execute(src, ci, trgXes, cwmm);
 							}
+						}
+						else {
 							if( impl.convert(src, ci, trg) )
 								execute(src, ci, trg);
 							else if( deleteOnNull ) {
@@ -311,38 +444,32 @@ public class Conversion {
 							}
 						}
 					}
+				}
+				else {
+					XElementValue trg = null;
+					if( trgs.size() <= 0 ) {
+						trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
+						trgOwner.addChild(trg);
+						deleteOnNull = true;
+					}
 					else {
-						XElementValue trg = null;
-						if( trgs.size() <= 0 ) {
-							trg = new XElementValue(ci.target, m_owner.trgSemanticModel);
-							trgOwner.addChild(trg);
-							deleteOnNull = true;
+						trg = (XElementValue)trgs.get(0);
+					}
+					boolean targetSet = false;
+					for( int k = 0; k < srcs.size(); k++ ) {
+						XElementValue src = (XElementValue)srcs.get(k);
+						if( impl.convert(src, ci, trg) ) {
+							targetSet = true;
+							execute(src, ci, trg);
 						}
-						else {
-							trg = (XElementValue)trgs.get(0);
-						}
-						boolean targetSet = false;
-						for( int k = 0; k < srcs.size(); k++ ) {
-							XElementValue src = (XElementValue)srcs.get(k);
-							if( impl.convert(src, ci, trg) ) {
-								targetSet = true;
-								execute(src, ci, trg);
-							}
-						}
-						if( !targetSet && deleteOnNull ) {
-							trgOwner.removeChild(trg);
-							m_owner.trgSemanticModel.removeElementValue(trg);
-						}
+					}
+					if( !targetSet && deleteOnNull ) {
+						trgOwner.removeChild(trg);
+						m_owner.trgSemanticModel.removeElementValue(trg);
 					}
 				}
 			}
-
 		}
-		catch( Exception e ) {
-			e.printStackTrace();
-			throw new MdmiException(e.getMessage());
-		}
-
 	}
 
 	// generates target ElementValue tree
