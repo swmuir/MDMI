@@ -94,7 +94,7 @@ public class DefaultTextField extends JTextField implements IEditorField, FocusL
 	/** Set the default value that is displayed when no text is present */
 	public void setDefaultValue(String defaultValue) {
 		String oldValue = m_defaultValue;
-		m_defaultValue = defaultValue == null ? "" : defaultValue;
+		m_defaultValue = defaultValue == null ? "(default)" : (defaultValue+" (default)");
 		if (m_showingDefault && !m_defaultValue.equals(oldValue)) {
 			// replace default text if changed
 			if (getDocument() instanceof DefaultDocument) {

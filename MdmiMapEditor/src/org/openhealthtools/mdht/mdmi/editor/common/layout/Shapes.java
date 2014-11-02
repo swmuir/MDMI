@@ -348,12 +348,17 @@ public class Shapes {
 
 		/** Default to a 3-pixel circle */
 		public LinkPoint() {
-			this(3);
+			this(Color.black, 3);
 		}
 
-		public LinkPoint(int diameter) {
+		/** Default to a 3-pixel circle */
+		public LinkPoint(Color color) {
+			this(color, 3);
+		}
+
+		public LinkPoint(Color color, int diameter) {
 			// add padding that shows when selected
-			super(Color.black, diameter + 2*s_padding);
+			super(color, diameter + 2*s_padding);
 			setSelectionThickness(1);
 		}
 		

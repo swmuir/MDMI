@@ -32,7 +32,7 @@ import javax.swing.text.StyleConstants;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.Connection;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.ConnectionPoint;
 
-/** A generic labled shape */
+/** A generic labeled shape */
 public abstract class Shape extends JPanel {
 
 	protected enum DrawingState {
@@ -56,7 +56,7 @@ public abstract class Shape extends JPanel {
 	
 	private Object m_userObject = null;
 
-	// creat a rectangle with this background color
+	// Create a rectangle with this background color
 	public Shape(Color color, int width, int height) {
 		m_color = color;
 		Dimension size = new Dimension(width, height);
@@ -489,7 +489,7 @@ public abstract class Shape extends JPanel {
 	}
 
 	/** Get a line from the connection point of the <i>fromShape</i> to
-	 *  the conneciton point of this shape */
+	 *  the connection point of this shape */
 	public Line2D getLineFrom(Connection fromConnection, ConnectionPoint toConnectionPoint) {
 		Point2D fromPoint = fromConnection.shape.getConnectionCoordinates(fromConnection.point);
 		Point2D toPoint = getConnectionCoordinates(toConnectionPoint);

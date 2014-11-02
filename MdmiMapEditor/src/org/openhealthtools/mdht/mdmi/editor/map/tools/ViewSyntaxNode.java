@@ -25,12 +25,12 @@ import java.util.Stack;
 import javax.swing.text.StyleConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.openhealthtools.mdht.mdmi.editor.common.layout.RelationshipView;
-import org.openhealthtools.mdht.mdmi.editor.common.layout.Shape;
-import org.openhealthtools.mdht.mdmi.editor.common.layout.Shapes;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.ArrowShape;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.Connection;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Link.ConnectionPoint;
+import org.openhealthtools.mdht.mdmi.editor.common.layout.RelationshipView;
+import org.openhealthtools.mdht.mdmi.editor.common.layout.Shape;
+import org.openhealthtools.mdht.mdmi.editor.common.layout.Shapes;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
 import org.openhealthtools.mdht.mdmi.editor.map.SelectionManager;
 import org.openhealthtools.mdht.mdmi.editor.map.tree.SyntaxNodeNode;
@@ -140,27 +140,36 @@ public class ViewSyntaxNode extends ViewDataObject {
 				//          |
 				//          o--->[node]
 				//
-				Shape intermediate = new Shapes.LinkPoint();
+				Shape intermediate = new Shapes.LinkPoint(s_nodeColor);
 				intermediate.centerHorizontally(parentShape, yPos);
 				intermediate.centerVertically(nodeShape, intermediate.getX());
 				view.add(intermediate);
 				// link from parent to intermediate, and from intermediate to child
-				view.addLink(new Connection(parentShape, ConnectionPoint.Center),
+				CustomLink link = new CustomLink(new Connection(parentShape, ConnectionPoint.Center),
 						new Connection(intermediate, ConnectionPoint.Center));
-				view.addLink(new Connection(intermediate, ConnectionPoint.Center),
+				link.linkColor = s_nodeColor;
+				link.linkThickness = 2;
+				view.addLink(link);
+				link = new CustomLink(new Connection(intermediate, ConnectionPoint.Center),
 						new Connection(nodeShape, ConnectionPoint.Center, ArrowShape.Arrow));
+				link.linkColor = s_nodeColor;
+				link.linkThickness = 2;
+				view.addLink(link);
 				
 
-				// draw link from parent data type to child datatype
-				if (parentDisplay.datatypeShape != null && datatypeShape != null) {
+				// draw link from parent data type to child datatype, if there's a field name
+				if (parentDisplay.datatypeShape != null && datatypeShape != null &&
+						node.getFieldName() != null && !node.getFieldName().isEmpty()) {
 					//      [ parent ]             xI
 					//      [datatype]------------ field name  y1
 					//                                 |
 					//               [ child  ]o<------o       y2
 					//               [datatype]  
+					Color color = Color.gray;
 					int xI = Math.max(parentDisplay.datatypeShape.getXmax(), datatypeShape.getXmax()) + s_horizontalGap;
 					int y1 = (int)parentDisplay.datatypeShape.getConnectionCoordinates(ConnectionPoint.SouthEast).getY();
 					Shape intermediate1 = new Shapes.Label(node.getFieldName(), Font.ITALIC);
+						
 					intermediate1.centerVertically(xI, y1, y1);
 					view.add(intermediate1);
 					
@@ -171,12 +180,21 @@ public class ViewSyntaxNode extends ViewDataObject {
 					view.add(intermediate2);
 					
 					// Link 'em
-					view.addLink(new Connection(parentDisplay.datatypeShape, ConnectionPoint.SouthEast),
+					link = new CustomLink(new Connection(parentDisplay.datatypeShape, ConnectionPoint.SouthEast),
 							new Connection(intermediate1, ConnectionPoint.Center));
-					view.addLink(new Connection(intermediate1, ConnectionPoint.Center),
+					link.linkColor = color;
+					link.linkThickness = 2;
+					view.addLink(link);
+					link = new CustomLink(new Connection(intermediate1, ConnectionPoint.Center),
 							new Connection(intermediate2, ConnectionPoint.Center));
-					view.addLink(new Connection(intermediate2, ConnectionPoint.Center),
+					link.linkColor = color;
+					link.linkThickness = 2;
+					view.addLink(link);
+					link = new CustomLink(new Connection(intermediate2, ConnectionPoint.Center),
 							new Connection(datatypeShape, ConnectionPoint.NorthEast, ArrowShape.Arrow));
+					link.linkColor = color;
+					link.linkThickness = 2;
+					view.addLink(link);
 				}
 			}
 
@@ -212,9 +230,14 @@ public class ViewSyntaxNode extends ViewDataObject {
 			nodeDisplay.seShape = createSemanticElementShape(node.getSemanticElement(), Font.BOLD);
 			nodeDisplay.seShape.centerVertically(nodeDisplay.nodeShape, xPos);
 			view.add(nodeDisplay.seShape);
-			// link node to datatype
-			view.addLink(new Connection(nodeDisplay.nodeShape, ConnectionPoint.Center), 
+			
+			
+			// link node to SE
+			CustomLink link = new CustomLink(new Connection(nodeDisplay.nodeShape, ConnectionPoint.Center), 
 					new Connection(nodeDisplay.seShape, ConnectionPoint.Center, ArrowShape.Arrow));
+			link.linkColor = s_semanticElementColor.darker();
+			link.linkThickness = 2;
+			view.addLink(link);
 			
 			prevShape = nodeDisplay.seShape;
 			xPos = nodeDisplay.seShape.getXmax() + s_horizontalGap;
@@ -226,8 +249,11 @@ public class ViewSyntaxNode extends ViewDataObject {
 			nodeDisplay.datatypeShape.centerVertically(nodeDisplay.nodeShape, xPos);
 			view.add(nodeDisplay.datatypeShape);
 			// link node to datatype
-			view.addLink(new Connection(prevShape, ConnectionPoint.Center), 
+			CustomLink link = new CustomLink(new Connection(prevShape, ConnectionPoint.Center), 
 					new Connection(nodeDisplay.datatypeShape, ConnectionPoint.Center, ArrowShape.Arrow));
+			link.linkColor = DataTypeShape.s_defaultDatatypeColor;
+			link.linkThickness = 2;
+			view.addLink(link);
 		}
 		
 		return nodeDisplay;
@@ -279,6 +305,16 @@ public class ViewSyntaxNode extends ViewDataObject {
 		if (otherElementName != null) {
 			shape.addSeparator();
 			shape.addTextLine(otherElementName);
+		}
+		// add location too
+		if (node.getLocation() != null && !node.getLocation().isEmpty()) {
+			String locationName = MessageFormat.format(s_res.getString("ViewSyntaxNode.locationName"),
+					node.getLocation());
+			if (shape instanceof Shapes.Circle) {
+				// pad the name some, since the shape is a circle, and text gets cut off
+				locationName = "    " + locationName + "    ";
+			}
+			shape.addTextLine(locationName);
 		}
 		return shape;
 	}

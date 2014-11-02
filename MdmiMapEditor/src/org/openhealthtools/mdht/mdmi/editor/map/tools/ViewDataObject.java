@@ -14,12 +14,18 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.tools;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.ResourceBundle;
@@ -29,10 +35,13 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.text.StyleConstants;
 
+import org.openhealthtools.mdht.mdmi.editor.common.layout.Link;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.RelationshipView;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Shape;
 import org.openhealthtools.mdht.mdmi.editor.common.layout.Shapes;
 import org.openhealthtools.mdht.mdmi.editor.map.ClassUtil;
+import org.openhealthtools.mdht.mdmi.model.Choice;
+import org.openhealthtools.mdht.mdmi.model.LeafSyntaxTranslator;
 import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 
@@ -133,9 +142,24 @@ public abstract class ViewDataObject extends PrintableView {
 	public static Shape createSemanticElementShape(SemanticElement semanticElement, int fontStyle) {
 		Shape semanticElementShape = new Shapes.Circle(s_semanticElementColor, s_semanticElementSize.width);
 		semanticElementShape.setUserObject(semanticElement);
-		labelShape(semanticElementShape, semanticElement.getClass(),
-				// pad name since oval-shape cuts into text
-				" " + semanticElement.getName() + " ", fontStyle);
+//		labelShape(semanticElementShape, semanticElement.getClass(),
+//				// pad name since oval-shape cuts into text
+//				" " + semanticElement.getName() + " ", fontStyle);
+
+		
+		// type
+		String type = ClassUtil.beautifyName(semanticElement.getClass());
+		semanticElementShape.addTextLine(type);
+		// pad name since oval-shape cuts into text
+		String name = " " + semanticElement.getName() + " ";
+		semanticElementShape.addTextLine(name, StyleConstants.ALIGN_CENTER, semanticElementShape.getFont().deriveFont(Font.BOLD));
+
+		if (semanticElement.getSemanticElementType() != null) {
+			// Show Computed/Local/Normal
+			semanticElementShape.addSeparator();
+			semanticElementShape.addTextLine(semanticElement.getSemanticElementType().toString());
+		}
+		
 		return semanticElementShape;
 	}
 	
@@ -187,6 +211,54 @@ public abstract class ViewDataObject extends PrintableView {
 			}
 		}
 
+		@Override
+		protected void paintLink(Graphics g, Link link) {
+			// use different line styles depending on end points
+			Stroke stroke = ((Graphics2D)g).getStroke();
+			if (link instanceof CustomLink) {
+				CustomLink customLink = (CustomLink)link;
+				g.setColor(customLink.linkColor == null ? Color.darkGray : customLink.linkColor);
+				if (customLink.linkThickness != 1) {
+					((Graphics2D)g).setStroke(new BasicStroke(customLink.linkThickness));
+				}
+
+				Shape tailShape = link.tail.shape;
+
+				// connect with single line from head to tail
+				Line2D line = tailShape.getLineFrom(link.head, link.tail.point);
+				((Graphics2D)g).draw(line);
+				
+				// restore
+				((Graphics2D)g).setStroke(stroke);
+
+				// draw a mark at the intersection with tail shape
+				drawTailMark(g, link.head, link.tail);
+
+				// draw a mark at the intersection with head shape
+				drawTailMark(g, link.tail, link.head);		
+				
+				
+				
+			} else {
+				super.paintLink(g, link);
+			}
+		}
+		
+		
+
+	}
+	
+	///////////////////////////
+	// Custom Link
+	//////////////////////////
+	protected class CustomLink extends Link {
+		public Color linkColor = null;
+		public int linkThickness = 1;
+
+		public CustomLink(Connection head, Connection tail) {
+			super(head, tail);
+		}
+		
 	}
 
 	private class OpenShapeAction extends AbstractAction {

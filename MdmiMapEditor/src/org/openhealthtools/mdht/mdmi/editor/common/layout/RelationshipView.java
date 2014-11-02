@@ -230,7 +230,7 @@ public class RelationshipView extends JPanel implements MouseListener, MouseMoti
 	
 	/** Draw a line linking the two endpoints on the link.
 	 * Show an arrow on the "tail" */
-	private void paintLink(Graphics g, Link link) {
+	protected void paintLink(Graphics g, Link link) {
 		//  _______
 		// | head  |
 		// |   +   | 
@@ -265,7 +265,7 @@ public class RelationshipView extends JPanel implements MouseListener, MouseMoti
 	 * @param line
 	 * @param bounds
 	 */
-	private void drawTailMark(Graphics g, Connection head, Connection tail) {
+	protected void drawTailMark(Graphics g, Connection head, Connection tail) {
 		
 		if (tail.arrow == ArrowShape.None) {
 			return;
