@@ -146,7 +146,6 @@ public class XDataStruct extends XData {
 			throw new MdmiException("Invalid fieldName: " + fieldName);
 		return xv.getValue();
 	}
-
 	
 	/**
 	 * Get the value of the given field.
@@ -160,7 +159,6 @@ public class XDataStruct extends XData {
 			throw new MdmiException("Invalid fieldName: " + fieldName);
 		return xv.getValue(index);
 	}
-
 	
 	/**
 	 * Clear the specified value, setting it to null in effect.
@@ -197,6 +195,22 @@ public class XDataStruct extends XData {
 
 	@Override
 	public boolean isEmpty() {
+		Collection<XValue> values = m_values.values();
+		for( XValue xvalue : values ) {
+	      if( !xvalue.isEmpty() )
+	      	return false;
+      }
+		return true;
+	}
+
+	public boolean isNullOrEmpty() {
+		if( m_datatype.getName().equalsIgnoreCase("Container") )
+			return false;
+		Collection<XValue> values = m_values.values();
+		for( XValue xvalue : values ) {
+	      if( !xvalue.isNullOrEmpty() )
+	      	return false;
+      }
 		return true;
 	}
 } // XDataStruct

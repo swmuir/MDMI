@@ -218,6 +218,27 @@ public final class XValue implements IValue {
 		setValue(value, 0);
 	}
 	
+	public boolean isNullOrEmpty() {
+		if( m_values.size() <= 0 )
+			return true;
+		boolean hasValue = false;
+		for( Object v : m_values ) {
+			if( v instanceof XDataStruct ) {
+				XDataStruct x = (XDataStruct)v;
+				if( !x.isNullOrEmpty() )
+					hasValue = true;
+			}
+			else if( v instanceof XDataChoice ) {
+				XDataChoice x = (XDataChoice)v;
+				if( !x.isNullOrEmpty() )
+					hasValue = true;
+			}
+			else
+				hasValue = true;
+      }
+		return !hasValue;
+	}
+
 	@Override
 	public boolean isEmpty() {
 		return m_values.isEmpty();

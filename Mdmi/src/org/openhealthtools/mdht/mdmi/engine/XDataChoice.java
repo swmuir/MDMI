@@ -143,7 +143,7 @@ public class XDataChoice extends XData {
 
    @Override
    protected String toString( String indent ) {
-      XValue v = (XValue)m_value;
+      XValue v = m_value;
       StringBuffer sb = new StringBuffer();
       sb.append( v.toString(indent) );
       sb.append("\r\n");
@@ -152,6 +152,10 @@ public class XDataChoice extends XData {
 
 	@Override
    public boolean isEmpty() {
-	   return false;
+		return m_value.isEmpty();
+   }
+
+	public boolean isNullOrEmpty() {
+		return m_value.isNullOrEmpty();
    }
 } // XDataChoice

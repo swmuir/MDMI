@@ -85,14 +85,14 @@ class ConversionImpl {
 		}
 		execSrcRule(src, trg, toBE, xv);
 		logObject("intermediateXValue", xv);
-		if( null != xv.getValue() ) {
+		if( !xv.isNullOrEmpty() ) {
 			execTrgRule(xv, trg, toSE);
 			logObject("finalXValue", trg);
 		}
 		if( MdmiUow.OUTPUT_TO_CONSOLE )
 			System.out.println("----------");
 		logToJson();
-		return null != xv.getValue(); 
+		return !xv.isNullOrEmpty(); 
 	}
 
 	boolean hasSrcRule( ToBusinessElement toBE ) {
