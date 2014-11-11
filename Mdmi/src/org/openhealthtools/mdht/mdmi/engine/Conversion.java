@@ -564,6 +564,7 @@ public class Conversion {
 		for( int i = 0; i < m_conversionInfos.size(); i++ ) {
 			ConversionInfo ci = m_conversionInfos.get(i);
 			SemanticElement parent = ci.target.getParent();
+//			System.out.println(parent.getName());
 			if( null == parent || !parent.getDatatype().getName().equalsIgnoreCase("container") )
 				continue; // parent is either null or not a container
 			if( hm.containsKey(String.valueOf(i)) )

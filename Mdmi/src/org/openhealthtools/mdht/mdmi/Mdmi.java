@@ -39,8 +39,13 @@ public final class Mdmi {
    private MdmiExternalResolvers m_resolvers;
    private MdmiPreProcessors     m_preProcessors;
    private MdmiPostProcessors    m_postProcessors;
+   private MdmiTargetSemanticModelPostProcessors targetSemanticModelPostProcessors;
 
-   /**
+   public MdmiTargetSemanticModelPostProcessors getTargetSemanticModelPostProcessors() {
+		return targetSemanticModelPostProcessors;
+	}
+
+	/**
     * Initialize this runtime, by specifying the root folder where normally the mdmi config file resides.
     * 
     * @param rootDir The root folder where this runtime is initialized from.
@@ -89,6 +94,8 @@ public final class Mdmi {
       m_resolvers = new MdmiExternalResolvers(m_config);
       m_preProcessors = new MdmiPreProcessors(m_config);
       m_postProcessors = new MdmiPostProcessors(m_config);
+      targetSemanticModelPostProcessors = new MdmiTargetSemanticModelPostProcessors(m_config);
+      
       m_resolver = new MdmiResolver(m_config);
       m_engine = new MdmiEngine(this);
       m_engine.start();

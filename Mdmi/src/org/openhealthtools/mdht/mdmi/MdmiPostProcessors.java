@@ -14,11 +14,13 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
-import org.openhealthtools.mdht.mdmi.MdmiConfig.PostProcessorInfo;
-import org.openhealthtools.mdht.mdmi.util.*;
+import org.openhealthtools.mdht.mdmi.MdmiConfig.ProcessorInfo;
+import org.openhealthtools.mdht.mdmi.util.Util;
 
 /**
  * Collection of post processors registered with this runtime.
@@ -35,12 +37,12 @@ public final class MdmiPostProcessors {
     * Load the providers specified in the config file.
     */
    void loadProcessors( MdmiConfig config ) {
-      Collection<PostProcessorInfo> infos = config.getAllPostProcessorInfos();
+      Collection<ProcessorInfo> infos = config.getAllPostProcessorInfos();
       if( 0 <= infos.size() ) {
-         for( Iterator<PostProcessorInfo> iterator = infos.iterator(); iterator.hasNext(); ) {
-            PostProcessorInfo info = iterator.next();
-            IPostProcessor obj = Util.getInstance(info.className, new File(info.jarFileName), null, null);
-            System.out.println("Loaded Post-Processor: " + info.className + " in " + info.jarFileName);
+         for( Iterator<ProcessorInfo> iterator = infos.iterator(); iterator.hasNext(); ) {
+         	ProcessorInfo info = iterator.next();
+            IPostProcessor obj = Util.getInstance(info.getClassName(), new File(info.getJarFileName()), null, null);
+            System.out.println("Loaded Post-Processor: " + info.getClassName() + " in " + info.getJarFileName());
             m_postProcessors.add(obj);
          }
       }

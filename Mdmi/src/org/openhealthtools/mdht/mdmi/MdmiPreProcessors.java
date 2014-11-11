@@ -14,11 +14,13 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
-import org.openhealthtools.mdht.mdmi.MdmiConfig.PreProcessorInfo;
-import org.openhealthtools.mdht.mdmi.util.*;
+import org.openhealthtools.mdht.mdmi.MdmiConfig.ProcessorInfo;
+import org.openhealthtools.mdht.mdmi.util.Util;
 
 /**
  * Collection of pre processors registered with this runtime. Will be loaded from the config file at the start, and may
@@ -35,12 +37,12 @@ public final class MdmiPreProcessors {
     * Load the providers specified in the config file.
     */
    void loadProcessors( MdmiConfig config ) {
-      Collection<PreProcessorInfo> infos = config.getAllPreProcessorInfos();
+      Collection<ProcessorInfo> infos = config.getAllPreProcessorInfos();
       if( 0 <= infos.size() ) {
-         for( Iterator<PreProcessorInfo> iterator = infos.iterator(); iterator.hasNext(); ) {
-            PreProcessorInfo info = iterator.next();
-            IPreProcessor obj = Util.getInstance(info.className, new File(info.jarFileName), null, null);
-            System.out.println("Loaded Pre-Processor: " + info.className + " in " + info.jarFileName);
+         for( Iterator<ProcessorInfo> iterator = infos.iterator(); iterator.hasNext(); ) {
+         	ProcessorInfo info = iterator.next();
+            IPreProcessor obj = Util.getInstance(info.getClassName(), new File(info.getJarFileName()), null, null);
+            System.out.println("Loaded Pre-Processor: " + info.getClassName() + " in " + info.getJarFileName());
             m_preProcessors.add(obj);
          }
       }

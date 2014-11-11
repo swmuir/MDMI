@@ -17,6 +17,7 @@ package org.openhealthtools.mdht.mdmi;
 import java.io.*;
 import java.util.*;
 import java.util.logging.*;
+
 import org.w3c.dom.*;
 import org.openhealthtools.mdht.mdmi.util.*;
 
@@ -33,9 +34,11 @@ public final class MdmiConfig {
    private int                                   m_threadPoolSize     = -1;
    private LogInfo                               m_logInfo            = DEFAULT_LOG_INFO;
    private HashMap<String, MapInfo>              m_mapInfos           = new HashMap<String, MapInfo>();
-   private HashMap<String, ExternalResolverInfo> m_resolverInfos      = new HashMap<String, ExternalResolverInfo>();
-   private HashMap<String, PreProcessorInfo>     m_preProcessorInfos  = new HashMap<String, PreProcessorInfo>();
-   private HashMap<String, PostProcessorInfo>    m_postProcessorInfos = new HashMap<String, PostProcessorInfo>();
+   private HashMap<String, ProcessorInfo> m_resolverInfos      = new HashMap<String, ProcessorInfo>();
+   private HashMap<String, ProcessorInfo>     m_preProcessorInfos  = new HashMap<String, ProcessorInfo>();
+   private HashMap<String, ProcessorInfo>    m_postProcessorInfos = new HashMap<String, ProcessorInfo>();
+   
+   private HashMap<String, ProcessorInfo>   m_targetSemanticModelPostProcessorInfos = new HashMap<String, ProcessorInfo>();
 
    /**
     * Default ctor.
@@ -135,7 +138,7 @@ public final class MdmiConfig {
     * 
     * @return All resolver infos registered with the runtime.
     */
-   public Collection<ExternalResolverInfo> getAllResolverInfos() {
+   public Collection<ProcessorInfo> getAllResolverInfos() {
       return m_resolverInfos.values();
    }
 
@@ -145,7 +148,7 @@ public final class MdmiConfig {
     * @param providerName The resolver name.
     * @return The ExternalResolverInfo instance, if found, null otherwise.
     */
-   public ExternalResolverInfo getResolverInfo( String providerName ) {
+   public ProcessorInfo getResolverInfo( String providerName ) {
       return m_resolverInfos.get(providerName);
    }
 
@@ -154,7 +157,7 @@ public final class MdmiConfig {
     * 
     * @param me The instance to add or update.
     */
-   public void putResolverInfo( ExternalResolverInfo me ) {
+   public void putResolverInfo( ProcessorInfo me ) {
       m_resolverInfos.put(me.providerName, me);
    }
 
@@ -172,7 +175,7 @@ public final class MdmiConfig {
     * 
     * @return All the pre-processor infos registered with this runtime.
     */
-   public Collection<PreProcessorInfo> getAllPreProcessorInfos() {
+   public Collection<ProcessorInfo> getAllPreProcessorInfos() {
       return m_preProcessorInfos.values();
    }
 
@@ -182,7 +185,7 @@ public final class MdmiConfig {
     * @param providerName The name to look for.
     * @return The pre-processor info instance if found, null otherwise.
     */
-   public PreProcessorInfo getPreProcessorInfo( String providerName ) {
+   public ProcessorInfo getPreProcessorInfo( String providerName ) {
       return m_preProcessorInfos.get(providerName);
    }
 
@@ -191,7 +194,7 @@ public final class MdmiConfig {
     * 
     * @param me The pre-processor info instance to add or update.
     */
-   public void putPreProcessorInfo( PreProcessorInfo me ) {
+   public void putPreProcessorInfo( ProcessorInfo me ) {
       m_preProcessorInfos.put(me.providerName, me);
    }
 
@@ -209,17 +212,20 @@ public final class MdmiConfig {
     * 
     * @return The list of all post-processor info instances.
     */
-   public Collection<PostProcessorInfo> getAllPostProcessorInfos() {
+   public Collection<ProcessorInfo> getAllPostProcessorInfos() {
       return m_postProcessorInfos.values();
+   }
+   
+   public Collection<ProcessorInfo> getAllTargetSemanticModelPostProcessorInfos() {
+      return m_targetSemanticModelPostProcessorInfos.values();
    }
 
    /**
     * Get the requested post-processor info instance by name.
-    * 
     * @param providerName The name to look for.
     * @return The post-processor info instance, or null if not found.
     */
-   public PostProcessorInfo getPostProcessorInfo( String providerName ) {
+   public ProcessorInfo getPostProcessorInfo( String providerName ) {
       return m_postProcessorInfos.get(providerName);
    }
 
@@ -228,7 +234,7 @@ public final class MdmiConfig {
     * 
     * @param me The post-processor info instance to add or update.
     */
-   public void putPostProcessorInfo( PostProcessorInfo me ) {
+   public void putPostProcessorInfo( ProcessorInfo me ) {
       m_postProcessorInfos.put(me.providerName, me);
    }
 
@@ -241,6 +247,14 @@ public final class MdmiConfig {
       m_postProcessorInfos.remove(providerName);
    }
 
+   
+   private static final String POSTPROCESSORTAG           = "postProcessor";
+   private static final String PREPROCESSORTAG           = "preProcessor";
+ 
+   private static final String EXTERNALRESOLVERTAG           = "externalResolver";
+   
+   private static final String TARGETSEMANTICMODELPOSTPROCESSOR           = "targetSemanticModelPostProcesor";
+   
    /**
     * Load this instance from the given configuration file. File must exist.
     * 
@@ -278,84 +292,96 @@ public final class MdmiConfig {
             m_mapInfos.put(me.mapName, me);
          }
 
-         es = XmlUtil.getElements(root, ExternalResolverInfo.TAG);
+         es = XmlUtil.getElements(root, EXTERNALRESOLVERTAG);
          for( Iterator<Element> iterator = es.iterator(); iterator.hasNext(); ) {
             e = iterator.next();
-            ExternalResolverInfo xp = ExternalResolverInfo.fromXml(e);
+            ProcessorInfo xp = ProcessorInfo.fromXml(e);
             m_resolverInfos.put(xp.providerName, xp);
          }
 
-         es = XmlUtil.getElements(root, PreProcessorInfo.TAG);
+         es = XmlUtil.getElements(root, PREPROCESSORTAG);
          for( Iterator<Element> iterator = es.iterator(); iterator.hasNext(); ) {
             e = iterator.next();
-            PreProcessorInfo xp = PreProcessorInfo.fromXml(e);
+            ProcessorInfo xp = ProcessorInfo.fromXml(e);
             m_preProcessorInfos.put(xp.providerName, xp);
          }
 
-         es = XmlUtil.getElements(root, PostProcessorInfo.TAG);
+         es = XmlUtil.getElements(root, POSTPROCESSORTAG);
          for( Iterator<Element> iterator = es.iterator(); iterator.hasNext(); ) {
             e = iterator.next();
-            PostProcessorInfo xp = PostProcessorInfo.fromXml(e);
+            ProcessorInfo xp = ProcessorInfo.fromXml(e);
             m_postProcessorInfos.put(xp.providerName, xp);
          }
+         
+         es = XmlUtil.getElements(root, TARGETSEMANTICMODELPOSTPROCESSOR);
+         for( Iterator<Element> iterator = es.iterator(); iterator.hasNext(); ) {
+            e = iterator.next();
+            ProcessorInfo xp = ProcessorInfo.fromXml(e);
+            m_targetSemanticModelPostProcessorInfos.put(xp.providerName, xp);
+         }
+         
+         
+         
+         
+         
       }
       catch( Exception ex ) {
          throw new MdmiException(ex, "Cannot load configuration file " + configFile.getAbsolutePath());
       }
    }
 
-   /**
-    * Save this to the given file. If the given file exists, it will be overwritten.
-    * 
-    * @param configFile The file to save to.
-    */
-   void save( File configFile ) {
-      if( configFile == null )
-         throw new IllegalArgumentException("Null file argument!");
-      if( configFile.exists() && !configFile.isFile() )
-         throw new IllegalArgumentException("Invalid file argument: " + configFile.getAbsolutePath());
-      try {
-         XmlParser p = new XmlParser();
-         Document doc = p.newDocument();
-         Element root = doc.createElement(TAG_NAME);
-         doc.appendChild(root);
-         if( m_threadPoolSize >= 0 )
-            XmlUtil.addElement(root, "threadPoolSize", String.valueOf(m_threadPoolSize));
-
-         if( m_logInfo != null )
-            m_logInfo.toXml(root);
-
-         Collection<MapInfo> mapInfos = m_mapInfos.values();
-         for( Iterator<MapInfo> iterator = mapInfos.iterator(); iterator.hasNext(); ) {
-            MapInfo me = iterator.next();
-            me.toXml(root);
-         }
-
-         Collection<ExternalResolverInfo> resolvers = m_resolverInfos.values();
-         for( Iterator<ExternalResolverInfo> iterator = resolvers.iterator(); iterator.hasNext(); ) {
-            ExternalResolverInfo me = iterator.next();
-            me.toXml(root);
-         }
-
-         Collection<PreProcessorInfo> preProcessors = m_preProcessorInfos.values();
-         for( Iterator<PreProcessorInfo> iterator = preProcessors.iterator(); iterator.hasNext(); ) {
-            PreProcessorInfo me = iterator.next();
-            me.toXml(root);
-         }
-
-         Collection<PostProcessorInfo> postProcessors = m_postProcessorInfos.values();
-         for( Iterator<PostProcessorInfo> iterator = postProcessors.iterator(); iterator.hasNext(); ) {
-            PostProcessorInfo me = iterator.next();
-            me.toXml(root);
-         }
-         XmlWriter w = new XmlWriter(configFile.getAbsolutePath());
-         w.write(doc);
-         w = null;
-      }
-      catch( Exception ex ) {
-         throw new MdmiException(ex, "Cannot save configuration file " + configFile.getAbsolutePath());
-      }
-   }
+//   /**
+//    * Save this to the given file. If the given file exists, it will be overwritten.
+//    * 
+//    * @param configFile The file to save to.
+//    */
+//   void save( File configFile ) {
+//      if( configFile == null )
+//         throw new IllegalArgumentException("Null file argument!");
+//      if( configFile.exists() && !configFile.isFile() )
+//         throw new IllegalArgumentException("Invalid file argument: " + configFile.getAbsolutePath());
+//      try {
+//         XmlParser p = new XmlParser();
+//         Document doc = p.newDocument();
+//         Element root = doc.createElement(TAG_NAME);
+//         doc.appendChild(root);
+//         if( m_threadPoolSize >= 0 )
+//            XmlUtil.addElement(root, "threadPoolSize", String.valueOf(m_threadPoolSize));
+//
+//         if( m_logInfo != null )
+//            m_logInfo.toXml(root);
+//
+//         Collection<MapInfo> mapInfos = m_mapInfos.values();
+//         for( Iterator<MapInfo> iterator = mapInfos.iterator(); iterator.hasNext(); ) {
+//            MapInfo me = iterator.next();
+//            me.toXml(root);
+//         }
+//
+//         Collection<ExternalResolverInfo> resolvers = m_resolverInfos.values();
+//         for( Iterator<ExternalResolverInfo> iterator = resolvers.iterator(); iterator.hasNext(); ) {
+//            ExternalResolverInfo me = iterator.next();
+//            me.toXml(root);
+//         }
+//
+//         Collection<PreProcessorInfo> preProcessors = m_preProcessorInfos.values();
+//         for( Iterator<PreProcessorInfo> iterator = preProcessors.iterator(); iterator.hasNext(); ) {
+//            PreProcessorInfo me = iterator.next();
+//            me.toXml(root);
+//         }
+//
+//         Collection<PostProcessorInfo> postProcessors = m_postProcessorInfos.values();
+//         for( Iterator<PostProcessorInfo> iterator = postProcessors.iterator(); iterator.hasNext(); ) {
+//            PostProcessorInfo me = iterator.next();
+//            me.toXml(root);
+//         }
+//         XmlWriter w = new XmlWriter(configFile.getAbsolutePath());
+//         w.write(doc);
+//         w = null;
+//      }
+//      catch( Exception ex ) {
+//         throw new MdmiException(ex, "Cannot save configuration file " + configFile.getAbsolutePath());
+//      }
+//   }
 
    /**
     * Logger information.
@@ -534,177 +560,90 @@ public final class MdmiConfig {
    } // MdmiConfig$MapInfo
 
    /**
-    * Metadata about an external resolver. The jar and class names must be valid. The class must implement
-    * IExternalResolver.
-    * 
-    * @author goancea
-    */
-   public static class ExternalResolverInfo {
-      private static final String TAG           = "externalResolver";
-      private static final String PROVIDER_NAME = "providerName";
-      private static final String JAR_FILE_NAME = "jarFileName";
-      private static final String CLASS_NAME    = "className";
-
-      public String               providerName;
-      public String               jarFileName;
-      public String               className;
-
-      /**
-       * Default ctor.
-       */
-      public ExternalResolverInfo() {
-      }
-
-      /**
-       * Construct a new instance based on the given parameters.
-       * 
-       * @param providerName The name of the provider.
-       * @param jarFileName The full path and file name for the jar file containing the implementation.
-       * @param className The class name of the class implementing the IExternalResolver.
-       */
-      public ExternalResolverInfo( String providerName, String jarFileName, String className ) {
-         this.providerName = providerName;
-         this.jarFileName = jarFileName;
-         this.className = className;
-      }
-
-      private void toXml( Element owner ) {
-         Element root = XmlUtil.addElement(owner, TAG);
-         root.setAttribute(PROVIDER_NAME, providerName);
-         XmlUtil.addElement(root, JAR_FILE_NAME, jarFileName);
-         XmlUtil.addElement(root, CLASS_NAME, className);
-      }
-
-      private static ExternalResolverInfo fromXml( Element root ) {
-         ExternalResolverInfo p = new ExternalResolverInfo();
-         p.providerName = root.getAttribute(PROVIDER_NAME);
-         p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
-         p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
-         if( p.jarFileName != null ) {
-            File file = new File(p.jarFileName);
-            if( !file.exists() )
-               file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
-            p.jarFileName = canonicalPathName(file);
-         }
-         return p;
-      }
-   } // MdmiConfig$ExternalProviderInfo
-
-   /**
-    * Metadata about an external pre-processor. The jar and class names must be valid. The class must implement
-    * IPreProcessor.
-    * 
-    * @author goancea
-    */
-   public static class PreProcessorInfo {
-      private static final String TAG           = "preProcessor";
-      private static final String PROVIDER_NAME = "providerName";
-      private static final String JAR_FILE_NAME = "jarFileName";
-      private static final String CLASS_NAME    = "className";
-
-      public String               providerName;
-      public String               jarFileName;
-      public String               className;
-
-      /**
-       * Default ctor.
-       */
-      public PreProcessorInfo() {
-      }
-
-      /**
-       * Construct a new instance based on the given parameters.
-       * 
-       * @param providerName The name of the provider.
-       * @param jarFileName The full path and file name for the jar file containing the implementation.
-       * @param className The class name of the class implementing the IPreProcessor.
-       */
-      public PreProcessorInfo( String providerName, String jarFileName, String className ) {
-         this.providerName = providerName;
-         this.jarFileName = jarFileName;
-         this.className = className;
-      }
-
-      private void toXml( Element owner ) {
-         Element root = XmlUtil.addElement(owner, TAG);
-         root.setAttribute(PROVIDER_NAME, providerName);
-         XmlUtil.addElement(root, JAR_FILE_NAME, jarFileName);
-         XmlUtil.addElement(root, CLASS_NAME, className);
-      }
-
-      private static PreProcessorInfo fromXml( Element root ) {
-         PreProcessorInfo p = new PreProcessorInfo();
-         p.providerName = root.getAttribute(PROVIDER_NAME);
-         p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
-         p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
-         if( p.jarFileName != null ) {
-            File file = new File(p.jarFileName);
-            if( !file.exists() )
-               file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
-            p.jarFileName = canonicalPathName(file);
-         }
-         return p;
-      }
-   } // MdmiConfig$PreProcessorInfo
-
-   /**
-    * Metadata about an external post-processor. The jar and class names must be valid. The class must implement
-    * IPostProcessor.
-    * 
-    * @author goancea
-    */
-   public static class PostProcessorInfo {
-      private static final String TAG           = "postProcessor";
-      private static final String PROVIDER_NAME = "providerName";
-      private static final String JAR_FILE_NAME = "jarFileName";
-      private static final String CLASS_NAME    = "className";
-
-      public String               providerName;
-      public String               jarFileName;
-      public String               className;
-
-      /**
-       * Default ctor.
-       */
-      public PostProcessorInfo() {
-      }
-
-      /**
-       * Construct a new instance based on the given parameters.
-       * 
-       * @param providerName The name of the provider.
-       * @param jarFileName The full path and file name for the jar file containing the implementation.
-       * @param className The class name of the class implementing the IPostProcessor.
-       */
-      public PostProcessorInfo( String providerName, String jarFileName, String className ) {
-         this.providerName = providerName;
-         this.jarFileName = jarFileName;
-         this.className = className;
-      }
-
-      private void toXml( Element owner ) {
-         Element root = XmlUtil.addElement(owner, TAG);
-         root.setAttribute(PROVIDER_NAME, providerName);
-         XmlUtil.addElement(root, JAR_FILE_NAME, jarFileName);
-         XmlUtil.addElement(root, CLASS_NAME, className);
-      }
-
-      private static PostProcessorInfo fromXml( Element root ) {
-         PostProcessorInfo p = new PostProcessorInfo();
-         p.providerName = root.getAttribute(PROVIDER_NAME);
-         p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
-         p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
-         if( p.jarFileName != null ) {
-            File file = new File(p.jarFileName);
-            if( !file.exists() )
-               file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
-            p.jarFileName = canonicalPathName(file);
-         }
-         return p;
-      }
-   } // MdmiConfig$PostProcessorInfo
+	 * Metadata about an external post-processor. The jar and class names must be valid. The class must implement
+	 * IPostProcessor.
+	 * 
+	 * @author goancea
+	 */
    
-   private static String canonicalPathName( File f ) {
+ 
+   
+   
+	public static class ProcessorInfo {
+	 
+	   private static final String PROVIDER_NAME = "providerName";
+	   private static final String JAR_FILE_NAME = "jarFileName";
+	   private static final String CLASS_NAME    = "className";
+	
+	   private String               providerName;
+	   private String               jarFileName;
+	   private String               className;
+	
+	   public String getProviderName() {
+			return providerName;
+		}
+	
+		public void setProviderName( String providerName ) {
+			this.providerName = providerName;
+		}
+	
+		public String getJarFileName() {
+			return jarFileName;
+		}
+	
+		public void setJarFileName( String jarFileName ) {
+			this.jarFileName = jarFileName;
+		}
+	
+		public String getClassName() {
+			return className;
+		}
+	
+		public void setClassName( String className ) {
+			this.className = className;
+		}
+	
+	 
+	   /**
+	    * Construct a new instance based on the given parameters.
+	    * 
+	    * @param providerName The name of the provider.
+	    * @param jarFileName The full path and file name for the jar file containing the implementation.
+	    * @param className The class name of the class implementing the IPostProcessor.
+	    */
+	   public ProcessorInfo( String providerName, String jarFileName, String className ) {
+	      this.providerName = providerName;
+	      this.jarFileName = jarFileName;
+	      this.className = className;
+	   }
+	
+	   public ProcessorInfo() {
+	      
+      }
+
+//		private void toXml( Element owner ) {
+//	      Element root = XmlUtil.addElement(owner, TAG);
+//	      root.setAttribute(PROVIDER_NAME, providerName);
+//	      XmlUtil.addElement(root, JAR_FILE_NAME, jarFileName);
+//	      XmlUtil.addElement(root, CLASS_NAME, className);
+//	   }
+	
+	   private static ProcessorInfo fromXml( Element root ) {
+	   	ProcessorInfo p = new ProcessorInfo();
+	      p.providerName = root.getAttribute(PROVIDER_NAME);
+	      p.jarFileName = XmlUtil.getText(XmlUtil.getElement(root, JAR_FILE_NAME));
+	      p.className = XmlUtil.getText(XmlUtil.getElement(root, CLASS_NAME));
+	      if( p.jarFileName != null ) {
+	         File file = new File(p.jarFileName);
+	         if( !file.exists() )
+	            file = Mdmi.INSTANCE.fileFromRelPath(p.jarFileName);
+	         p.jarFileName = canonicalPathName(file);
+	      }
+	      return p;
+	   }
+	} // MdmiConfig$PostProcessorInfo
+
+	private static String canonicalPathName( File f ) {
       try {
          return f.getCanonicalPath();
       }

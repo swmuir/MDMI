@@ -14,11 +14,15 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi;
 
-import java.io.*;
-import java.util.*;
-import org.openhealthtools.mdht.mdmi.MdmiConfig.ExternalResolverInfo;
-import org.openhealthtools.mdht.mdmi.model.*;
-import org.openhealthtools.mdht.mdmi.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import org.openhealthtools.mdht.mdmi.MdmiConfig.ProcessorInfo;
+import org.openhealthtools.mdht.mdmi.model.DTExternal;
+import org.openhealthtools.mdht.mdmi.util.Util;
 
 /**
  * Collection of external resolvers for resolving external data types.
@@ -36,12 +40,12 @@ public final class MdmiExternalResolvers {
     * Load the providers specified in the config file.
     */
    void loadResolvers( MdmiConfig config ) {
-      Collection<ExternalResolverInfo> infos = config.getAllResolverInfos();
+      Collection<ProcessorInfo> infos = config.getAllResolverInfos();
       if( 0 <= infos.size() ) {
-         for( Iterator<ExternalResolverInfo> iterator = infos.iterator(); iterator.hasNext(); ) {
-            ExternalResolverInfo info = iterator.next();
-            IExternalResolver obj = Util.getInstance(info.className, new File(info.jarFileName), null, null);
-            System.out.println("Loaded External Resolver: " + info.className + " in " + info.jarFileName);
+         for( Iterator<ProcessorInfo> iterator = infos.iterator(); iterator.hasNext(); ) {
+         	ProcessorInfo info = iterator.next();
+            IExternalResolver obj = Util.getInstance(info.getClassName(), new File(info.getJarFileName()), null, null);
+            System.out.println("Loaded External Resolver: " + info.getClassName() + " in " + info.getJarFileName());
             m_resolvers.add(obj);
          }
       }

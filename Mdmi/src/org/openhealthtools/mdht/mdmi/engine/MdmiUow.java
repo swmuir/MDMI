@@ -174,6 +174,7 @@ public class MdmiUow implements Runnable {
 		c.execute();
 		System.out.println("---------- CONVERSION END ----------");
 		System.out.println("Data conversion took " + (System.currentTimeMillis() - ts) + " milliseconds.");
+		Mdmi.INSTANCE.getTargetSemanticModelPostProcessors().postProcess(trgSemanticModel);
 		serializeSemanticModel("TargetSemanticModel", trgSemanticModel);
 		if( OUTPUT_TO_CONSOLE ) {
 	      System.out.println("---------- TARGET MESSAGE START ----------");
@@ -181,6 +182,8 @@ public class MdmiUow implements Runnable {
 	      System.out.println("---------- TARGET MESSAGE END ----------");
 		}
 	}
+	
+
 
 	// 4. Build the target syntax tree from the target semantic model
 	void processOutboundTargetMessage() {
