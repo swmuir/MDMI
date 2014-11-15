@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2014 SemantX, Inc and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     SemantX, Sean Muir - initial API and implementation
+ *******************************************************************************/
 package org.openhealthtools.mdht.mdmiplugins;
 
 import java.io.ByteArrayInputStream;
@@ -61,6 +71,9 @@ public class I2B2SemanticModelPostProcess implements
 
 	}
 
+	/**
+	 * @TODO Move to properties file 
+	 */
 	private static final String I2B2RestURL = "http://services.i2b2.org:9090/i2b2/services/OntologyService/getCodeInfo";
 
 	private HashMap<String, CodeInfo> codeInformationMap = new HashMap<String, CodeInfo>();
