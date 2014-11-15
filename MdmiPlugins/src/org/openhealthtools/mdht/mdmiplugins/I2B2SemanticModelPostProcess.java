@@ -61,6 +61,8 @@ public class I2B2SemanticModelPostProcess implements
 
 	}
 
+	private static final String I2B2RestURL = "http://services.i2b2.org:9090/i2b2/services/OntologyService/getCodeInfo";
+
 	private HashMap<String, CodeInfo> codeInformationMap = new HashMap<String, CodeInfo>();
 
 	@Override
@@ -83,6 +85,8 @@ public class I2B2SemanticModelPostProcess implements
 					if (codeInfo != null) {
 					xds.setValue(nameAttribute, codeInfo.getName());
 					xds.setValue(pathAttribute, codeInfo.getPath());
+					} else {
+						xds.setValue(nameAttribute, "Error "+ code + " not found!");
 					}
 				}
 			}
@@ -109,7 +113,7 @@ public class I2B2SemanticModelPostProcess implements
 				Client httpClient = Client.create();
 
 				WebResource getCodeInfo = httpClient
-						.resource("http://services.i2b2.org:9090/i2b2/services/OntologyService/getCodeInfo");
+						.resource(I2B2RestURL);
 
 				final String request = readFile("i2b2GetCodeInfo.xml",
 						StandardCharsets.UTF_8);
