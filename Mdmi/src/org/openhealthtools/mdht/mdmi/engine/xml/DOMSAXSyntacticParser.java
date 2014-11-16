@@ -737,14 +737,14 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 					 */
 						
 						/*
-						 *  treatAsContainer - If the leaf node has a "/" in its definition, combine all "/" of similiar types
+						 *  treatAsContainer - If the leaf node has a "/" in its definition, combine all "/" of similiar types with a element node.getMaxOccurs != 1
 						 *  we set treat as container to false - this will cause the createElement process to search for existing elements before creating new ones
 						 *  SWM
 						 *  
 						 */
 						boolean treatAsContainer = true;
-						
-						if (ynode.getNode().getLocation().contains("/")) {
+												
+						if (ynode.getNode().getLocation().contains("/") && ynode.getNode().getMaxOccurs() == 1) {
 							treatAsContainer = false;
 						}
 						
