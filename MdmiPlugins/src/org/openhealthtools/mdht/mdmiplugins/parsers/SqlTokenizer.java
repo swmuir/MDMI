@@ -1,9 +1,6 @@
 package org.openhealthtools.mdht.mdmiplugins.parsers;
 
-import java.text.*;
 import java.util.*;
-
-import org.openhealthtools.mdht.mdmi.util.*;
 
 public class SqlTokenizer {
    public ArrayList<Token> tokenize( String sql ) {
@@ -40,6 +37,8 @@ public class SqlTokenizer {
          if( '[' == c )
             e = ']';
          String value = getDelimitedString(sb, c, e);
+         if( '[' == c )
+            return new TWord(value);
          return new TLiteral(value);
       }
       else if( 0 <= DIGITS.indexOf(c) ) {
