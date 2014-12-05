@@ -266,8 +266,6 @@ public final class Mdmi {
    public static IExpressionInterpreter getInterpreter( String lang, XElementValue context, String name, XValue value ) { 
       if( lang == null || lang.length() <= 0 )
          throw new MdmiException("Language not set!");
-      if( lang.equalsIgnoreCase("nrl") )
-         return new NrlAdapter(context == null ? null: context.getOwner(), context, name, value);
       if( lang.equalsIgnoreCase("js") || lang.equalsIgnoreCase("javascript") || lang.equalsIgnoreCase("ecmascript") )
          return new JsAdapter(context == null ? null: context.getOwner(), name, value);
       throw new MdmiException("Language {0} not supported!", lang);
