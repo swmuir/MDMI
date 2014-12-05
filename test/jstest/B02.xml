@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<message>
-   <dbtr>John</dbtr>
-   <cdtr>Jane</cdtr>
-   <dt>2009-05-28T13:45:56-05:00</dt>
-   <amnt>3.14</amnt>
-   <ccy>EUR</ccy>
-   <externalTest>TEST</externalTest>
-</message>
