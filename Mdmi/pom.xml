@@ -14,11 +14,7 @@
 
 
 	<repositories>
-		<repository>
-			<id>JKMSoftware-desktop</id>
-			<name>JKMSoftware-desktop-releases</name>
-			<url>http://localhost:8081/artifactory/ext-release-local</url>
-		</repository>
+		 
 	</repositories>
 
 	<properties>
