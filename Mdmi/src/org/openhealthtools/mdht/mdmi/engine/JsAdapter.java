@@ -15,11 +15,17 @@
  *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.engine;
 
-import java.util.*;
-import javax.script.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.openhealthtools.mdht.mdmi.*;
-import org.openhealthtools.mdht.mdmi.model.*;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.openhealthtools.mdht.mdmi.ElementValueSet;
+import org.openhealthtools.mdht.mdmi.IElementValue;
+import org.openhealthtools.mdht.mdmi.IExpressionInterpreter;
+import org.openhealthtools.mdht.mdmi.MdmiException;
+import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 
 public class JsAdapter implements IExpressionInterpreter  {
    private ElementValueSet m_eset;
@@ -28,15 +34,39 @@ public class JsAdapter implements IExpressionInterpreter  {
    final static ScriptEngineManager factory = new ScriptEngineManager();
    final static ScriptEngine engine = factory.getEngineByName("JavaScript");
    
-   public JsAdapter( ElementValueSet eset, String name, XValue value ) {
+   final static String PACKAGES = " importPackage(Packages.org.openhealthtools.mdht.mdmi);"
+         + "importPackage(Packages.org.openhealthtools.mdht.mdmi.engine);"
+         + "importPackage(Packages.org.openhealthtools.mdht.mdmi.model);";
+   
+   private static Double javaVersion = null;
+   private static String loadPrefix = "";
+   
+   public static void setJavaVersion( Double javaVersion ) {
+		JsAdapter.javaVersion = javaVersion;
+	}
+
+	public JsAdapter( ElementValueSet eset, String name, XValue value ) {
       initialize(eset, null, name, value);
    }
    
+   /* 
+    * If the version of java is greater the 1.7, need to add load compatibility 
+    * see https://wiki.openjdk.java.net/display/Nashorn/Rhino+Migration+Guide
+    * 
+    * (non-Javadoc)
+    * @see org.openhealthtools.mdht.mdmi.IExpressionInterpreter#initialize(org.openhealthtools.mdht.mdmi.ElementValueSet, org.openhealthtools.mdht.mdmi.engine.XElementValue, java.lang.String, org.openhealthtools.mdht.mdmi.engine.XValue)
+    */
    @Override
    public void initialize( ElementValueSet eset, XElementValue context, String name, XValue value ) {
       m_eset = eset;
       m_name = name;
       m_value = value;
+      if (javaVersion == null) {
+      	javaVersion = Double.parseDouble(System.getProperty("java.specification.version"));
+      	if (javaVersion > 1.7) {
+      		loadPrefix = "load(\"nashorn:mozilla_compat.js\");";
+      	}
+      }
    }
 
    @Override
@@ -117,9 +147,6 @@ public class JsAdapter implements IExpressionInterpreter  {
    }
 
    private String addPackages( String rule ) {
-      String packages = "importPackage(Packages.org.openhealthtools.mdht.mdmi);"
-            + "importPackage(Packages.org.openhealthtools.mdht.mdmi.engine);"
-            + "importPackage(Packages.org.openhealthtools.mdht.mdmi.model);";
-      return packages + rule;
+      return loadPrefix + PACKAGES + rule;
    }
 } // JsAdapter
