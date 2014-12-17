@@ -14,12 +14,15 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.editor.map.actions;
 
+import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.actions.AbstractMenuAction;
 import org.openhealthtools.mdht.mdmi.editor.common.components.BaseDialog;
+import org.openhealthtools.mdht.mdmi.editor.common.components.WrappingDisplayText;
 import org.openhealthtools.mdht.mdmi.editor.map.tools.ReferentIndexToCSV;
 
 public class ReviseReferentIndexAction extends AbstractMenuAction implements Runnable {
@@ -34,7 +37,7 @@ public class ReviseReferentIndexAction extends AbstractMenuAction implements Run
 	@Override
 	public void run() {
 		Frame frame = SystemContext.getApplicationFrame();
-		ReferentIndexToCSV.TokenSelector sel = new ReferentIndexToCSV.TokenSelector(frame);
+		ReferentIndexToCSV.TokenSelector sel = new TokenSelector(frame);
 		int rc = sel.display(frame);
 		if (rc == BaseDialog.OK_BUTTON_OPTION) {
 			ReferentIndexToCSV importer = new ReferentIndexToCSV();
@@ -42,5 +45,24 @@ public class ReviseReferentIndexAction extends AbstractMenuAction implements Run
 		}
 	}
 
-	
+	private static class TokenSelector extends ReferentIndexToCSV.TokenSelector {
+
+		public TokenSelector(Frame owner) {
+			super(owner);
+			
+			// add text to the top
+			String text = "Revise the Referent Index using a file containing the Business Elements that need to be changed.";
+			text += "\n\nThe first column must be the UID or existing business element name.";
+			text += "\n\nThe additional columns must be labeled with the fields to be replaced (e.g. \"Name\", \"Description\")";
+			WrappingDisplayText description = new WrappingDisplayText(text);
+			Font font = description.getFont();
+			font = font.deriveFont((float)(font.getSize()-1));	// make smaller
+			description.setFont(font);
+			
+			add(description, BorderLayout.NORTH);
+			
+			pack();
+		}
+		
+	}
 }
