@@ -1051,6 +1051,15 @@ public class DefaultSemanticParser implements ISemanticParser {
 		}
 	}
 
+	/**
+	 * setComputedInValue Given a semantic element - determine if the computedin should be fired
+	 * The first check is to see if the parent not null - Search for instance of the parent and add child element and run computed in
+	 * The second is if the parent is null and the type is not normal
+	 * The last if if is the semantic element is owned by the root semantic element and the type is local
+	 * 
+	 * @TODO Document and perhaps simplify the handling of computed in 
+	 * @param se
+	 */
 	private void setComputedInValue( SemanticElement se ) {
 		String rule = se.getComputedInValue().getExpression();
 		String lang = se.getComputedInValue().getLanguage();
@@ -1061,8 +1070,13 @@ public class DefaultSemanticParser implements ISemanticParser {
 				needsChildEV.addChild(childEV);
 				childEV.setParent(needsChildEV);
 			}
+		} else if( se.getSemanticElementType() != SemanticElementType.NORMAL ) {
+			ArrayList<IElementValue> a = valueSet.getElementValuesByType(se);
+			if( a.size() <= 0 )
+				new XElementValue(se, valueSet);
 		}
-		else if( se.getSemanticElementType() != SemanticElementType.NORMAL ) {
+
+		if( se.getParent() != null && se.getParent().getParent() == null && se.getSemanticElementType() == SemanticElementType.LOCAL ) {
 			ArrayList<IElementValue> a = valueSet.getElementValuesByType(se);
 			if( a.size() <= 0 )
 				new XElementValue(se, valueSet);
@@ -1070,7 +1084,7 @@ public class DefaultSemanticParser implements ISemanticParser {
 
 		ArrayList<IElementValue> axs = valueSet.getElementValuesByType(se);
 		for( int i = 0; i < axs.size(); i++ ) {
-			evalRule(lang, rule, (XElementValue)axs.get(i));
+			evalRule(lang, rule, (XElementValue) axs.get(i));
 		}
 	}
 
