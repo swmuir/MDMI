@@ -102,7 +102,8 @@ public class Conversion {
 				ConversionInfo ci = new ConversionInfo(target, trgBER, srcBER);
 				ArrayList<SemanticElement> srcSes = getSourceSESforBER(srcModel, srcBER);
 				if( srcSes.size() <= 0 ) {
-					throw new MdmiException("Conversion: invalid mapping, missing source SEs, source BER is " + ci.srcBER.getName());
+					break;
+//					throw new MdmiException("Conversion: invalid mapping, missing source SEs, source BER is " + ci.srcBER.getName());
 				}
 				for( int k = 0; k < srcSes.size(); k++ ) {
 					SemanticElement ses = srcSes.get(k);
