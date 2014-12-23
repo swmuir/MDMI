@@ -1,0 +1,7 @@
+test/BCHSourceMap.xmi	
+BCHMessageGroup.BCHRXHistory
+test/BCHSourceMessage.xml
+test/CCDTargetMap.xmi	
+CCDMessageGroup.CCD
+test/CCDTargetMessage.xml
+PayerAuthorizationSupplyId

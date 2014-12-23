@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bch>
+   <PatientSegments>
+      <element>
+         <messageType>PID</messageType>
+         <msgCtrlID />
+         <patientDOB>19700101</patientDOB>
+         <patientFamilyName>Smith</patientFamilyName>
+         <patientGender>M</patientGender>
+         <patientGivenName>John</patientGivenName>
+         <patientId>1234</patientId>
+         <patientIdSourceSystemId>001</patientIdSourceSystemId>
+         <patientIdSourceSystemName>BCH</patientIdSourceSystemName>
+         <patientIdType>i2b2</patientIdType>
+         <patientMiddleName>Q</patientMiddleName>
+         <patientPostalCode>90210</patientPostalCode>
+         <patientPrefix />
+         <patientSuffix />
+      </element>
+   </PatientSegments>
+   <RxHistorySegments>
+      <element>
+         <messageType>RDS</messageType>
+         <msgCtrlID>43908861</msgCtrlID>
+         <orders>  
+            <element>
+               <orc>
+                  <duration>1101</duration>
+                  <enteringOrganizationAlternativeId>Fill</enteringOrganizationAlternativeId>
+                  <enteringOrganizationIdentifier>T1111</enteringOrganizationIdentifier>
+                  <enteringOrganizationNameOfCodingSystem>11RXHUB</enteringOrganizationNameOfCodingSystem>
+                  <enteringOrganizationText>RIT1111</enteringOrganizationText>
+                  <fillerOrderNumber>
+                     <entityIdentifier>1111a</entityIdentifier>
+                  </fillerOrderNumber>
+                  <messageType>ORC</messageType>
+                  <orderControl>OK</orderControl>
+                  <orderStatus>CM</orderStatus>
+                  <placerOrderNumber>
+                     <entityIdentifier>MSG9BFF7E8F59094D29A7CF2EB6484DC813</entityIdentifier>
+                  </placerOrderNumber>
+                  <providerAssigningAuthority>DEA1111</providerAssigningAuthority>
+                  <providerFamilyName>FAHEY1111</providerFamilyName>
+                  <providerGivenName>john111</providerGivenName>
+                  <providerId>BFBF111</providerId>
+               </orc>
+               <rxd>
+                  <actualDispenseAmount>111</actualDispenseAmount>
+                  <actualDispenseUnitsIdentifier>yy11</actualDispenseUnitsIdentifier>
+                  <actualDispenseUnitsText>Mutually Defined</actualDispenseUnitsText>
+                  <dateTime>Apr 16, 1111 12:00:00 AM</dateTime>
+                  <dispenseCodeAlternativeCodingSys>Generic Name</dispenseCodeAlternativeCodingSys>
+                  <dispenseCodeAlternativeText>Drug11</dispenseCodeAlternativeText>
+                  <dispenseCodeIdentifier>99999999999999999999999999999999</dispenseCodeIdentifier>
+                  <dispenseCodeNameOfCodingSystem>NDC</dispenseCodeNameOfCodingSystem>
+                  <dispenseCodeRxnormId>551111</dispenseCodeRxnormId>
+                  <dispenseCodeText>PREVACID 10 MG CAPSULE</dispenseCodeText>
+                  <dispenseNotes>TAKE 1 TABLET 1 TIMES A DAY</dispenseNotes>
+                  <dispenseProviderAssigningAuth>NCPDP Provider ID Number</dispenseProviderAssigningAuth>
+                  <dispenseProviderFamilyName>CVS Pharmacy # 111</dispenseProviderFamilyName>
+                  <dispenseProviderIdNumber>11116</dispenseProviderIdNumber>
+                  <dispenseProviderIdentifierTypeCode>D1111</dispenseProviderIdentifierTypeCode>
+                  <dispenseProviderSourceTable>NCPDP0128</dispenseProviderSourceTable>
+                  <dispenseSubIdCounter>2</dispenseSubIdCounter>
+                  <messageType>RXD</messageType>
+                  <numberOfRefillsRemaining>331111</numberOfRefillsRemaining>
+                  <prescriptionNumber>211111</prescriptionNumber>
+               </rxd>
+            </element>
+        </orders>
+    </element>
+</RxHistorySegments>
+</bch>
