@@ -75,9 +75,9 @@ public class MessageModel {
    public void setSource( URI source ) {
       m_source = source;
    }
-
-   public Collection<MdmiBusinessElementReference> getBusinessElementReferences() {
-      Collection<SemanticElement> ses = m_elementSet.getSemanticElements();
+   
+   public  HashMap<String, MdmiBusinessElementReference> getBusinessElementHashMap() {
+   	 Collection<SemanticElement> ses = m_elementSet.getSemanticElements();
       HashMap<String, MdmiBusinessElementReference> bers = new HashMap<String, MdmiBusinessElementReference>();
       for( Iterator<SemanticElement> it = ses.iterator(); it.hasNext(); ) {
          SemanticElement se = it.next();
@@ -96,7 +96,11 @@ public class MessageModel {
                bers.put(ber.getUniqueIdentifier(), ber);
          }
       }
-      return bers.values();
+      return bers;
+   }
+
+   public Collection<MdmiBusinessElementReference> getBusinessElementReferences() {
+      return getBusinessElementHashMap().values();
    }
 
    @Override
