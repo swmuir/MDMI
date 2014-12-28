@@ -19,6 +19,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,9 +36,9 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -44,6 +50,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
@@ -94,8 +101,12 @@ public class TableViewer extends PrintableView  {
 	public static final String  TABLE_VIEWER_HEIGHT        = "tableViewerHeight";
 	/** Window state (Minimized/Maximized) */
 	public static final String  TABLE_VIEWER_MAXIMIZED     = "tableViewerMaximized";
-	
+	/** CSV File */
+	private static final String TABLE_VIEWER_CSV_FILE = "tableVieweerCSVFile";	
 
+	/** field separator */
+	public static char SEPARATOR = ',';
+	
 	// Filtering Criteria
 	private static final String ALL_SEMANTIC_ELEMENTS       = s_res.getString("TableViewer.AllSemanticElements");
 	private static final String NORMAL_SEMANTIC_ELEMENTS    = s_res.getString("TableViewer.NormalSemanticElements");
@@ -111,12 +122,15 @@ public class TableViewer extends PrintableView  {
 	
 	// Size information
 	private UserPreferences 	 m_preferences;
+
+	private File m_lastCSVFile = null;	// remember
 	
 	// Filters
 	private JComboBox m_filters;
 	private JComboBox m_showLeafNodes;
 	
 	// extra buttons
+	private JButton m_toCSVButton;
 	private JButton m_refreshButton;
 	private JButton m_mainWindowButton;
 	private ActionListener m_buttonAction;
@@ -146,8 +160,11 @@ public class TableViewer extends PrintableView  {
 	private ArrayList<String> m_columnNames = new ArrayList<String>();
 	
 	// Table Cell Editors (acts as CollectionChangeListener)
-	CustomCellEditor m_nameCellEditor = new CustomCellEditor();
-	BusinessElementCellEditor m_beCellEditor = new BusinessElementCellEditor();
+	private CustomCellEditor m_nameCellEditor = new CustomCellEditor();
+	private BusinessElementCellEditor m_beCellEditor = new BusinessElementCellEditor();
+	
+	// Table Cell Renderer
+	private RowDataRenderer m_customRenderer  = new RowDataRenderer();
 	
 	// Listener for changes to the model
 	ChangeListener m_changeListener = new ChangeListener();
@@ -202,7 +219,13 @@ public class TableViewer extends PrintableView  {
 		} else {
 			BaseDialog.centerOnScreen(this);
 		}
+
+        String lastFileName = m_preferences.getValue(TABLE_VIEWER_CSV_FILE, SystemContext.getMapFileName());
+        if (lastFileName != null) {
+        	m_lastCSVFile = new File(lastFileName);
+        }
 		
+
 		setWindowTitle();
 
 		setVisible(true);
@@ -256,10 +279,9 @@ public class TableViewer extends PrintableView  {
 		
 		// set width and renderer for data
 		int width = getWidth()/3;
-		RowDataRenderer customRenderer = new RowDataRenderer();
 		for (int c=0; c<m_table.getColumnCount(); c++) {
 			TableColumn column = m_table.getColumnModel().getColumn(c);
-			column.setCellRenderer(customRenderer);
+			column.setCellRenderer(m_customRenderer);
 			// columns 1, 3 and 5 get most of the width
 			if (c == m_leafNodeCol) {
 				column.setPreferredWidth(width/2);
@@ -312,6 +334,12 @@ public class TableViewer extends PrintableView  {
 	
 	public void setWindowTitle() {
 		String title = s_res.getString("TableViewer.title");
+
+    	String mapFileName = SystemContext.getMapFileName();
+		if (mapFileName != null) {
+			title += " " + mapFileName;
+		}
+		
 		if (m_tableModel != null && m_tableModel.isDirty()) {
 			title = "*" + title;
 		}
@@ -338,11 +366,16 @@ public class TableViewer extends PrintableView  {
 		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		JPanel rightPanel = super.createButtonPanel();
-
+		
+		m_toCSVButton = new JButton(s_res.getString("TableViewer.toCSV"));
 		m_refreshButton = new JButton(s_res.getString("TableViewer.refresh"));
 		m_mainWindowButton = new JButton(s_res.getString("TableViewer.mainWindow"));
-//		m_saveButton = new JButton(s_res.getString("TableViewer.save"));
 		m_buttonAction = new ButtonAction();
+		
+		m_toCSVButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
+				s_res.getString("TableViewer.toCSVIcon")));
+		m_toCSVButton.setToolTipText(s_res.getString("TableViewer.toCSVToolTip"));
+		m_toCSVButton.addActionListener(m_buttonAction);
 		
 		m_refreshButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
 				s_res.getString("TableViewer.refreshIcon")));
@@ -354,6 +387,7 @@ public class TableViewer extends PrintableView  {
 		m_mainWindowButton.setIcon(AbstractComponentEditor.getIcon(this.getClass(),
 				s_res.getString("TableViewer.mainWindowIcon")));
 		
+		rightPanel.add(m_toCSVButton);
 		rightPanel.add(m_refreshButton);
 		rightPanel.add(m_mainWindowButton);
 
@@ -822,6 +856,8 @@ public class TableViewer extends PrintableView  {
 		m_table.removeMouseListener(m_mouseListener);
 
 		// remove listeners
+		m_toCSVButton.setToolTipText(null);
+		m_toCSVButton.removeActionListener(m_buttonAction);
 		m_refreshButton.setToolTipText(null);
 		m_refreshButton.removeActionListener(m_buttonAction);
 		m_mainWindowButton.setToolTipText(null);
@@ -1142,6 +1178,108 @@ public class TableViewer extends PrintableView  {
 			m_selectedLeafRows = null;
 		}
 	}
+
+
+	/** Save the table data to a CSV file (prompt user) 
+	 * @throws IOException */
+	public void saveAsCSV() throws IOException {
+
+		File csvFile = getCSVFile();
+    	if (csvFile == null) {
+    		return;
+    	}
+    	
+    	//--------------------------
+		// open output file
+    	//--------------------------
+		FileOutputStream fstream = new FileOutputStream(csvFile);
+		DataOutputStream out = new DataOutputStream(fstream);
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+		
+
+    	//--------------------------
+		// Write each row
+		//--------------------------
+		int numRows = m_tableModel.getRowCount();
+		int numCols = m_tableModel.getColumnCount();
+		// header
+		for (int c=0; c<numCols; c++) {
+			if (c > 0) {
+				writer.write(SEPARATOR);
+			}
+			writer.write(m_tableModel.getColumnName(c));
+		}
+		writer.newLine();
+		writer.flush();
+		
+		// rows
+		for (int r=0; r<numRows; r++) {
+			for (int c=0; c<numCols; c++) {
+				Object value = m_tableModel.getValueAt(r, c);
+				String stringValue = m_customRenderer.getStringValue(value, r, c);
+				if (c > 0) {
+					writer.write(SEPARATOR);
+				}
+				writer.write(stringValue);
+			}
+
+			writer.newLine();
+			writer.flush();
+		}
+
+    	//--------------------------
+		// Close
+    	//--------------------------
+		writer.close();
+		out.close();
+		fstream.close();
+		
+		// save file name
+		m_lastCSVFile = csvFile;
+		m_preferences.putValue(TABLE_VIEWER_CSV_FILE, m_lastCSVFile.getAbsolutePath());
+	}
+
+    /** Browse for a CSV file */
+    private File getCSVFile() {
+    	File lastFile =  m_lastCSVFile;
+        
+        // create a file chooser
+        JFileChooser chooser = new JFileChooser(lastFile);
+        // write CSV
+        chooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        
+        // pre-set
+        if (lastFile != null && lastFile.exists()) {
+        	chooser.setSelectedFile(lastFile);
+        }
+        
+        File file = null;
+
+        // prompt for a file
+        int opt = chooser.showSaveDialog(this);
+        
+        if (opt == JFileChooser.APPROVE_OPTION) {
+        	file = chooser.getSelectedFile();
+
+        	// check
+    		if (file.exists()) {
+    			// The file, {fileName}, already exists.
+    			// Are you sure you want to overwrite it?
+    			opt = JOptionPane.showConfirmDialog(this, 
+    					MessageFormat.format(s_res.getString("TableViewer.fileExistsMessage"), file.getName()),
+    					s_res.getString("TableViewer.fileExistsTitle"),
+    					JOptionPane.YES_NO_OPTION);
+    			
+    			if (opt != JOptionPane.YES_OPTION) {
+    				return null;
+    			}
+    		}
+        }
+        
+        return file;
+    }
 	
 	/** convert individual numbers into lists - e.g 1-3,5,7,10-12 */
 	public static String listToString(int [] numbers) {
@@ -1709,6 +1847,62 @@ public class TableViewer extends PrintableView  {
 	private class RowDataRenderer extends DefaultTableCellRenderer {
 		int m_defaultFontSize = -1;
 		
+		public String getStringValue(Object value, int row, int column) {
+			String stringValue = "";
+			if (column == m_rowNumbCol) {
+				stringValue = String.valueOf(row);
+	
+			} else if (value instanceof Node) {
+				Node node = (Node)value;
+				stringValue = node.getName();
+				
+			} else if (value instanceof LeafNodeSELink) {
+				stringValue = "<->";	
+				
+			} else if (value instanceof SemanticElement) {
+				SemanticElement se = (SemanticElement)value;
+				stringValue = se.getName();
+				// check for field name
+				RowData rowData = m_tableModel.getRowData(row);
+				if (rowData != null && rowData.field != null) {
+					// SemanticElement.fieldName
+					StringBuilder buf = new StringBuilder(se.getName());
+					buf.append('.').append(rowData.field.getName());
+					stringValue = buf.toString();
+				}
+
+			} else if (value instanceof SEtoBELink) {
+				SEtoBELink se = (SEtoBELink)value;
+				// <-- / --> / <-->
+				switch (se.direction) {
+				case None:
+					RowData rowData = m_tableModel.getRowData(row);
+					if (rowData != null && rowData.semanticElement != null
+							&& SemanticElementType.LOCAL.equals(rowData.semanticElement.getSemanticElementType())) {
+						stringValue = "Local";
+					}
+					break;
+				case Both:
+					stringValue = "<->";
+					break;
+				case ToMdmi:
+					stringValue = "<-";
+					break;
+				case FromMdmi:
+					stringValue = "->";
+					break;
+				}
+				
+			} else if (value instanceof MdmiBusinessElementReference) {
+				MdmiBusinessElementReference ber = (MdmiBusinessElementReference)value;
+				stringValue = ber.getName();
+				
+			} else if (value != null) {
+				stringValue = value.toString();
+			}
+			return stringValue;
+		}
+		
 		@Override
 		public Component getTableCellRendererComponent(JTable table,
 				Object value, boolean isSelected, boolean hasFocus, int row,
@@ -1719,6 +1913,8 @@ public class TableViewer extends PrintableView  {
 				m_defaultFontSize = font.getSize();
 			}
 			
+			String stringValue = getStringValue(value, row, column);
+			
 			int align = LEFT;
 			int style = Font.PLAIN;
 			int size = m_defaultFontSize;
@@ -1727,7 +1923,6 @@ public class TableViewer extends PrintableView  {
 			Color bgColor = isSelected ? table.getSelectionBackground() : table.getBackground();
 			
 			if (column == m_rowNumbCol) {
-				value = String.valueOf(row);
 				align = CENTER;
 				style = Font.ITALIC;
 				toolTip = "Row #" + row;
@@ -1737,7 +1932,6 @@ public class TableViewer extends PrintableView  {
 				
 			} else if (value instanceof Node) {
 				Node node = (Node)value;
-				value = node.getName();
 				icon = TreeNodeIcon.getTreeIcon(node.getClass());
 				// show path in tool tip
 				StringBuilder buf = new StringBuilder(node.getName());
@@ -1753,21 +1947,12 @@ public class TableViewer extends PrintableView  {
 				toolTip = buf.toString();
 				
 			} else if (value instanceof LeafNodeSELink) {
-				value = SemanticElementNode.DOUBLE_ARROW;	
+				stringValue = ""+SemanticElementNode.DOUBLE_ARROW;	
 				align = CENTER;
 				size = m_defaultFontSize + 4;
 				
 			} else if (value instanceof SemanticElement) {
 				SemanticElement se = (SemanticElement)value;
-				value = se.getName();
-				// check for field name
-				RowData rowData = m_tableModel.getRowData(row);
-				if (rowData != null && rowData.field != null) {
-					// SemanticElement.fieldName
-					StringBuilder buf = new StringBuilder(se.getName());
-					buf.append('.').append(rowData.field.getName());
-					value = buf.toString();
-				}
 				
 				icon = TreeNodeIcon.getTreeIcon(se.getClass());
 				toolTip = ClassUtil.createToolTip(se);
@@ -1777,26 +1962,20 @@ public class TableViewer extends PrintableView  {
 				// <-- / --> / <-->
 				switch (se.direction) {
 				case None:
-					value = "";
-					RowData rowData = m_tableModel.getRowData(row);
-					if (rowData != null && rowData.semanticElement != null
-							&& SemanticElementType.LOCAL.equals(rowData.semanticElement.getSemanticElementType())) {
-						value = "Local";
-					}
 					toolTip = "Un-linked";
 					break;
 				case Both:
-					value = SemanticElementNode.DOUBLE_ARROW;
+					stringValue = "" + SemanticElementNode.DOUBLE_ARROW;
 					size = m_defaultFontSize + 4;
 					toolTip = "SE To/From BER";
 					break;
 				case ToMdmi:
-					value = SemanticElementNode.LEFT_ARROW;
+					stringValue = "" + SemanticElementNode.LEFT_ARROW;
 					size = m_defaultFontSize + 4;
 					toolTip = "BER to SE";
 					break;
 				case FromMdmi:
-					value = SemanticElementNode.RIGHT_ARROW;
+					stringValue = "" + SemanticElementNode.RIGHT_ARROW;
 					size = m_defaultFontSize + 4;
 					toolTip = "SE to BER";
 					break;
@@ -1805,12 +1984,11 @@ public class TableViewer extends PrintableView  {
 				
 			} else if (value instanceof MdmiBusinessElementReference) {
 				MdmiBusinessElementReference ber = (MdmiBusinessElementReference)value;
-				value = ber.getName();
 				icon = TreeNodeIcon.getTreeIcon(ber.getClass());
 				toolTip = ClassUtil.createToolTip(ber);
 			}
 			
-			Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
+			Component c = super.getTableCellRendererComponent(table, stringValue, isSelected, hasFocus,
 					row, column);
 
 			
@@ -2000,8 +2178,12 @@ public class TableViewer extends PrintableView  {
 
 			try {
 				Object source = e.getSource();
-				if (source == m_refreshButton) {
+				if (source == m_toCSVButton) {
+					saveAsCSV();
+					
+				} else if (source == m_refreshButton) {
 					refreshTable();
+					
 				} else if (source == m_mainWindowButton) {
 					final Frame appFrame = SystemContext.getApplicationFrame();
 

@@ -138,6 +138,20 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
         }
     }
     
+    /** Modify the Referent Index based on the contents of a CSV file. The user will be prompted to provide
+     * the file.
+     * 
+     * The first line of the file provides the names of the fields of the Business Element Reference
+     * to be changed.
+     *
+     * The first column identifies the Business Element Reference to be modified; it must be either
+     * 'Unique Identifier', for the UID, or 'Name', for the current name.
+     * 
+     * The additional columns provide the data to be changed. The column name (in the first line) will designate
+     * which field (e.g. "Description").
+     * 
+     * @param sep	Field separator in the file
+     */
     public void reviseReferentIndex(char sep) {
     	Frame applicationFrame = SystemContext.getApplicationFrame();
     	// set cursor
@@ -195,6 +209,18 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
     	}
     }
     
+    
+    /** Modify the Referent Index based on the contents of the provided CSV file.
+     * 
+     * The first line of the file provides the names of the fields of the Business Element Reference
+     * to be changed.
+     *
+     * The first column identifies the Business Element Reference to be modified; it can be either
+     * 'Unique Identifier', for the UID, or 'Name', for the current name.
+     * 
+     * The additional columns provide the data to be changed. The column name (in the first line) will designate
+     * which field (e.g. "Description").
+     */
     public Collection<ModelInfo> reviseReferentIndex(File file, char sep) throws IOException {
 
         SelectionManager selectionManager = SelectionManager.getInstance();
@@ -238,12 +264,15 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		{
 			// find matching getXXX method
 			String condensedName = attributeName.replaceAll(" ", "");
+			String getMethodNameToMatch = "get" + condensedName;
+			String isMethodNameToMatch = "is" + condensedName;
 			
 			Method[] foundPair = null;
 			for (Method[] getSetPair : getSetMethods) {
-				String getMethodName = getSetPair[0].getName();
-				if (getMethodName.equalsIgnoreCase("get" + condensedName) ||
-						getMethodName.equalsIgnoreCase("is" + condensedName)) {
+				// look for a method with a name 'getXxxx' or 'isXxx'
+				String existingGetMethodName = getSetPair[0].getName();
+				if (existingGetMethodName.equalsIgnoreCase(getMethodNameToMatch) ||
+						existingGetMethodName.equalsIgnoreCase(isMethodNameToMatch)) {
 					foundPair = getSetPair;
 					break;
 				}
@@ -394,7 +423,7 @@ public class ReferentIndexToCSV extends SpreadSheetModelBuilder {
 		return valResults;
     }
 
-    // Export to CSV as BER Name, Description
+    /** Export a ReferentIndex to CSV as: UID, Name, Description, Read-Only, Reference (URI), Reference Datatype */
 	public void exportReferentIndex(File file, char separator) throws IOException {
 		FileOutputStream fstream = new FileOutputStream(file);
 		

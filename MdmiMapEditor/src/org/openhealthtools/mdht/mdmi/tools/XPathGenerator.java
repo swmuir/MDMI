@@ -315,14 +315,7 @@ public class XPathGenerator extends JFrame implements ActionListener {
     		int idsWithPath = 0;
 
     		// sort SEs by name
-			Comparator<SemanticElement> seCompare = new Comparator<SemanticElement> () {
-				@Override
-				public int compare(SemanticElement se1, SemanticElement se2) {
-					String name1 = se1.getName() == null ? "" : se1.getName();
-					String name2 = se2.getName() == null ? "" : se2.getName();
-					return name1.compareTo(name2);
-				}
-			};
+			Comparator<SemanticElement> seCompare = getSemanticElementComparator();
     		
     		// modify
     		for (MessageGroup group : groups) {
@@ -404,6 +397,19 @@ public class XPathGenerator extends JFrame implements ActionListener {
     		JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     	}
     }
+
+    
+    /** Get a comparator for Semantic Elements (by name) */
+	public static Comparator<SemanticElement> getSemanticElementComparator() {
+		return new Comparator<SemanticElement> () {
+			@Override
+			public int compare(SemanticElement se1, SemanticElement se2) {
+				String name1 = se1.getName() == null ? "" : se1.getName();
+				String name2 = se2.getName() == null ? "" : se2.getName();
+				return name1.compareTo(name2);
+			}
+		};
+	}
     
     /** Create an XPath for this business element */
 	public static String getXPathForElement(MessageGroup group, SemanticElement se) {
