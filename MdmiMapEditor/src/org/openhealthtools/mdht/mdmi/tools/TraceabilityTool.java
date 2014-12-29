@@ -36,7 +36,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
-import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.openhealthtools.mdht.mdmi.editor.common.UserPreferences;
@@ -49,6 +48,7 @@ import org.openhealthtools.mdht.mdmi.model.MdmiDatatype;
 import org.openhealthtools.mdht.mdmi.model.MdmiDomainDictionaryReference;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.MessageModel;
+import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
@@ -56,7 +56,7 @@ import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.reader.MapBuilderXMIDirect;
 
 /*
- * Tool to provide traceability information
+ * Tool to provide trace information
  */
 public class TraceabilityTool extends JFrame implements ActionListener {
 
@@ -72,6 +72,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private static final String DESCRIPTION_STATE = "DescriptionState";
 	private static final String CODELLIST_STATE = "CodeListState";
 	private static final String ABS_LOCATION_STATE = "AbsoluteLocationState";
+	private static final String ABS_NAME_STATE = "AbsoluteNameState";
+	private static final String CARDINALITY_STATE = "CardinalityState";
 	private static final String COMPUTED_VALUE_STATE = "ComputedValueState";
 	
 	/** Resource for localization */
@@ -88,7 +90,9 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private JCheckBox m_uniqueID = new JCheckBox(s_res.getString("TraceabilityTool.uniqueID"));
 	private JCheckBox m_description = new JCheckBox(s_res.getString("TraceabilityTool.description"));
 	private JCheckBox m_codeList = new JCheckBox(s_res.getString("TraceabilityTool.codeList"));
-	private JCheckBox m_absoluteLocation = new JCheckBox(s_res.getString("TraceabilityTool.absoluteLocation"));
+	private JCheckBox m_absoluteLocation = new JCheckBox(s_res.getString("TraceabilityTool.absolutePathLocation"));
+	private JCheckBox m_absoluteName = new JCheckBox(s_res.getString("TraceabilityTool.absolutePathName"));
+	private JCheckBox m_cardinality = new JCheckBox(s_res.getString("TraceabilityTool.cardinality"));
 	private JCheckBox m_computedValue = new JCheckBox(s_res.getString("TraceabilityTool.computedValue"));
 	
 	// Generate buttons
@@ -100,7 +104,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private UserPreferences m_pref = UserPreferences.getInstance("TraceabilityTool", null);
 	
 	/** field separator */
-	public static char SEPARATOR = ',';	// TODO: Future allow user to pick
+	public static char SEPARATOR = ',';
 	
 	public TraceabilityTool() {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -131,6 +135,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		//  - Optional Fields-------------------------
 		// | [x] Description     [x] Location         |
 		//  ------------------------------------------
+		//
 		//            [Generate]
 		
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -146,8 +151,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		gbc.gridwidth = 3;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.weightx = 1;
-		// Assign a unique identifier to all Business Element References in the specified file.
-		// Any Business Element Reference that already has a unique identifier will not be changed.
+		// Generate traceability information between standards and the Referent Index
 		WrappingDisplayText instructions = new WrappingDisplayText();
 		instructions.setText(s_res.getString("TraceabilityTool.instructions"));
 		main.add(instructions, gbc);
@@ -218,12 +222,16 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		optionalFields.add(m_description);
 		optionalFields.add(m_codeList);
 		optionalFields.add(m_absoluteLocation);
+		optionalFields.add(m_absoluteName);
+		optionalFields.add(m_cardinality);
 		optionalFields.add(m_computedValue);
 		// set state
 		m_uniqueID.setSelected(m_pref.getBooleanValue(UNIQUEID_STATE, true));
 		m_description.setSelected(m_pref.getBooleanValue(DESCRIPTION_STATE, true));
 		m_codeList.setSelected(m_pref.getBooleanValue(CODELLIST_STATE, true));
 		m_absoluteLocation.setSelected(m_pref.getBooleanValue(ABS_LOCATION_STATE, true));
+		m_absoluteName.setSelected(m_pref.getBooleanValue(ABS_NAME_STATE, true));
+		m_cardinality.setSelected(m_pref.getBooleanValue(CARDINALITY_STATE, true));
 		m_computedValue.setSelected(m_pref.getBooleanValue(COMPUTED_VALUE_STATE, true));
 
 		optionalFields.setBorder( BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
@@ -253,6 +261,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		m_description.addActionListener(this);
 		m_codeList.addActionListener(this);
 		m_absoluteLocation.addActionListener(this);
+		m_absoluteName.addActionListener(this);
+		m_cardinality.addActionListener(this);
 		m_computedValue.addActionListener(this);
 		
     	m_generateBtn.addActionListener(this);
@@ -279,6 +289,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		m_description.removeActionListener(this);
 		m_codeList.removeActionListener(this);
 		m_absoluteLocation.removeActionListener(this);
+		m_absoluteName.removeActionListener(this);
+		m_cardinality.removeActionListener(this);
 		m_computedValue.removeActionListener(this);
 		
     	m_generateBtn.removeActionListener(this);
@@ -531,26 +543,34 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		for (String direction : directions) {
 			writer.write(SEPARATOR);	// force a blank column between sections
 			
-			writer.write(direction + " Semantic Element Name");			// Column 6, 13
+			writer.write(direction + " Semantic Element Name");	
 			writer.write(SEPARATOR);
 			if (m_description.isSelected()) {
-				writer.write("Semantic Element Description");	// Column 7, 14
+				writer.write("Semantic Element Description");
 				writer.write(SEPARATOR);
 			}
-			writer.write("Data Type Name");					// Column 8, 15
+			writer.write("Data Type Name");
 			writer.write(SEPARATOR);
 			if (m_absoluteLocation.isSelected()) {
-				writer.write("Absolute Location");				// Column 9, 16
+				writer.write("Absolute Location");
+				writer.write(SEPARATOR);
+			}
+			if (m_absoluteName.isSelected()) {
+				writer.write("Absolute Name");
+				writer.write(SEPARATOR);
+			}
+			if (m_cardinality.isSelected()) {
+				writer.write("Cardinality");
 				writer.write(SEPARATOR);
 			}
 			if (m_codeList.isSelected()) {
-				writer.write("Code List");						// Column 10, 17
+				writer.write("Code List");
 				writer.write(SEPARATOR);
 			}
-			writer.write("Relationship");					// Column 11, 18 (Java Script?)
+			writer.write("Relationship");
 			writer.write(SEPARATOR);
 			if (m_computedValue.isSelected()) {
-				writer.write("Computed Value");					// Column 12, 19
+				writer.write("Computed Value");	
 				writer.write(SEPARATOR);
 			}
 		}
@@ -617,7 +637,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	 * @throws IOException */
 	private int writeBusinessElementData(MdmiBusinessElementReference be, Map<SemanticElement, List<ConversionRule>> sourceSEs,
 			Map<SemanticElement, List<ConversionRule>> targetSEs,
-			MdmiDatatype dataType, Field field, BufferedWriter writer) throws IOException {
+			MdmiDatatype beDataType, Field beField, BufferedWriter writer) throws IOException {
 
 		
 		int linesWritten = 0;
@@ -627,28 +647,21 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		}
 		
 		// Attribute
-		String attributeName = dataType.getTypeName();
-		if (field != null) {
+		String attributeName = beDataType.getTypeName();
+		if (beField != null) {
 			// dataTypeName.fieldName
-			attributeName  += "." + field.getName();
+			attributeName  += "." + beField.getName();
 		}
-		
-		// Keep track of target rules identified
-//		ArrayList<ConversionRule> targetRulesIdentified = new ArrayList<ConversionRule>();
 		
 		//----------------------------------------------
 		// First, look at each source element/rule.
 		//----------------------------------------------
 		for (SemanticElement sourceSE : sourceSEs.keySet()) {
+			MdmiDatatype seDatatype = sourceSE.getDatatype();
 			
 			// need to look at rules
 			List<ConversionRule> sourceRules = sourceSEs.get(sourceSE);
 			for (ConversionRule sourceRule : sourceRules) {
-				//--------------------------------------
-				// Find Target
-				//--------------------------------------
-				ConversionRule targetRule = findTargetConversionRule(sourceSE, sourceRule, targetSEs);
-
 				// Business Element Data
 				writeBusinessElementFields(be, attributeName, writer);
 				
@@ -656,21 +669,34 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 				writer.write(SEPARATOR);
 				
 				// Source Semantic Element
-				writeSemanticElementFields(sourceSE, sourceRule, writer);
+				Field seField = null;
+				if (seDatatype == beDataType) {
+					// isomorphic
+					seField = beField;
+				}
+				
+				writeSemanticElementFields(sourceSE, seField, sourceRule, writer);
 
 
 				// Target Semantic Element
+				//--------------------------------------
+				// Find Target
+				//--------------------------------------
+				ConversionRule targetRule = findTargetConversionRule(be, sourceSE, beField, sourceRule, targetSEs);
+
 				if (targetRule != null) {
 					SemanticElement targetSE = targetRule.getOwner();
 
 					// extra
 					writer.write(SEPARATOR);
-					writeSemanticElementFields(targetSE, targetRule, writer);
+					seField = null;
+					if (targetSE.getDatatype() == beDataType) {
+						// isomorphic
+						seField = beField;
+					}
+					writeSemanticElementFields(targetSE, seField, targetRule, writer);
 					
-					// mark it
-//					if (!targetRulesIdentified.contains(targetRule)) {
-//						targetRulesIdentified.add(targetRule);
-//					}
+
 					// remove it
 					List<ConversionRule> list =  targetSEs.get(targetRule.getOwner());
 					list.remove(targetRule);
@@ -682,30 +708,34 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			}
 		}
 		
-		// add Target Semantic Elements that weren't traced
-		for (SemanticElement targetSE : targetSEs.keySet()) {
-			List<ConversionRule> targetRules = targetSEs.get(targetSE);
-			for (ConversionRule targetRule: targetRules) {
-//				if (targetRulesIdentified.contains(targetRule))	{
-//					continue;
-//				}
+		// add Target Semantic Elements if BE wan't traced
+		if (linesWritten == 0) {
+			for (SemanticElement targetSE : targetSEs.keySet()) {
+				List<ConversionRule> targetRules = targetSEs.get(targetSE);
+				for (ConversionRule targetRule: targetRules) {
 
-				// Business Element Data
-				writeBusinessElementFields(be, attributeName, writer);
+					// Business Element Data
+					writeBusinessElementFields(be, attributeName, writer);
 
-				// Source Semantic Element (blanks)
-				writer.write(SEPARATOR);
-				writeSemanticElementFields(null, null, writer);
+					// Source Semantic Element (blanks)
+					writer.write(SEPARATOR);
+					writeSemanticElementFields(null, null, null, writer);
 
-				// Target Semantic Element
-				writer.write(SEPARATOR);
-				writeSemanticElementFields(targetSE, targetRule, writer);
+					// Target Semantic Element
+					Field seField = null;
+					if (targetSE.getDatatype() == beDataType) {
+						// isomorphic
+						seField = beField;
+					}
+					writer.write(SEPARATOR);
+					writeSemanticElementFields(targetSE, seField, targetRule, writer);
 
 
-				writer.newLine();
-				writer.flush();
+					writer.newLine();
+					writer.flush();
+				}
+
 			}
-			
 		}
 		
 		return linesWritten;
@@ -731,7 +761,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	//		var target = To_ProblemCode.getValue();
 	//		target.setValue('code', source);
 	//
-	private static ConversionRule findTargetConversionRule(SemanticElement sourceSE, ConversionRule sourceRule,
+	private static ConversionRule findTargetConversionRule(MdmiBusinessElementReference ber,
+			SemanticElement sourceSE, Field field,  ConversionRule sourceRule,
 			Map<SemanticElement, List<ConversionRule>> targetSEs) {
 		MdmiDatatype srcDatatype = sourceSE.getDatatype();
 		
@@ -742,6 +773,15 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			for (ConversionRule targetRule: targetRules) {
 				if (srcDatatype.getTypeName().equals(targetDatatype.getTypeName())) {
 					return targetRule;
+				}
+				
+				String exp = targetRule.getRule();
+				// look for text in the form "set value to From_<beName>.<field>"
+				if (field != null && exp != null && exp.length() > 0) {
+					String textToMatch = "set value to From_" + ber.getName() + "." + field.getName();
+					if (exp.contains(textToMatch)) {
+						return targetRule;
+					}
 				}
 			}
 			
@@ -791,8 +831,11 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	}
 
 	/** Write the fields of a Semantic Element. If a null SE is provided, blanks will be written */
-	private void writeSemanticElementFields(SemanticElement se, ConversionRule rule,
+	private void writeSemanticElementFields(SemanticElement se, Field field, ConversionRule rule,
 			BufferedWriter writer) throws IOException {
+		
+		// Get syntax node
+		Node syntaxNode = (se==null) ? null : se.getSyntaxNode();
 		
 		//1. Semantic Element Name
 		writer.write(se == null ? "" : se.getName());	
@@ -809,22 +852,71 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		}
 		
 		// 3. Data Type Name
-		// TODO: Add field/attribute data
 		if (se != null && se.getDatatype() != null) {
 			writer.write(se.getDatatype().getTypeName());
+			if (field != null) {
+				// dataTypeName.fieldName
+				writer.write(".");
+				writer.write(field.getName());
+			}
 		} else {
 			writer.write("");
 		}
 		writer.write(SEPARATOR);
 		
 		// 4. Absolute Location
-		// TODO: what is this?
 		if (m_absoluteLocation.isSelected()) {
-			writer.write("?");
+			// walk parent
+			StringBuilder buf = new StringBuilder();
+			Node parentNode = syntaxNode;
+			while (parentNode != null) {
+				// add location
+				if (buf.length() > 0) buf.insert(0, File.separatorChar);
+				buf.insert(0, parentNode.getLocation());
+				
+				parentNode = parentNode.getParentNode();
+			}
+			writer.write(buf.toString());
+			writer.write(SEPARATOR);
+		}
+
+		// 5. Absolute Name
+		if (m_absoluteName.isSelected()) {
+			// walk parent
+			StringBuilder buf = new StringBuilder();
+			Node parentNode = syntaxNode;
+			while (parentNode != null) {
+				// add name
+				if (buf.length() > 0) buf.insert(0, '.');
+				buf.insert(0, parentNode.getName());
+				
+				parentNode = parentNode.getParentNode();
+			}
+			writer.write(buf.toString());
 			writer.write(SEPARATOR);
 		}
 		
-		// 5. Code List
+		// 6. Cardinality
+		if (m_cardinality.isSelected()) {
+			StringBuilder buf = new StringBuilder();
+			if (syntaxNode != null) {
+				int min = syntaxNode.getMinOccurs();
+				int max = syntaxNode.getMaxOccurs();
+				if (min == 0 && max == Integer.MAX_VALUE) {
+					buf.append("unbounded");
+				} else {
+					// min..max
+					buf.append(min).append("..");
+					if (max != Integer.MAX_VALUE) {
+						buf.append(max);
+					} 
+				}
+			}
+			writer.write(buf.toString());
+			writer.write(SEPARATOR);
+		}
+		
+		// 7. Code List
 		if (m_codeList.isSelected()) {
 			if (se != null && se.getEnumValueSet() != null) {
 				writer.write(se.getEnumValueSet());
@@ -834,8 +926,9 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			writer.write(SEPARATOR);
 		}
 		
-		// 6. Java Script
+		// 8. Java Script
 		if (rule != null && rule.getRule() != null && !rule.getRule().isEmpty()) {
+			// script can contain special characters, so enclose in quotes
 			writer.write("\"");
 			writer.write(rule.getRule());
 			writer.write("\"");
@@ -844,7 +937,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		}
 		writer.write(SEPARATOR);
 		
-		// 7. Computed Value
+		// 9. Computed Value
 		if (m_computedValue.isSelected()) {
 			if (se != null && se.getComputedValue() != null && se.getComputedValue().getExpression() != null) {
 				writer.write(se.getComputedValue().getExpression());
@@ -970,6 +1063,9 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			if (file != null) {
 				m_outputFileName.setText(file.getAbsolutePath());
 			}
+
+		} else if (e.getSource() == m_uniqueID) {
+			m_pref.putBooleanValue(UNIQUEID_STATE, m_description.isSelected());
 			
 		} else if (e.getSource() == m_description) {
 			// save state
@@ -982,6 +1078,12 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		} else if (e.getSource() == m_absoluteLocation) {
 			// save state
 			m_pref.putBooleanValue(ABS_LOCATION_STATE, m_absoluteLocation.isSelected());
+			
+		} else if (e.getSource() == m_absoluteName) {
+			m_pref.putBooleanValue(ABS_NAME_STATE, m_absoluteName.isSelected());
+			
+		} else if (e.getSource() == m_cardinality) {
+			m_pref.putBooleanValue(CARDINALITY_STATE, m_cardinality.isSelected());
 			
 		} else if (e.getSource() == m_computedValue) {
 			// save state
