@@ -82,10 +82,10 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.tools.Local");
 	
 	private JTextField m_sourceFileName = new JTextField(35);
-	private JTextField m_targetFileName = new JTextField(35);
+	private JTextField m_targetFileName[] = new JTextField[] {new JTextField(35), new JTextField(35)};
 	private JTextField m_outputFileName = new JTextField(35);
 	private JButton    m_browseSourceBtn = new JButton("...");
-	private JButton    m_browseTargetBtn = new JButton("...");
+	private JButton    m_browseTargetBtn[] = new JButton[] {new JButton("..."), new JButton("...")};
 	private JButton    m_browseOutputBtn = new JButton("...");
 	
 	// Optional Fields
@@ -109,7 +109,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	
 	// Found SEs
 	ArrayList<SemanticElement> m_foundSourceSes = new ArrayList<SemanticElement>();
-	ArrayList<SemanticElement> m_foundTargetSes = new ArrayList<SemanticElement>();
+	ArrayList<SemanticElement> m_foundTarget1Ses = new ArrayList<SemanticElement>();
+	ArrayList<SemanticElement> m_foundTarget2Ses = new ArrayList<SemanticElement>();
 	
 	private UserPreferences m_pref = UserPreferences.getInstance("TraceabilityTool", null);
 	
@@ -190,23 +191,27 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		gbc.insets.left = 10;
 		
 		gbc.insets.top = 0;
-		gbc.gridx = 0;
-		gbc.gridy++;
+		
+		for (int i=0; i<2; i++) {
+			gbc.gridx = 0;
+			gbc.gridy++;
 
-		// Target File: [__________________________][...]
-		gbc.weightx = 0;
-		gbc.fill = GridBagConstraints.NONE;
-		main.add(new JLabel(s_res.getString("TraceabilityTool.targetFile")), gbc);
-		gbc.gridx++;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.weightx = 1.0;
-		main.add(m_targetFileName, gbc);
-		gbc.gridx++;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.weightx = 0;
-		gbc.insets.left = 0;
-		main.add(m_browseTargetBtn, gbc);
-		gbc.insets.left = 10;
+			// Target File (1): [__________________________][...]
+			gbc.weightx = 0;
+			gbc.fill = GridBagConstraints.NONE;
+			String textLabel = MessageFormat.format(s_res.getString("TraceabilityTool.targetFileI"), (i+1));
+			main.add(new JLabel(textLabel), gbc);
+			gbc.gridx++;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.weightx = 1.0;
+			main.add(m_targetFileName[i], gbc);
+			gbc.gridx++;
+			gbc.fill = GridBagConstraints.NONE;
+			gbc.weightx = 0;
+			gbc.insets.left = 0;
+			main.add(m_browseTargetBtn[i], gbc);
+			gbc.insets.left = 10;
+		}
 		
 		gbc.insets.top = 10;
 		gbc.gridx = 0;
@@ -290,7 +295,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		
 
     	m_browseSourceBtn.addActionListener(this);
-    	m_browseTargetBtn.addActionListener(this);
+    	m_browseTargetBtn[0].addActionListener(this);
+    	m_browseTargetBtn[1].addActionListener(this);
     	m_browseOutputBtn.addActionListener(this);
     	
     	m_uniqueID.addActionListener(this);
@@ -321,7 +327,8 @@ public class TraceabilityTool extends JFrame implements ActionListener {
         
 		// cleanup
     	m_browseSourceBtn.removeActionListener(this);
-    	m_browseTargetBtn.removeActionListener(this);
+    	m_browseTargetBtn[0].removeActionListener(this);
+    	m_browseTargetBtn[1].removeActionListener(this);
     	m_browseOutputBtn.removeActionListener(this);
     	
     	m_uniqueID.removeActionListener(this);
@@ -397,16 +404,40 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     }
     
     /** Open the input files and produce the output file */
-    private void generateOutputData(String srcFileName, String targetFileName) {
+    private void generateOutputData() {
+
+    	String srcFileName = m_sourceFileName.getText().trim();
+    	String targetFileName1 = m_targetFileName[0].getText().trim();
+    	String targetFileName2 = m_targetFileName[1].getText().trim();
+    	
     	try {
     		// check input files
+    		int numFiles = 2;
     		File srcFile = new File(srcFileName);
-    		File targetFile = new File(targetFileName);
+    		File targetFile1 = new File(targetFileName1);
+    		// File2 is optional
+    		File targetFile2 = null;
+    		if (!targetFileName2.isEmpty()) {
+    			numFiles++;
+    			targetFile2 = new File(targetFileName2);
+    		}
 
-    		for (int i=0; i<2; i++) {
+    		for (int i=0; i<numFiles; i++) {
     			// validate file
-    			String inFileName = (i==0) ? srcFileName :  targetFileName;
-    			File inputFile = (i==0) ? srcFile :  targetFile;
+    			String inFileName;
+    			File inputFile;
+    			if (i == 0) {
+    				inFileName = srcFileName;
+    				inputFile = srcFile;
+    			} else if (i == 1) {
+    				inFileName = targetFileName1;
+    				inputFile = targetFile1;
+    				
+    			} else {
+    				inFileName = targetFileName2;
+    				inputFile = targetFile2;
+    				
+    			}
     			if (inFileName.isEmpty()) {
     				// No input file has been specified."
     				JOptionPane.showMessageDialog(this, s_res.getString("TraceabilityTool.noInputMessage"),
@@ -423,8 +454,9 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     				return;
     			}
     		}
+    		
     		// check for duplicate names
-    		if (srcFile.equals(targetFile)) {
+    		if (srcFile.equals(targetFile1) || srcFile.equals(targetFile2)) {
     			//The input files must be different.
     			JOptionPane.showMessageDialog(this, s_res.getString("TraceabilityTool.duplicateInputMessage"),
     					s_res.getString("TraceabilityTool.duplicateInputTitle"), JOptionPane.ERROR_MESSAGE);
@@ -461,7 +493,11 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     		// read
     		ModelValidationResults results = new ModelValidationResults();
     		List<MessageGroup> srcGroups = MapBuilderXMIDirect.build(srcFile, results);
-    		List<MessageGroup> targetGroups = MapBuilderXMIDirect.build(targetFile, results);
+    		List<MessageGroup> targetGroups1 = MapBuilderXMIDirect.build(targetFile1, results);
+    		List<MessageGroup> targetGroups2 = null;
+    		if (targetFile2 != null) {
+    			targetGroups2 = MapBuilderXMIDirect.build(targetFile2, results);
+    		}
     		
     		// there should only be one message group
     		StringBuilder warning = new StringBuilder();
@@ -470,13 +506,21 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 				warning.append(MessageFormat.format(s_res.getString("TraceabilityTool.multipleGroupsMessage"),
 						srcFileName));
     		}
-    		if (targetGroups.size() != 1) {
+    		if (targetGroups1.size() != 1) {
     			// The file, {0}, contains multiple message groups. Only the first will be used.
     			if (warning.length() > 0) {
     				warning.append("\n");
     			}
 				warning.append(MessageFormat.format(s_res.getString("TraceabilityTool.multipleGroupsMessage"),
-						targetFileName));
+						targetFileName1));
+    		}
+    		if (targetGroups2 != null && targetGroups2.size() != 1) {
+    			// The file, {0}, contains multiple message groups. Only the first will be used.
+    			if (warning.length() > 0) {
+    				warning.append("\n");
+    			}
+				warning.append(MessageFormat.format(s_res.getString("TraceabilityTool.multipleGroupsMessage"),
+						targetFileName2));
     		}
     		if (warning.length() > 0) {
     			JOptionPane.showMessageDialog(this, warning,
@@ -499,12 +543,26 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     			writer.write("Source: ");
     			writer.write(srcFile.getName());
     			writer.newLine();
-    			writer.write("Target: ");
-    			writer.write(targetFile.getName());
-    			writer.newLine();
-    			writer.flush();
+    			if (targetFile2 != null) {
+        			writer.write("Target 1: ");
+        			writer.write(targetFile1.getName());
+        			writer.newLine();
+        			writer.flush();
+        			writer.write("Target 2: ");
+        			writer.write(targetFile2.getName());
+        			writer.newLine();
+        			writer.flush();
+    				
+    			} else {
+        			writer.write("Target: ");
+        			writer.write(targetFile1.getName());
+        			writer.newLine();
+        			writer.flush();
+    			}
 
-    			beCount = Math.max(beCount, generateOutput(srcGroups.get(0), targetGroups.get(0), writer));
+    			beCount = Math.max(beCount, 
+    					generateOutput(srcGroups.get(0), targetGroups1.get(0), 
+    							targetGroups2 == null ? null :targetGroups2.get(0), writer));
     		}
 
     		if (m_sourceToTarget.isSelected() && m_targetToSource.isSelected()) {
@@ -516,14 +574,14 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     		//---------------------------------------
     		if (m_targetToSource.isSelected()) {
     			writer.write("Source: ");
-    			writer.write(targetFile.getName());
+    			writer.write(targetFile1.getName());
     			writer.newLine();
     			writer.write("Target: ");
     			writer.write(srcFile.getName());
     			writer.newLine();
     			writer.flush();
 
-    			beCount = Math.max(beCount, generateOutput(targetGroups.get(0), srcGroups.get(0), writer));
+    			beCount = Math.max(beCount, generateOutput(targetGroups1.get(0), srcGroups.get(0), null, writer));
     		}
 
     		//---------------------------------------
@@ -564,7 +622,9 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     /** write the data from the two input groups 
      * @return the number of business elements mapped */
     
-	private int generateOutput(MessageGroup sourceGroup, MessageGroup targetGroup, BufferedWriter writer)
+	private int generateOutput(MessageGroup sourceGroup, MessageGroup targetGroup1, 
+			MessageGroup targetGroup2, // optional
+			BufferedWriter writer)
 			throws FileNotFoundException, IOException {
 
 		//------------------------------------
@@ -588,8 +648,12 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			writer.write(SEPARATOR);
 		}
 
+		// Semantic Element
 		// Source and Target
 		String [] directions = {"Source", "Target"};
+		if (targetGroup2 != null) {
+			directions = new String[]{"Source", "Target1", "Target2"};
+		}
 		for (String direction : directions) {
 			writer.write(SEPARATOR);	// force a blank column between sections
 			
@@ -653,14 +717,24 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			}
 			
 			// find semantic elements that reference this BER as a target
-			Map<SemanticElement, List<ConversionRule>> targetSEs = findSemanticElements(be, targetGroup, false);
-			if (targetSEs.isEmpty()) {
+			Map<SemanticElement, List<ConversionRule>> target1SEs = findSemanticElements(be, targetGroup1, false);
+			if (target1SEs.isEmpty()) {
 				continue;
+			}
+			
+			// find semantic elements that reference this BER as a target
+			Map<SemanticElement, List<ConversionRule>> target2SEs = null;
+			if (targetGroup2 != null) {
+				target2SEs = findSemanticElements(be, targetGroup2, false);
+				if (target2SEs.isEmpty()) {
+					continue;
+				}
 			}
 			
 			// clear list
 			m_foundSourceSes.clear();
-			m_foundTargetSes.clear();
+			m_foundTarget1Ses.clear();
+			m_foundTarget2Ses.clear();
 			
 			// If dataType is complex, write an entry for each attribute of the data type
 			MdmiDatatype dataType = be.getReferenceDatatype();
@@ -670,17 +744,17 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 				if (fields == null || fields.isEmpty()) {
 					// no fields
 					linesWritten++;
-					writeBusinessElementData(be, dataType, null, sourceSEs, targetSEs, writer);
+					writeBusinessElementData(be, dataType, null, sourceSEs, target1SEs, target2SEs, writer);
 				} else {
 					for (Field field : fields) {
 						// will be formatted as typeName.attribute
 						linesWritten++;
-						writeBusinessElementData(be, dataType, field, sourceSEs, targetSEs, writer);
+						writeBusinessElementData(be, dataType, field, sourceSEs, target1SEs, target2SEs, writer);
 					}
 				}
 			} else {
 				linesWritten++;
-				writeBusinessElementData(be, dataType, null, sourceSEs, targetSEs, writer);
+				writeBusinessElementData(be, dataType, null, sourceSEs, target1SEs, target2SEs, writer);
 			}
 
 			//---------------------------------------------------
@@ -708,11 +782,11 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 					writer.flush();
 				}
 			}
-			for (SemanticElement semanticElement : targetSEs.keySet()) {
-				if (m_foundTargetSes.contains(semanticElement)) {
+			for (SemanticElement semanticElement : target1SEs.keySet()) {
+				if (m_foundTarget1Ses.contains(semanticElement)) {
 					continue;
 				}
-				List<ConversionRule> ruleList = targetSEs.get(semanticElement);
+				List<ConversionRule> ruleList = target1SEs.get(semanticElement);
 				for (ConversionRule rule : ruleList) {
 
 					// write BE
@@ -730,6 +804,34 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 					writer.flush();
 				}
 			}
+			if (target2SEs != null) {
+				for (SemanticElement semanticElement : target2SEs.keySet()) {
+					if (m_foundTarget2Ses.contains(semanticElement)) {
+						continue;
+					}
+					List<ConversionRule> ruleList = target2SEs.get(semanticElement);
+					for (ConversionRule rule : ruleList) {
+
+						// write BE
+						writeBusinessElementFields(be, dataType.getTypeName(), writer);
+						writer.write(SEPARATOR);
+
+						// write empty Source
+						writeSemaniticElementRule(null, null, null, writer);
+						writer.write(SEPARATOR);
+
+						// write empty Target 1
+						writeSemaniticElementRule(null, null, null, writer);
+						writer.write(SEPARATOR);
+
+						// write Target 2
+						writeSemaniticElementRule(semanticElement.getDatatype(), null, rule, writer);
+
+						writer.newLine();
+						writer.flush();
+					}
+				}
+			}
 
 			// put a new line between BEs
 			writer.newLine();
@@ -742,11 +844,16 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	 * @throws IOException */
 	private void writeBusinessElementData(MdmiBusinessElementReference be, MdmiDatatype beDataType, Field beField, 
 			Map<SemanticElement, List<ConversionRule>> sourceSEs,
-			Map<SemanticElement, List<ConversionRule>> targetSEs,
+			Map<SemanticElement, List<ConversionRule>> target1SEs,
+			Map<SemanticElement, List<ConversionRule>> target2SEs,	// optional
 			BufferedWriter writer) throws IOException {
 		
 		
-		if (sourceSEs.isEmpty() || targetSEs.isEmpty()) {
+		if (sourceSEs.isEmpty() || target1SEs.isEmpty()) {
+			return;
+		}
+		
+		if (target2SEs != null &&  target2SEs.isEmpty()) {
 			return;
 		}
 		
@@ -760,8 +867,12 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		// 1. Find Source 
 		ConversionRule foundSourceRule = findConversionRule(be, beField, sourceSEs);
 		
-		// 2. Find Target
-		ConversionRule foundTargetRule = findConversionRule(be, beField, targetSEs);
+		// 2. Find Target(s)
+		ConversionRule foundTarget1Rule = findConversionRule(be, beField, target1SEs);
+		ConversionRule foundTarget2Rule = null;
+		if (target2SEs != null) {
+			foundTarget2Rule = findConversionRule(be, beField, target2SEs);
+		}
 		
 		// 3.  write BE
 		writeBusinessElementFields(be, attributeName, writer);
@@ -774,10 +885,20 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		}
 		writer.write(SEPARATOR);
 		
-		// 5. write Target
-		writeSemaniticElementRule(beDataType, beField, foundTargetRule, writer);
-		if (foundTargetRule != null) {
-			m_foundTargetSes.add(foundTargetRule.getOwner());
+		// 5. write Target 1
+		writeSemaniticElementRule(beDataType, beField, foundTarget1Rule, writer);
+		if (foundTarget1Rule != null) {
+			m_foundTarget1Ses.add(foundTarget1Rule.getOwner());
+		}
+
+		// 6. write Target 2
+		if (target2SEs != null) {
+			writer.write(SEPARATOR);
+
+			writeSemaniticElementRule(beDataType, beField, foundTarget2Rule, writer);
+			if (foundTarget2Rule != null) {
+				m_foundTarget2Ses.add(foundTarget2Rule.getOwner());
+			}
 		}
 
 		writer.newLine();
@@ -1124,10 +1245,16 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 				m_sourceFileName.setText(file.getAbsolutePath());
 			}
 			
-		} else if (source == m_browseTargetBtn) {
+		} else if (source == m_browseTargetBtn[0]) {
 			File file = getFile(true);
 			if (file != null) {
-				m_targetFileName.setText(file.getAbsolutePath());
+				m_targetFileName[0].setText(file.getAbsolutePath());
+			}
+			
+		} else if (source == m_browseTargetBtn[1]) {
+			File file = getFile(true);
+			if (file != null) {
+				m_targetFileName[1].setText(file.getAbsolutePath());
 			}
 			
 		} else if (source == m_browseOutputBtn) {
@@ -1181,15 +1308,25 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			
 			
 		} else if (source == m_generateBtn) {
-			generateOutputData( m_sourceFileName.getText().trim(), m_targetFileName.getText().trim());
+			generateOutputData();
 		}
 		
 		// enable generate buttons if we have files
 		m_generateBtn.setEnabled(false);
 		
-		if (!m_sourceFileName.getText().trim().isEmpty() && !m_targetFileName.getText().trim().isEmpty() &&
+		if (!m_sourceFileName.getText().trim().isEmpty() && !m_targetFileName[0].getText().trim().isEmpty() &&
 				!m_outputFileName.getText().trim().isEmpty()) {
 			m_generateBtn.setEnabled(true);
+		}
+		
+		// disable Target-To-Source if we have a second target file
+		m_sourceToTarget.setEnabled(true);
+		m_targetToSource.setEnabled(true);
+		if (!m_targetFileName[1].getText().trim().isEmpty()) {
+			m_sourceToTarget.setEnabled(false);
+			m_targetToSource.setEnabled(false);
+			m_sourceToTarget.setSelected(true);
+			m_targetToSource.setSelected(false);
 		}
 	}
 	
