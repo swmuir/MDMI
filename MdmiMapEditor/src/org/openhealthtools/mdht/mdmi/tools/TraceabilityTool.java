@@ -60,6 +60,12 @@ import org.openhealthtools.mdht.mdmi.model.xmi.direct.reader.MapBuilderXMIDirect
  */
 public class TraceabilityTool extends JFrame implements ActionListener {
 
+	/** Field separator for Absolute Name */
+	private static final char NAME_SEPARATOR = '.';
+
+	/** Field separator for Absolute Location */
+	private static final char PATH_SEPARATOR = '/';
+	
 	private static final String XMI_EXTENSION = "xmi";
 	private static final String CSV_EXTENSION = "csv";
 	
@@ -956,25 +962,54 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 
 		String exp = rule.getRule();
 		StringBuilder textToMatch = new StringBuilder();
+		StringBuilder altTextToMatch = new StringBuilder();
 		if (beField != null && exp != null && exp.length() > 0) {
-			//String textToMatch = "set value to From_" + ber.getName() + "." + beField.getName();
+
 			if (rule instanceof ToMessageElement) {
 				// look for text in the form "set value to From_<beName>.<field>"
 				textToMatch.append("set value to ").append("From_");
 				textToMatch.append(ber.getName()).append('.').append(beField.getName());
 				
+				if (exp.contains(textToMatch.toString())) {
+					return true;
+				}
+
+				// now look for text like this:
+				//var source = From_DocumentID.getValue();
+				//var target = value.getXValue();
+				//target.setValue(source.getValue('root'));
+				textToMatch.setLength(0);
+				textToMatch.append("source = ").append("From_").append(ber.getName()).append(".getValue()");
+				altTextToMatch.append("source.getValue('").append(beField.getName()).append("'");
+
+				if (exp.contains(textToMatch.toString()) && exp.contains(altTextToMatch.toString())) {
+					return true;
+				}
+								
 			} else if (rule instanceof ToBusinessElement) {
 				// look for text in the form "set To_<beName>.<field> to value"
 				textToMatch.append("set ").append("To_");
 				textToMatch.append(ber.getName()).append('.').append(beField.getName());
 				textToMatch.append(" to value");
 				
+				if (exp.contains(textToMatch.toString())) {
+					return true;
+				}
+
+				// now look for text like this:
+				//var source = value.value();
+				//var target = To_DocumentID.getValue();
+				//target.setValue('root', source);
+				textToMatch.setLength(0);
+				textToMatch.append("target = ").append("To_").append(ber.getName()).append(".getValue()");
+				altTextToMatch.append("target.setValue('").append(beField.getName()).append("'");
+
+				if (exp.contains(textToMatch.toString()) && exp.contains(altTextToMatch.toString())) {
+					return true;
+				}
+				
 			} else {
 				return false;
-			}
-			
-			if (exp.contains(textToMatch.toString())) {
-				return true;
 			}
 		}
 		
@@ -1063,7 +1098,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			Node parentNode = syntaxNode;
 			while (parentNode != null) {
 				// add location
-				if (buf.length() > 0) buf.insert(0, File.separatorChar);
+				if (buf.length() > 0) buf.insert(0, PATH_SEPARATOR);
 				buf.insert(0, parentNode.getLocation());
 				
 				parentNode = parentNode.getParentNode();
@@ -1079,7 +1114,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			Node parentNode = syntaxNode;
 			while (parentNode != null) {
 				// add name
-				if (buf.length() > 0) buf.insert(0, '.');
+				if (buf.length() > 0) buf.insert(0, NAME_SEPARATOR);
 				buf.insert(0, parentNode.getName());
 				
 				parentNode = parentNode.getParentNode();
