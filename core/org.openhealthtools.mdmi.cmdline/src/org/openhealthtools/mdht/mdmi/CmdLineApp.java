@@ -120,7 +120,9 @@ public class CmdLineApp {
 			final ArrayList<String> elements = new ArrayList<String>();
 			String[] ss = cnvElm.split(";");
 			for (String s : ss) {
-				elements.add(s);
+				if (s != null && s.trim().length() > 0) {
+					elements.add(s);
+				}
 			}
 
 			// 4. load the maps into the runtime.
