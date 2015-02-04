@@ -50,6 +50,7 @@ import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.model.MessageModel;
 import org.openhealthtools.mdht.mdmi.model.Node;
 import org.openhealthtools.mdht.mdmi.model.SemanticElement;
+import org.openhealthtools.mdht.mdmi.model.SemanticElementRelationship;
 import org.openhealthtools.mdht.mdmi.model.ToBusinessElement;
 import org.openhealthtools.mdht.mdmi.model.ToMessageElement;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
@@ -81,8 +82,13 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private static final String ABS_NAME_STATE = "AbsoluteNameState";
 	private static final String CARDINALITY_STATE = "CardinalityState";
 	private static final String COMPUTED_VALUE_STATE = "ComputedValueState";
+	private static final String RELATED_SE_STATE = "RelatedSeState";
+//	private static final String RULE_STATE = "RuleState";
+	
 	private static final String SOURCE_TO_TARGET_STATE = "SourceToTargetState";
 	private static final String TARGET_TO_SOURCE_STATE = "TargetToSourceState";
+	
+	private static final String HIDE_UNMAPPED_STATE = "HideUnmappedState";
 	
 	/** Resource for localization */
 	private static ResourceBundle s_res = ResourceBundle.getBundle("org.openhealthtools.mdht.mdmi.tools.Local");
@@ -102,10 +108,37 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private JCheckBox m_absoluteName = new JCheckBox(s_res.getString("TraceabilityTool.absolutePathName"));
 	private JCheckBox m_cardinality = new JCheckBox(s_res.getString("TraceabilityTool.cardinality"));
 	private JCheckBox m_computedValue = new JCheckBox(s_res.getString("TraceabilityTool.computedValue"));
+	private JCheckBox m_relatedSE = new JCheckBox(s_res.getString("TraceabilityTool.relatedSE"));
+	
+	/** structure to map an optional field check box to the property */
+	private static class OptionalField {
+		public String propertyName;
+		public JCheckBox checkBox;
+		public OptionalField(String propertyName, JCheckBox checkBox) {
+			this.propertyName = propertyName;
+			this.checkBox = checkBox;
+		}
+	}
+	
+	/** Optional Fields */
+	private final OptionalField [] m_optionalFields = new OptionalField [] {
+			new OptionalField(UNIQUEID_STATE, m_uniqueID),
+			new OptionalField(DESCRIPTION_STATE, m_description),
+			new OptionalField(CODELLIST_STATE, m_codeList),
+			new OptionalField(ABS_LOCATION_STATE, m_absoluteLocation),
+			new OptionalField(ABS_NAME_STATE, m_absoluteName),
+			new OptionalField(CARDINALITY_STATE, m_cardinality),
+			new OptionalField(COMPUTED_VALUE_STATE, m_computedValue),
+			new OptionalField(RELATED_SE_STATE, m_relatedSE),
+	};
 	
 	// Direction buttons
 	private JCheckBox m_sourceToTarget = new JCheckBox(s_res.getString("TraceabilityTool.sourceToTarget"));
 	private JCheckBox m_targetToSource = new JCheckBox(s_res.getString("TraceabilityTool.targetToSource"));
+
+	
+	// Skip un-mapped buttons
+	private JCheckBox m_hideUnmapped = new JCheckBox(s_res.getString("TraceabilityTool.hideUnmapped"));
 	
 	// Generate buttons
 	private JButton    m_generateBtn = new JButton(s_res.getString("TraceabilityTool.generateBtn"));
@@ -152,6 +185,10 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		//
 		//  - Optional Fields-------------------------
 		// | [x] Description     [x] Location         |
+		//  ------------------------------------------
+		
+		//  - Other Options---------------------------
+		// | [x] Hide un mapped                       |
 		//  ------------------------------------------
 		//
 		//  - Direction -------------------------------------
@@ -244,21 +281,11 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		
 		// optional fields
 		JPanel optionalFields = new JPanel(new GridLayout(0, 3, 10, 10));
-		optionalFields.add(m_uniqueID);
-		optionalFields.add(m_description);
-		optionalFields.add(m_codeList);
-		optionalFields.add(m_absoluteLocation);
-		optionalFields.add(m_absoluteName);
-		optionalFields.add(m_cardinality);
-		optionalFields.add(m_computedValue);
-		// set state
-		m_uniqueID.setSelected(m_pref.getBooleanValue(UNIQUEID_STATE, true));
-		m_description.setSelected(m_pref.getBooleanValue(DESCRIPTION_STATE, true));
-		m_codeList.setSelected(m_pref.getBooleanValue(CODELLIST_STATE, true));
-		m_absoluteLocation.setSelected(m_pref.getBooleanValue(ABS_LOCATION_STATE, true));
-		m_absoluteName.setSelected(m_pref.getBooleanValue(ABS_NAME_STATE, true));
-		m_cardinality.setSelected(m_pref.getBooleanValue(CARDINALITY_STATE, true));
-		m_computedValue.setSelected(m_pref.getBooleanValue(COMPUTED_VALUE_STATE, true));
+		for (OptionalField optionalField : m_optionalFields) {
+			// add to control
+			optionalFields.add(optionalField.checkBox);
+		}
+		
 
 		optionalFields.setBorder( BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
 				s_res.getString("TraceabilityTool.options")));
@@ -269,11 +296,27 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		gbc.gridwidth = 1;
 		
 		
-		// Direction
 		gbc.gridx = 0;
 		gbc.gridy++;
-		
-		// optional fields
+
+		// Other options
+		JPanel optionsFields = new JPanel(new GridLayout(0, 2, 10, 10));
+		optionsFields.add(m_hideUnmapped);
+		// set state
+		m_hideUnmapped.setSelected(m_pref.getBooleanValue(HIDE_UNMAPPED_STATE, false));
+
+		optionsFields.setBorder( BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+				s_res.getString("TraceabilityTool.otherOptions")));
+		gbc.weightx = 1.0;
+		gbc.gridwidth = 3;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		main.add(optionsFields, gbc);
+		gbc.gridwidth = 1;
+
+		gbc.gridx = 0;
+		gbc.gridy++;
+
+		// Direction
 		JPanel directionFields = new JPanel(new GridLayout(0, 2, 10, 10));
 		directionFields.add(m_sourceToTarget);
 		directionFields.add(m_targetToSource);
@@ -305,16 +348,18 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     	m_browseTargetBtn[1].addActionListener(this);
     	m_browseOutputBtn.addActionListener(this);
     	
-    	m_uniqueID.addActionListener(this);
-		m_description.addActionListener(this);
-		m_codeList.addActionListener(this);
-		m_absoluteLocation.addActionListener(this);
-		m_absoluteName.addActionListener(this);
-		m_cardinality.addActionListener(this);
-		m_computedValue.addActionListener(this);
-
+    	for (OptionalField optionalField : m_optionalFields) {
+			// set state to last saved value
+			boolean state = m_pref.getBooleanValue(optionalField.propertyName, true);
+			optionalField.checkBox.setSelected(state);
+			// add listener
+//			optionalField.checkBox.addActionListener(this);
+		}
+    	
 		m_sourceToTarget.addActionListener(this);
 		m_targetToSource.addActionListener(this);
+
+		m_hideUnmapped.addActionListener(this);
 		
     	m_generateBtn.addActionListener(this);
 	}
@@ -337,16 +382,19 @@ public class TraceabilityTool extends JFrame implements ActionListener {
     	m_browseTargetBtn[1].removeActionListener(this);
     	m_browseOutputBtn.removeActionListener(this);
     	
-    	m_uniqueID.removeActionListener(this);
-		m_description.removeActionListener(this);
-		m_codeList.removeActionListener(this);
-		m_absoluteLocation.removeActionListener(this);
-		m_absoluteName.removeActionListener(this);
-		m_cardinality.removeActionListener(this);
-		m_computedValue.removeActionListener(this);
-		
+    	// save states and remove listener
+    	for (OptionalField optionalField : m_optionalFields) {
+			// save state
+			boolean state = optionalField.checkBox.isSelected(); 
+			m_pref.putBooleanValue(optionalField.propertyName, state);
+			
+//			optionalField.checkBox.removeActionListener(this);
+		}
+    	
 		m_sourceToTarget.removeActionListener(this);
 		m_targetToSource.removeActionListener(this);
+
+		m_hideUnmapped.removeActionListener(this);
 		
     	m_generateBtn.removeActionListener(this);
     	
@@ -680,17 +728,22 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 				writer.write(SEPARATOR);
 			}
 			if (m_cardinality.isSelected()) {
-				writer.write("Cardinality");
+				writer.write(m_cardinality.getText());
 				writer.write(SEPARATOR);
 			}
 			if (m_codeList.isSelected()) {
-				writer.write("Code List");
+				writer.write(m_codeList.getText());
 				writer.write(SEPARATOR);
 			}
 			writer.write("Relationship");
 			writer.write(SEPARATOR);
 			if (m_computedValue.isSelected()) {
-				writer.write("Computed Value");	
+				writer.write(m_computedValue.getText());	
+				writer.write(SEPARATOR);
+			}
+			
+			if (m_relatedSE.isSelected()) {
+				writer.write(m_relatedSE.getText());
 				writer.write(SEPARATOR);
 			}
 		}
@@ -766,56 +819,34 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			//---------------------------------------------------
 			// Write additional lines for unmapped SE/rules
 			//---------------------------------------------------
-			for (SemanticElement semanticElement : sourceSEs.keySet()) {
-				if (m_foundSourceSes.contains(semanticElement)) {
-					continue;
-				}
-				List<ConversionRule> ruleList = sourceSEs.get(semanticElement);
-				for (ConversionRule rule : ruleList) {
-
-					// write BE
-					writeBusinessElementFields(be, dataType.getTypeName(), writer);
-					writer.write(SEPARATOR);
-					
-					// write Source
-					writeSemaniticElementRule(semanticElement.getDatatype(), null, rule, writer);
-					writer.write(SEPARATOR);
-					
-					// write empty Target
-					writeSemaniticElementRule(null, null, null, writer);
-					
-					writer.newLine();
-					writer.flush();
-				}
-			}
-			for (SemanticElement semanticElement : target1SEs.keySet()) {
-				if (m_foundTarget1Ses.contains(semanticElement)) {
-					continue;
-				}
-				List<ConversionRule> ruleList = target1SEs.get(semanticElement);
-				for (ConversionRule rule : ruleList) {
-
-					// write BE
-					writeBusinessElementFields(be, dataType.getTypeName(), writer);
-					writer.write(SEPARATOR);
-					
-					// write empty Source
-					writeSemaniticElementRule(null, null, null, writer);
-					writer.write(SEPARATOR);
-					
-					// write Target
-					writeSemaniticElementRule(semanticElement.getDatatype(), null, rule, writer);
-					
-					writer.newLine();
-					writer.flush();
-				}
-			}
-			if (target2SEs != null) {
-				for (SemanticElement semanticElement : target2SEs.keySet()) {
-					if (m_foundTarget2Ses.contains(semanticElement)) {
+			if (!m_hideUnmapped.isSelected()) {
+				for (SemanticElement semanticElement : sourceSEs.keySet()) {
+					if (m_foundSourceSes.contains(semanticElement)) {
 						continue;
 					}
-					List<ConversionRule> ruleList = target2SEs.get(semanticElement);
+					List<ConversionRule> ruleList = sourceSEs.get(semanticElement);
+					for (ConversionRule rule : ruleList) {
+
+						// write BE
+						writeBusinessElementFields(be, dataType.getTypeName(), writer);
+						writer.write(SEPARATOR);
+
+						// write Source
+						writeSemaniticElementRule(semanticElement.getDatatype(), null, rule, writer);
+						writer.write(SEPARATOR);
+
+						// write empty Target
+						writeSemaniticElementRule(null, null, null, writer);
+
+						writer.newLine();
+						writer.flush();
+					}
+				}
+				for (SemanticElement semanticElement : target1SEs.keySet()) {
+					if (m_foundTarget1Ses.contains(semanticElement)) {
+						continue;
+					}
+					List<ConversionRule> ruleList = target1SEs.get(semanticElement);
 					for (ConversionRule rule : ruleList) {
 
 						// write BE
@@ -826,15 +857,39 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 						writeSemaniticElementRule(null, null, null, writer);
 						writer.write(SEPARATOR);
 
-						// write empty Target 1
-						writeSemaniticElementRule(null, null, null, writer);
-						writer.write(SEPARATOR);
-
-						// write Target 2
+						// write Target
 						writeSemaniticElementRule(semanticElement.getDatatype(), null, rule, writer);
 
 						writer.newLine();
 						writer.flush();
+					}
+				}
+				if (target2SEs != null) {
+					for (SemanticElement semanticElement : target2SEs.keySet()) {
+						if (m_foundTarget2Ses.contains(semanticElement)) {
+							continue;
+						}
+						List<ConversionRule> ruleList = target2SEs.get(semanticElement);
+						for (ConversionRule rule : ruleList) {
+
+							// write BE
+							writeBusinessElementFields(be, dataType.getTypeName(), writer);
+							writer.write(SEPARATOR);
+
+							// write empty Source
+							writeSemaniticElementRule(null, null, null, writer);
+							writer.write(SEPARATOR);
+
+							// write empty Target 1
+							writeSemaniticElementRule(null, null, null, writer);
+							writer.write(SEPARATOR);
+
+							// write Target 2
+							writeSemaniticElementRule(semanticElement.getDatatype(), null, rule, writer);
+
+							writer.newLine();
+							writer.flush();
+						}
 					}
 				}
 			}
@@ -919,13 +974,13 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			SemanticElement sourceSE = rule.getOwner();
 			if (sourceSE.getDatatype().getTypeName().equals(beDataType.getTypeName())) {
 				// isomorphic - show field as part of data type
-				writeSemanticElementFields(sourceSE, beField, rule, writer);
+				writeSemanticElementFields(sourceSE, beDataType, beField, rule, writer);
 			} else {
-				writeSemanticElementFields(sourceSE, null, rule, writer);
+				writeSemanticElementFields(sourceSE, beDataType, null, rule, writer);
 			}
 		} else {
 			// write blanks
-			writeSemanticElementFields(null, null, null, writer);
+			writeSemanticElementFields(null, null, null, null, writer);
 		}
 	}
 
@@ -1058,7 +1113,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	}
 
 	/** Write the fields of a Semantic Element. If a null SE is provided, blanks will be written */
-	private void writeSemanticElementFields(SemanticElement se, Field field, ConversionRule rule,
+	private void writeSemanticElementFields(SemanticElement se, MdmiDatatype beType, Field field, ConversionRule rule,
 			BufferedWriter writer) throws IOException {
 		
 		// Get syntax node
@@ -1153,12 +1208,24 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			writer.write(SEPARATOR);
 		}
 		
-		// 8. Java Script
+		boolean isomorphic = false;
+
+		if (se != null && se.getDatatype().getTypeName().equals(beType.getTypeName())) {
+			isomorphic = true;
+		}
+		
+		// 8. Relationship (Java Script)
 		if (rule != null && rule.getRule() != null && !rule.getRule().isEmpty()) {
 			// script can contain special characters, so enclose in quotes
-			writer.write("\"");
-			writer.write(rule.getRule());
-			writer.write("\"");
+			StringBuilder buf = new StringBuilder();
+			buf.append("\"");
+			// new-lines break CSV - replace with HTML Break
+			buf.append(rule.getRule().replace("\n", "<br>"));
+			buf.append("\"");
+			writer.write(buf.toString());
+			
+		} else if (isomorphic) {
+			writer.write("Isomorphic");
 		} else {
 			writer.write("");
 		}
@@ -1171,6 +1238,33 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			} else {
 				writer.write("");
 			}
+			writer.write(SEPARATOR);
+		}
+		
+		// 10. Related SEs  (show as relationship = SE
+		if (m_relatedSE.isSelected()) {
+			StringBuilder buf = new StringBuilder();
+			if (se != null) {
+				int relatedSECount = 0;
+				Collection<SemanticElementRelationship> relationships = se.getRelationships();
+				if (relationships != null && !relationships.isEmpty()) {
+					for (SemanticElementRelationship relationship : relationships){
+						SemanticElement relatedSE = relationship.getRelatedSemanticElement();
+						if (relatedSE != null) {
+							relatedSECount++;
+							if (relatedSECount > 1) {
+								buf.append(", ");
+							}
+							buf.append(relationship.getName()).append("=").append(relatedSE.getName());
+						}
+					}
+					// we need to enclose in quotes if there are embedded commas
+					if (relatedSECount > 1) {
+						buf.insert(0, "\"").append("\"");
+					}
+				}
+			}
+			writer.write(buf.toString());
 			writer.write(SEPARATOR);
 		}
 	}
@@ -1297,31 +1391,6 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			if (file != null) {
 				m_outputFileName.setText(file.getAbsolutePath());
 			}
-
-		} else if (source == m_uniqueID) {
-			m_pref.putBooleanValue(UNIQUEID_STATE, m_description.isSelected());
-			
-		} else if (source == m_description) {
-			// save state
-			m_pref.putBooleanValue(DESCRIPTION_STATE, m_description.isSelected());
-			
-		} else if (source == m_codeList) {
-			// save state
-			m_pref.putBooleanValue(CODELLIST_STATE, m_codeList.isSelected());
-			
-		} else if (source == m_absoluteLocation) {
-			// save state
-			m_pref.putBooleanValue(ABS_LOCATION_STATE, m_absoluteLocation.isSelected());
-			
-		} else if (source == m_absoluteName) {
-			m_pref.putBooleanValue(ABS_NAME_STATE, m_absoluteName.isSelected());
-			
-		} else if (source == m_cardinality) {
-			m_pref.putBooleanValue(CARDINALITY_STATE, m_cardinality.isSelected());
-			
-		} else if (source == m_computedValue) {
-			// save state
-			m_pref.putBooleanValue(COMPUTED_VALUE_STATE, m_computedValue.isSelected());
 			
 		} else if (source == m_sourceToTarget) {
 			// make sure one of the two is checked
@@ -1341,6 +1410,9 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			m_pref.putBooleanValue(SOURCE_TO_TARGET_STATE, m_sourceToTarget.isSelected());
 			m_pref.putBooleanValue(TARGET_TO_SOURCE_STATE, m_targetToSource.isSelected());
 			
+		} else if (source == m_hideUnmapped) {
+			// save state
+			m_pref.putBooleanValue(HIDE_UNMAPPED_STATE, m_hideUnmapped.isSelected());
 			
 		} else if (source == m_generateBtn) {
 			generateOutputData();
