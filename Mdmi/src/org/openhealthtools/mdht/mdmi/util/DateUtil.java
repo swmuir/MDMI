@@ -327,11 +327,7 @@ public class DateUtil {
 		// Use Guava's charmatcher to deal with everything but single-quoted literals
 		CharMatcher matcher = CharMatcher.anyOf(newOF_trg)
 				.or(CharMatcher.JAVA_LETTER.negate());
-		// bugfix 2/8/15 - remove trailing non-format chars (e.g. :)
-		System.out.println("WAHHHHHH!");
-		System.out.println(CharMatcher.JAVA_LETTER.negate().trimTrailingFrom("a1:-"));
-		System.out.println(CharMatcher.JAVA_LETTER.negate().trimTrailingFrom(
-				matcher.retainFrom(outFormat)));
+		// bugfix 2/9/15 - remove trailing non-format chars (e.g. :)
 		if (!outFormat.contains("'")) return CharMatcher.JAVA_LETTER.negate().trimTrailingFrom(
 				matcher.retainFrom(outFormat));
 		else {
