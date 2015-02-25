@@ -168,8 +168,8 @@ public class ValueSetMapPanel extends JPanel {
 				toCode = CSVFileReader.getString(stringList, column++);
 				toDescr = CSVFileReader.getString(stringList, column++);
 
-				// must have a fromCode and a toCode (the rest are optional)
-				if (fromCode.isEmpty() || toCode.isEmpty()) {
+				// must have a fromCode (the rest are optional)
+				if (fromCode.isEmpty()) {
 					StringBuilder message = new StringBuilder();
 					message.append("Line ").append(lineNo).append(" is missing a ");
 					if (fromCode.isEmpty()) {
@@ -195,6 +195,10 @@ public class ValueSetMapPanel extends JPanel {
 				} else if (fromValue.getDescription() == null || fromValue.getDescription().isEmpty()){
 					// update description
 					fromValue.setDescription(fromDescr);
+				}
+				
+				if (toCode.isEmpty()) {
+					continue;
 				}
 				
 				// 2. Lookup To Code
