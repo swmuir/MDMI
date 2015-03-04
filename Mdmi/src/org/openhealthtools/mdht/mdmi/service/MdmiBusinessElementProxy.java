@@ -1,21 +1,6 @@
-/*******************************************************************************
-* Copyright (c) 2012-2013 Firestar Software, Inc.
-* All rights reserved. This program and the accompanying materials
-* are made available under the terms of the Eclipse Public License v1.0
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v10.html
-*
-* Contributors:
-*     Firestar Software, Inc. - initial API and implementation
-*
-* Author:
-*     Gabriel Oancea
-*
-*******************************************************************************/
 package org.openhealthtools.mdht.mdmi.service;
 
 import java.net.*;
-import java.util.*;
 
 import javax.ws.rs.core.*;
 
@@ -31,32 +16,24 @@ public class MdmiBusinessElementProxy {
    
    private String token;
    private WebResource service;
-   private MessageGroup messageGroup;
    private MdmiDatatypeProxy dtProxy;
    
-   public MdmiBusinessElementProxy( URI uri, String token, MessageGroup messageGroup, MdmiDatatypeProxy dtProxy ) {
-      if( uri == null || messageGroup == null || dtProxy == null )
-         throw new IllegalArgumentException("Null service URI, or message group, or datatype proxy!");
+   public MdmiBusinessElementProxy( URI uri, String token, MdmiDatatypeProxy dtProxy ) {
+      if( uri == null || dtProxy == null )
+         throw new IllegalArgumentException("Null service URI, or datatype proxy!");
       ClientConfig config = new DefaultClientConfig();
       Client client = Client.create(config);
       service = client.resource(uri);
       this.token = token;
-      this.messageGroup = messageGroup;
       this.dtProxy = dtProxy;
    }
    
-   public MdmiBusinessElementReference[] getAll( int offset ) {
+   public MdmiNetBusinessElement[] getAll( int offset ) {
       try {
          MdmiNetBusinessElement[] lst = new MdmiNetBusinessElement[0];
          lst = service.path(RPATH).queryParam("offset", String.valueOf(offset))
                .accept(MediaType.APPLICATION_XML).get(lst.getClass());
-         ArrayList<MdmiBusinessElementReference> a = new ArrayList<MdmiBusinessElementReference>();
-         for( int i = 0; i < lst.length; i++ ) {
-            MdmiBusinessElementReference br = toModel(lst[i]);
-            messageGroup.getDomainDictionary().addBusinessElement(br);
-            a.add(br);
-         }
-         return a.toArray(new MdmiBusinessElementReference[] {});
+         return lst;
       }
       catch( MdmiException ex ) {
          throw ex;
@@ -66,13 +43,29 @@ public class MdmiBusinessElementProxy {
       }
    }
    
-   public MdmiBusinessElementReference get( String value ) {
+   public MdmiBusinessElementReference[] getAll( int offset, MessageGroup messageGroup, int nameIndex ) {
+      try {
+         MdmiNetBusinessElement[] lst = getAll(offset);
+         MdmiBusinessElementReference[] bers = new MdmiBusinessElementReference[lst.length];
+         for( int i = 0; i < lst.length; i++ ) {
+	         bers[i] = toModel(messageGroup, lst[i], nameIndex);
+	         messageGroup.getDomainDictionary().addBusinessElement(bers[i]);
+         }
+         return bers;
+      }
+      catch( MdmiException ex ) {
+         throw ex;
+      }
+      catch( Exception ex ) {
+         throw new MdmiException(ex, "Proxy getAll() failed!");
+      }
+   }
+   
+   public MdmiNetBusinessElement get( String value ) {
       try {
          MdmiNetBusinessElement nbr = service.path(RPATH + "/" + value).accept(MediaType.APPLICATION_XML)
                .get(MdmiNetBusinessElement.class);
-         MdmiBusinessElementReference br = toModel(nbr);
-         messageGroup.getDomainDictionary().addBusinessElement(br);
-         return br;
+         return nbr;
       }
       catch( MdmiException ex ) {
          throw ex;
@@ -84,15 +77,41 @@ public class MdmiBusinessElementProxy {
       }
    }
    
-   public MdmiBusinessElementReference add( MdmiBusinessElementReference br ) {
+   public MdmiBusinessElementReference get( String value, MessageGroup messageGroup, int nameIndex ) {
       try {
-         MdmiNetBusinessElement o = fromModel(br);
-         MdmiNetBusinessElement nbr = service.path(RPATH).queryParam("token", token).accept(MediaType.APPLICATION_XML)
-               .post(MdmiNetBusinessElement.class, o);
-         br = toModel(nbr);
-         MdmiBusinessElementReference existing = messageGroup.getDomainDictionary().getBusinessElement(br.getName());
-         if( null != existing )
-            messageGroup.getDomainDictionary().getBusinessElements().remove(existing);
+         MdmiNetBusinessElement nbr = get(value);
+         MdmiBusinessElementReference ber = toModel(messageGroup, nbr, nameIndex);
+         messageGroup.getDomainDictionary().addBusinessElement(ber);
+         return ber;
+      }
+      catch( MdmiException ex ) {
+         throw ex;
+      }
+      catch( Exception ex ) {
+         if( 0 < ex.getMessage().indexOf("404") )
+            return null;
+         throw new MdmiException(ex, "Proxy get() failed!");
+      }
+   }
+   
+   public MdmiNetBusinessElement add( MdmiNetBusinessElement nbr ) {
+      try {
+         nbr = service.path(RPATH).queryParam("token", token).accept(MediaType.APPLICATION_XML)
+               .post(MdmiNetBusinessElement.class, nbr);
+         return nbr;
+      }
+      catch( MdmiException ex ) {
+         throw ex;
+      }
+      catch( Exception ex ) {
+         throw new MdmiException(ex, "Proxy add() failed!");
+      }
+   }
+   
+   public MdmiBusinessElementReference add( MdmiBusinessElementReference br, MessageGroup messageGroup, int nameIndex ) {
+      try {
+      	MdmiNetBusinessElement nbr = add(fromModel(br));
+      	br = toModel(messageGroup, nbr, nameIndex);
          messageGroup.getDomainDictionary().addBusinessElement(br);
          return br;
       }
@@ -104,15 +123,24 @@ public class MdmiBusinessElementProxy {
       }
    }
    
-   public MdmiBusinessElementReference update( MdmiBusinessElementReference br ) {
+   public MdmiNetBusinessElement update( MdmiNetBusinessElement nbr ) {
       try {
-         MdmiNetBusinessElement o = fromModel(br);
-         MdmiNetBusinessElement nbr = service.path(RPATH + "/" + o.getName()).queryParam("token", token).accept(MediaType.APPLICATION_XML)
-               .put(MdmiNetBusinessElement.class, o);
-         br = toModel(nbr);
-         MdmiBusinessElementReference existing = messageGroup.getDomainDictionary().getBusinessElement(br.getName());
-         if( null != existing )
-            messageGroup.getDomainDictionary().getBusinessElements().remove(existing);
+         nbr = service.path(RPATH + "/" + nbr.getUniqueId()).queryParam("token", token).accept(MediaType.APPLICATION_XML)
+               .put(MdmiNetBusinessElement.class, nbr);
+         return nbr;
+      }
+      catch( MdmiException ex ) {
+         throw ex;
+      }
+      catch( Exception ex ) {
+         throw new MdmiException(ex, "Proxy add() failed!");
+      }
+   }
+   
+   public MdmiBusinessElementReference update( MdmiBusinessElementReference br, MessageGroup messageGroup, int nameIndex ) {
+      try {
+      	MdmiNetBusinessElement nbr = update(fromModel(br));
+      	br = toModel(messageGroup, nbr, nameIndex);
          messageGroup.getDomainDictionary().addBusinessElement(br);
          return br;
       }
@@ -122,49 +150,62 @@ public class MdmiBusinessElementProxy {
       catch( Exception ex ) {
          throw new MdmiException(ex, "Proxy add() failed!");
       }
+   }
+   
+   public void delete( MdmiNetBusinessElement nbr ) {
+   	delete(nbr.getUniqueId());
    }
    
    public void delete( MdmiBusinessElementReference br ) {
+   	delete(br.getUniqueIdentifier());
+   }
+   
+   public void delete( String uniqueIdentifier ) {
       try {
-         service.path(RPATH + "/" + br.getName()).queryParam("token", token).delete(MdmiNetBusinessElement.class);
-         if( null != messageGroup.getDatatype(br.getName()) )
-            messageGroup.getDomainDictionary().getBusinessElements().remove(br);
+         service.path(RPATH + "/" + uniqueIdentifier).queryParam("token", token).delete(MdmiNetBusinessElement.class);
       }
       catch( Exception ex ) {
          throw new MdmiException(ex, "Proxy delete() failed!");
       }
    }
    
-   private MdmiBusinessElementReference toModel( MdmiNetBusinessElement nbr ) {
+   public MdmiBusinessElementReference toModel( MessageGroup messageGroup, MdmiNetBusinessElement nbr, int nameIndex ) {
+   	if( nameIndex < 0 || nbr.getNames().size() <= nameIndex )
+   		nameIndex = 0; // default for all that do not have multiple names
       MdmiBusinessElementReference br = new MdmiBusinessElementReference();
-      br.setName(nbr.getName());
-      br.setDescription(nbr.getDescription());
+      String name = nbr.getNames().get(nameIndex).getName();
+      String description = nbr.getNames().get(nameIndex).getDescription();
+      br.setName(name);
+      br.setDescription(description);
       try {
          br.setReference(new URI(nbr.getUri()));
       }
       catch( Exception ex ) {
-         throw new MdmiException(ex, "Invalid reference URI {0} for BER {1}.", nbr.getUri(), nbr.getName());
+         throw new MdmiException(ex, "Invalid reference URI {0} for BER {1}.", nbr.getUri(), name);
       }
       br.setUniqueIdentifier(nbr.getUniqueId());
       br.setReadonly(true);
+      br.setEnumValueDescrField(nbr.getEnumValueDescrField());
+      br.setEnumValueField(nbr.getEnumValueField());
+      br.setEnumValueSet(nbr.getEnumValueSet());
+      br.setEnumValueSetField(nbr.getEnumValueSetField());
       String tn = nbr.getDataType();
       MdmiDatatype t = null;
       try {
          t = messageGroup.getDatatype(tn);
          if( t == null )
-            t = dtProxy.get(tn);
+            t = dtProxy.get(messageGroup, tn);
       }
       catch( Exception ex ) {
-         throw new MdmiException(ex, "Cannot find datatype {0} for BER {1}.", tn, nbr.getName());
+         throw new MdmiException(ex, "Cannot find datatype {0} for BER {1}.", tn, name);
       }
       br.setReferenceDatatype(t);
       return br;
    }
    
-   private MdmiNetBusinessElement fromModel( MdmiBusinessElementReference br ) {
+   public MdmiNetBusinessElement fromModel( MdmiBusinessElementReference br ) {
       MdmiNetBusinessElement nbr = new MdmiNetBusinessElement();
-      nbr.setName(br.getName());
-      nbr.setDescription(br.getDescription());
+      nbr.getNames().add(new MdmiNetBerName(br.getName(), br.getDescription()));
       nbr.setUri(br.getReference() == null ? null : br.getReference().toString());
       nbr.setUniqueId(br.getUniqueIdentifier());
       nbr.setDataType(br.getReferenceDatatype().getName());

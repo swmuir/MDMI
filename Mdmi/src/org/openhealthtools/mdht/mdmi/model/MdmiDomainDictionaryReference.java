@@ -59,6 +59,13 @@ public class MdmiDomainDictionaryReference implements IPackage {
    }
 
    public void addBusinessElement( MdmiBusinessElementReference businessElement ) {
+   	for( int i = 0; i < m_businessElemList.size(); i++ ) {
+   		MdmiBusinessElementReference ber = m_businessElemList.get(i);
+   		if( businessElement.getUniqueIdentifier().equals(ber.getUniqueIdentifier()) ) {
+   			m_businessElemList.set(i, businessElement);
+   			return;
+   		}
+      }
       m_businessElemList.add(businessElement);
    }
 

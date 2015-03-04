@@ -12,32 +12,47 @@ import org.openhealthtools.mdht.mdmi.service.entities.*;
 
 @Entity("BusinessElements")
 class MdmiNetBusinessElementDA {
-   @Id ObjectId _id  ;
-   String       name ;
-   String       descr;
-   String       uri  ;
-   String       unId ;
-   String       dTyp ;
+   @Id ObjectId                _id  ;
+   ArrayList<MdmiNetBerNameDA> names = new ArrayList<MdmiNetBerNameDA>();
+   String                      uri  ;
+   String                      unId ;
+   String                      dTyp ;
+   String                      evdf ;
+   String                      evf  ;
+   String                      evs  ;
+   String                      evsf ;
    
    public MdmiNetBusinessElementDA() {
    }
    
    public MdmiNetBusinessElementDA( MdmiNetBusinessElement src ) {
       _id   = new ObjectId();
-      name  = src.getName();
-      descr = src.getDescription();
+      for( int i = 0; i < src.getNames().size(); i++ ) {
+         MdmiNetBerName n = src.getNames().get(i);
+         names.add(new MdmiNetBerNameDA(n.getName(), n.getDescription()));
+      }
       uri   = src.getUri();
       unId  = src.getUniqueId();
       dTyp  = src.getDataType();
+      evdf  = src.getEnumValueDescrField();
+      evf   = src.getEnumValueField();
+      evs   = src.getEnumValueSet();
+      evsf  = src.getEnumValueSetField();
    }
    
    public MdmiNetBusinessElement toBO() {
       MdmiNetBusinessElement bo = new MdmiNetBusinessElement();
-      bo.setName(name);
-      bo.setDescription(descr);
+      for( int i = 0; i < names.size(); i++ ) {
+         MdmiNetBerNameDA o = names.get(i);
+         bo.getNames().add(new MdmiNetBerName(o.name, o.descr));
+      }
       bo.setUri(uri);
       bo.setUniqueId(unId);
       bo.setDataType(dTyp);
+      bo.setEnumValueDescrField(evdf);
+      bo.setEnumValueField(evf);
+      bo.setEnumValueSet(evs);
+      bo.setEnumValueSetField(evsf);
       return bo;
    }
 
@@ -45,8 +60,13 @@ class MdmiNetBusinessElementDA {
    public String toString() {
       StringBuilder sb = new StringBuilder();
       sb.append("{");
-      sb.append("name: '").append(name).append("'");
-      sb.append(", descr: '").append(descr).append("'");
+      sb.append("names: [");
+      for( int i = 0; i < names.size(); i++ ) {
+         if( 0 < i )
+            sb.append(", ");
+         sb.append(names.get(i).toString());
+      }
+      sb.append("]");
       sb.append(", uri: '").append(uri).append("'");
       sb.append(", unId: '").append(unId).append("'");
       sb.append(", dTyp: '").append(dTyp).append("'");
@@ -55,8 +75,30 @@ class MdmiNetBusinessElementDA {
    }
 } // MdmiDataTypeDA
 
+class MdmiNetBerNameDA {
+   String       name ;
+   String       descr;
+   
+   public MdmiNetBerNameDA() {
+   }
+   
+   public MdmiNetBerNameDA( String name, String descr ) {
+      this.name = name;
+      this.descr = descr;
+   }
+
+   @Override
+   public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("{");
+      sb.append("name: '").append(name).append("'");
+      sb.append(", descr: '").append(descr).append("'}");
+      return sb.toString();
+   }
+}
+
 class MdmiNetBusinessElementCollection {
-   private final static String DB_NAME = "MdmiDictionary";
+   private final static String DB_NAME = "ReferentIndex";
    private Mongo     server;
    private Morphia   morphia;
    private Datastore ds;
@@ -97,10 +139,6 @@ class MdmiNetBusinessElementCollection {
          AppListener.logger.error("MdmiNetBusinessElement.append fails, duplicate uniqueId: '" + businessElement.getUniqueId() + "'");
          return false;
       }
-      if( null != findOne(businessElement.getName()) ) {
-         AppListener.logger.error("MdmiNetBusinessElement.append fails, duplicate name: '" + businessElement.getName() + "'");
-         return false;
-      }
       MdmiNetBusinessElementDA o = new MdmiNetBusinessElementDA(businessElement);
       ds.save(o);
       AppListener.logger.debug("MdmiNetBusinessElement.append success: " + o.toString());
@@ -108,33 +146,19 @@ class MdmiNetBusinessElementCollection {
    }
    
    boolean update( MdmiNetBusinessElement businessElement ) {
-      MdmiNetBusinessElementDA found = findOne(businessElement.getName());
       MdmiNetBusinessElementDA fid = findOneByUniqueId(businessElement.getUniqueId());
       MdmiNetBusinessElementDA o = new MdmiNetBusinessElementDA(businessElement);
-      if( null != found ) {
-         o._id = found._id;
-         if( null != fid ) {
-            if( !fid._id.equals(o._id) ) {
-               AppListener.logger.error("MdmiNetBusinessElement.update fails, duplicate uniqueId: '" + businessElement.getUniqueId() + "'");
-               return false;
-            }
-         }
-      }
-      else {
-         if( null != fid ) {
-            AppListener.logger.error("MdmiNetBusinessElement.update fails, duplicate uniqueId: '" + businessElement.getUniqueId() + "'");
-            return false;
-         }
-      }
+      if( null != fid )
+         o._id = fid._id;
       ds.save(o);
       AppListener.logger.debug("MdmiNetBusinessElement.update success: " + o.toString());
       return true;
    }
    
-   MdmiNetBusinessElement delete( String name ) {
-      MdmiNetBusinessElementDA o = findOne(name);
+   MdmiNetBusinessElement delete( String uniqueId ) {
+      MdmiNetBusinessElementDA o = findOneByUniqueId(uniqueId);
       if( o == null ) {
-         AppListener.logger.warn("MdmiNetBusinessElement.delete fails, name: '" + name + "' not found!");
+         AppListener.logger.warn("MdmiNetBusinessElement.delete fails, uniqueId: '" + uniqueId + "' not found!");
          return null;
       }
       ds.delete(MdmiNetBusinessElementDA.class, o._id);
@@ -143,7 +167,7 @@ class MdmiNetBusinessElementCollection {
    }
    
    private MdmiNetBusinessElementDA findOne( String name ) {
-      return ds.find(MdmiNetBusinessElementDA.class).field("name").equal(name).get();
+      return ds.find(MdmiNetBusinessElementDA.class).field("names.name").equal(name).get();
    }
    
    private MdmiNetBusinessElementDA findOneByUniqueId( String uniqueId ) {

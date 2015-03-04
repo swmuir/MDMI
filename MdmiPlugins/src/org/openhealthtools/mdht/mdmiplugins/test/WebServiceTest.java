@@ -13,18 +13,18 @@ public class WebServiceTest {
          testMap.setName("TestMap");
          testMap.setDomainDictionary(new MdmiDomainDictionaryReference());
          
-         MdmiDatatypeProxy pdt = new MdmiDatatypeProxy(getBaseUri(), getToken(), testMap);
-         MdmiBusinessElementProxy pbe = new MdmiBusinessElementProxy(getBaseUri(), getToken(), testMap, pdt);
+         MdmiDatatypeProxy pdt = new MdmiDatatypeProxy(getBaseUri(), getToken());
+         MdmiBusinessElementProxy pbe = new MdmiBusinessElementProxy(getBaseUri(), getToken(), pdt);
 
          System.out.println("--- DATA TYPES -----------");
-         MdmiDatatype[] lstDT = pdt.getAll(0); // offset 0
+         MdmiDatatype[] lstDT = pdt.getAll(testMap, 0); // offset 0
          for( int i = 0; i < lstDT.length; i++ ) {
             System.out.println(lstDT[i].toString());
          }
          System.out.println("--------------------------");
          
          System.out.println("--- BUSINESS ELEMENTS ----");
-         MdmiBusinessElementReference[] lstBE = pbe.getAll(0);
+         MdmiBusinessElementReference[] lstBE = pbe.getAll(0, testMap, 0);
          for( int i = 0; i < lstBE.length; i++ ) {
             System.out.println(lstBE[i].toString());
          }
@@ -34,16 +34,16 @@ public class WebServiceTest {
          testDataDT.setTypeName("CodeList");
          testDataDT.setTypeSpec(new URI("http://dictionary.mdmi.org/enums/CodeList"));
          try {
-            pdt.delete(testDataDT);
+            pdt.delete(testMap, testDataDT);
          }
          catch( Exception ignoreDeleteFails ) {}
          
-         MdmiDatatype responseDT = pdt.add(testDataDT);
+         MdmiDatatype responseDT = pdt.add(testMap, testDataDT);
          System.out.println(responseDT);
          System.out.println("--------------------------");
          
          String nameDT = responseDT.getName();
-         responseDT = pdt.get(nameDT);
+         responseDT = pdt.get(testMap, nameDT);
          System.out.println(responseDT);
          System.out.println("--------------------------");
          
@@ -51,7 +51,7 @@ public class WebServiceTest {
          testDataDT.setTypeName("CodeList");
          testDataDT.setTypeSpec(new URI("http://dictionary.mdmi.org/enums/CodeListV2"));
          
-         responseDT = pdt.update(testDataDT);
+         responseDT = pdt.update(testMap, testDataDT);
          System.out.println(responseDT);
          System.out.println("--------------------------");
          
@@ -61,16 +61,16 @@ public class WebServiceTest {
          testDataBE.setReference(new URI("http://dictionary.mdmi.org/bers/TestBer"));
          testDataBE.setReferenceDatatype(testDataDT);
          try {
-            pbe.delete(testDataBE);
+            pbe.delete(testDataBE.getUniqueIdentifier());
          }
          catch( Exception ignoreDeleteFails ) {}
          
-         MdmiBusinessElementReference responseBE = pbe.add(testDataBE);
+         MdmiBusinessElementReference responseBE = pbe.add(testDataBE, testMap, 0);
          System.out.println(responseBE);
          System.out.println("--------------------------");
          
          String nameBE = responseBE.getName();
-         responseBE = pbe.get(nameBE);
+         responseBE = pbe.get(nameBE, testMap, 0);
          System.out.println(responseBE);
          System.out.println("--------------------------");
          
@@ -79,23 +79,22 @@ public class WebServiceTest {
          testDataBE.setUniqueIdentifier("TestBer");
          testDataBE.setReference(new URI("http://dictionary.mdmi.org/bers/TestBerV2"));
          testDataBE.setReferenceDatatype(testDataDT);
-         
-         responseBE = pbe.update(testDataBE);
+         responseBE = pbe.update(testDataBE, testMap, 0);
          System.out.println(responseBE);
          System.out.println("--------------------------");
          
-         pdt.delete(testDataDT);
-         pbe.delete(testDataBE);
+         pdt.delete(testMap, testDataDT);
+         pbe.delete(testDataBE.getUniqueIdentifier());
          
          System.out.println("--- DATA TYPES -----------");
-         lstDT = pdt.getAll(0);
+         lstDT = pdt.getAll(testMap, 0);
          for( int i = 0; i < lstDT.length; i++ ) {
             System.out.println(lstDT[i].toString());
          }
          System.out.println("--------------------------");
 
          System.out.println("--- BUSINESS ELEMENTS ----");
-         lstBE = pbe.getAll(0);
+         lstBE = pbe.getAll(0, testMap, 0);
          for( int i = 0; i < lstBE.length; i++ ) {
             System.out.println(lstBE[i].toString());
          }
@@ -107,16 +106,16 @@ public class WebServiceTest {
          stringBE.setReference(new URI("http://dictionary.mdmi.org/bers/StringBer"));
          stringBE.setReferenceDatatype(DTSPrimitive.STRING);
          try {
-            pbe.delete(stringBE);
+            pbe.delete(pbe.fromModel(stringBE));
          }
          catch( Exception ignoreDeleteFails ) {}
          
-         MdmiBusinessElementReference rsBE = pbe.add(stringBE);
+         MdmiBusinessElementReference rsBE = pbe.add(stringBE, testMap, 0);
          System.out.println(rsBE);
          System.out.println("--------------------------");
          
          nameBE = rsBE.getName();
-         rsBE = pbe.get(nameBE);
+         rsBE = pbe.get(nameBE, testMap, 0);
          System.out.println(rsBE);
          System.out.println("--------------------------");
          
@@ -126,11 +125,11 @@ public class WebServiceTest {
          stringBE.setReference(new URI("http://dictionary.mdmi.org/bers/StringBerV2"));
          stringBE.setReferenceDatatype(DTSPrimitive.STRING);
          
-         rsBE = pbe.update(stringBE);
+         rsBE = pbe.update(stringBE, testMap, 0);
          System.out.println(rsBE);
          System.out.println("--------------------------");
          
-         pbe.delete(stringBE);
+         pbe.delete(stringBE.getUniqueIdentifier());
       }
       catch( Exception ex ) {
          ex.printStackTrace();

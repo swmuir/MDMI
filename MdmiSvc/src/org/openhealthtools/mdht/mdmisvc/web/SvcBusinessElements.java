@@ -47,8 +47,10 @@ public class SvcBusinessElements {
    
    // return null if it is valid
    static String isBusinessElementValid( MdmiNetBusinessElement o, boolean forInsert ) {
-      if( null == o.getName() || o.getName().length() <= 0 )
-         return "<h3>Name is null or empty!</h3>";
+      if( o.getNames().size() <= 0 )
+         return "<h3>No name(s) provided!</h3>";
+      if( null == o.getNames().get(0).getName() || o.getNames().get(0).getName().length() <= 0 )
+         return "<h3>No name(s) provided, or an empty name provided!</h3>";
       if( null == o.getUniqueId() || o.getUniqueId().length() <= 0 )
          return "<h3>UniqueId not set to a valid value!</h3>";
       if( null == o.getUri() || o.getUri().length() <= 0 )

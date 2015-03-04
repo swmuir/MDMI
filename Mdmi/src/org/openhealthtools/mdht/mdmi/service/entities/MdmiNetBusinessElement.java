@@ -14,6 +14,7 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.service.entities;
 
+import java.util.*;
 import javax.xml.bind.annotation.*;
 
 /**
@@ -24,26 +25,21 @@ import javax.xml.bind.annotation.*;
  */
 @XmlRootElement
 public class MdmiNetBusinessElement {
-   String name       ;
-   String description;
-   String uri        ;
-   String uniqueId   ;
-   String dataType   ;
+   ArrayList<MdmiNetBerName> names = new ArrayList<MdmiNetBerName>();
+   String                    uri                ;
+   String                    uniqueId           ;
+   String                    dataType           ;
+   String                    enumValueSetField  ;
+   String                    enumValueField     ;
+   String                    enumValueDescrField;
+	String                    enumValueSet       ;
 
-   public String getName() {
-      return name;
+   public ArrayList<MdmiNetBerName> getNames() {
+      return names;
    }
 
-   public void setName( String name ) {
-      this.name = name;
-   }
-
-   public String getDescription() {
-      return description;
-   }
-
-   public void setDescription( String description ) {
-      this.description = description;
+   public void setNames( ArrayList<MdmiNetBerName> names ) {
+      this.names = names;
    }
 
    public String getUri() {
@@ -69,13 +65,51 @@ public class MdmiNetBusinessElement {
    public void setDataType( String dataType ) {
       this.dataType = dataType;
    }
+   
+   public String getEnumValueSetField() {
+		return enumValueSetField;
+	}
 
-   @Override
+	public void setEnumValueSetField( String enumValueSetField ) {
+		this.enumValueSetField = enumValueSetField;
+	}
+
+	public String getEnumValueField() {
+		return enumValueField;
+	}
+
+	public void setEnumValueField( String enumValueField ) {
+		this.enumValueField = enumValueField;
+	}
+
+	public String getEnumValueDescrField() {
+		return enumValueDescrField;
+	}
+
+	public void setEnumValueDescrField( String enumValueDescrField ) {
+		this.enumValueDescrField = enumValueDescrField;
+	}
+
+	public String getEnumValueSet() {
+		return enumValueSet;
+	}
+
+	public void setEnumValueSet( String enumValueSet ) {
+		this.enumValueSet = enumValueSet;
+	}
+
+	@Override
    public String toString() {
       StringBuilder sb = new StringBuilder();
       sb.append("{");
-      sb.append("name: '").append(name).append("'");
-      sb.append(", description: '").append(description).append("'");
+      sb.append("names: [");
+      for( int i = 0; i < names.size(); i++ ) {
+	      MdmiNetBerName mnbn = names.get(i);
+	      if( 0 < i )
+	      	sb.append(", ");
+	      sb.append("{name: '").append(mnbn.name).append("', description: '").append(mnbn.description).append("'}");
+      }
+      sb.append("]");
       sb.append(", uri: '").append(uri).append("'");
       sb.append(", uniqueId: '").append(uniqueId).append("'");
       sb.append(", dataType: '").append(dataType).append("'");

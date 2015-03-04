@@ -108,6 +108,13 @@ public class MessageGroup implements IPackage {
    }
 
    public void addDatatype( MdmiDatatype datatype ) {
+      for( int i = 0; i < m_datatypes.size(); i++ ) {
+         MdmiDatatype dt = m_datatypes.get(i);
+         if( dt.getName().equals(datatype.getName()) ) {
+         	m_datatypes.set(i, datatype);
+         	return;
+         }
+      }
       m_datatypes.add(datatype);
    }
 

@@ -94,7 +94,7 @@ class MdmiNetDataTypeDA {
 } // MdmiNetDataTypeDA
 
 class MdmiNetDataTypeCollection {
-   private final static String DB_NAME = "MdmiDictionary";
+   private final static String DB_NAME = "ReferentIndex";
    private Mongo     server;
    private Morphia   morphia;
    private Datastore ds;
