@@ -78,12 +78,12 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private static final String UNIQUEID_STATE    = "UniqueIDState";
 	private static final String DESCRIPTION_STATE = "DescriptionState";
 	private static final String CODELLIST_STATE = "CodeListState";
+	private static final String RELATIONSHIP_STATE = "RelationshipState";
 	private static final String ABS_LOCATION_STATE = "AbsoluteLocationState";
 	private static final String ABS_NAME_STATE = "AbsoluteNameState";
 	private static final String CARDINALITY_STATE = "CardinalityState";
 	private static final String COMPUTED_VALUE_STATE = "ComputedValueState";
 	private static final String RELATED_SE_STATE = "RelatedSeState";
-//	private static final String RULE_STATE = "RuleState";
 	
 	private static final String SOURCE_TO_TARGET_STATE = "SourceToTargetState";
 	private static final String TARGET_TO_SOURCE_STATE = "TargetToSourceState";
@@ -104,6 +104,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 	private JCheckBox m_uniqueID = new JCheckBox(s_res.getString("TraceabilityTool.uniqueID"));
 	private JCheckBox m_description = new JCheckBox(s_res.getString("TraceabilityTool.description"));
 	private JCheckBox m_codeList = new JCheckBox(s_res.getString("TraceabilityTool.codeList"));
+	private JCheckBox m_relationship = new JCheckBox(s_res.getString("TraceabilityTool.relationship"));
 	private JCheckBox m_absoluteLocation = new JCheckBox(s_res.getString("TraceabilityTool.absolutePathLocation"));
 	private JCheckBox m_absoluteName = new JCheckBox(s_res.getString("TraceabilityTool.absolutePathName"));
 	private JCheckBox m_cardinality = new JCheckBox(s_res.getString("TraceabilityTool.cardinality"));
@@ -125,6 +126,7 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 			new OptionalField(UNIQUEID_STATE, m_uniqueID),
 			new OptionalField(DESCRIPTION_STATE, m_description),
 			new OptionalField(CODELLIST_STATE, m_codeList),
+			new OptionalField(RELATIONSHIP_STATE, m_relationship),
 			new OptionalField(ABS_LOCATION_STATE, m_absoluteLocation),
 			new OptionalField(ABS_NAME_STATE, m_absoluteName),
 			new OptionalField(CARDINALITY_STATE, m_cardinality),
@@ -735,8 +737,10 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 				writer.write(m_codeList.getText());
 				writer.write(SEPARATOR);
 			}
-			writer.write("Relationship");
-			writer.write(SEPARATOR);
+			if (m_relationship.isSelected()) {
+				writer.write(m_relationship.getText());
+				writer.write(SEPARATOR);
+			}
 			if (m_computedValue.isSelected()) {
 				writer.write(m_computedValue.getText());	
 				writer.write(SEPARATOR);
@@ -1215,21 +1219,23 @@ public class TraceabilityTool extends JFrame implements ActionListener {
 		}
 		
 		// 8. Relationship (Java Script)
-		if (rule != null && rule.getRule() != null && !rule.getRule().isEmpty()) {
-			// script can contain special characters, so enclose in quotes
-			StringBuilder buf = new StringBuilder();
-			buf.append("\"");
-			// new-lines break CSV - replace with HTML Break
-			buf.append(rule.getRule().replace("\n", "<br>"));
-			buf.append("\"");
-			writer.write(buf.toString());
-			
-		} else if (isomorphic) {
-			writer.write("Isomorphic");
-		} else {
-			writer.write("");
+		if (m_relationship.isSelected()) {
+			if (rule != null && rule.getRule() != null && !rule.getRule().isEmpty()) {
+				// script can contain special characters, so enclose in quotes
+				StringBuilder buf = new StringBuilder();
+				buf.append("\"");
+				// new-lines break CSV - replace with HTML Break
+				buf.append(rule.getRule().replace("\n", "<br>"));
+				buf.append("\"");
+				writer.write(buf.toString());
+
+			} else if (isomorphic) {
+				writer.write("Isomorphic");
+			} else {
+				writer.write("");
+			}
+			writer.write(SEPARATOR);
 		}
-		writer.write(SEPARATOR);
 		
 		// 9. Computed Value
 		if (m_computedValue.isSelected()) {
