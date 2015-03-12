@@ -34,6 +34,7 @@ public class WebServiceTest {
          testDataDT.setTypeName("CodeList");
          testDataDT.setTypeSpec(new URI("http://dictionary.mdmi.org/enums/CodeList"));
          try {
+            // delete if already exists
             pdt.delete(testMap, testDataDT);
          }
          catch( Exception ignoreDeleteFails ) {}
