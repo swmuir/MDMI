@@ -138,7 +138,7 @@ public class WebServiceTest {
    }
 
    private static URI getBaseUri() {
-      return UriBuilder.fromUri("http://localhost:8080/MdmiSvc").build(); // 107.22.213.68
+      return UriBuilder.fromUri("http://52.1.151.176:8080/MdmiSvc").build(); // 107.22.213.68
    }
 
    private static String getToken() {
