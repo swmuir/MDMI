@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import org.openhealthtools.mdht.mdmi.editor.common.SystemContext;
 import org.openhealthtools.mdht.mdmi.editor.common.actions.DefaultMenuAction;
@@ -38,8 +39,17 @@ public class ViewDescriptionsAction extends DefaultMenuAction {
 	public void execute(ActionEvent actionEvent) {
 		MessageGroup group = selectMessageGroup();
 		if (group != null) {
-			ViewObjectDescriptions view = new ViewObjectDescriptions(group);
-			view.setVisible(true);
+			final ViewObjectDescriptions view = new ViewObjectDescriptions(group);
+			
+			SwingUtilities.invokeLater(new Runnable() {
+				
+				@Override
+				public void run() {
+					view.setVisible(true);
+					view.toFront();
+					
+				}
+			});
 		}
 	}
 	
