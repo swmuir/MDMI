@@ -186,13 +186,23 @@ public class MdmiModelTree extends JPanel {
 		return m_messageElementsTree;
 	}
 
+	/** Return all message group nodes, sorted as shown in the tree */
+	public List<MessageGroupNode> getMessageGroupNodes() {
+		// We'll assume the message groups are the children of the root
+		List<MessageGroupNode> groups = new ArrayList<MessageGroupNode>();
+		for (int i = 0; i < m_treeRoot.getChildCount(); i++) {
+			MessageGroupNode msgGroupNode = (MessageGroupNode) m_treeRoot.getChildAt(i);
+			groups.add(msgGroupNode);
+		}
+		return groups;
+	}
+
 	/** Return all message groups, sorted as shown in the tree */
 	public List<MessageGroup> getMessageGroups() {
 		// We'll assume the message groups are the children of the root
 		List<MessageGroup> groups = new ArrayList<MessageGroup>();
 		for (int i = 0; i < m_treeRoot.getChildCount(); i++) {
-			MessageGroupNode msgGroupNode = (MessageGroupNode) m_treeRoot
-					.getChildAt(i);
+			MessageGroupNode msgGroupNode = (MessageGroupNode) m_treeRoot.getChildAt(i);
 			MessageGroup group = msgGroupNode.getMessageGroup();
 			groups.add(group);
 		}

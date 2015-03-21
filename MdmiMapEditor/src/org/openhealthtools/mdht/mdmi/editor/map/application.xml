@@ -27,6 +27,7 @@
 		<action name="openFile" class="org.openhealthtools.mdht.mdmi.editor.map.actions.OpenFileAction"/>
 		<action name="loadDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.LoadDatatypesAction"/>
 		<action name="importDictionary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportDomainDictionaryAction"/>
+		<action name="importRefIndexFromWS" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportRefIndexFromWSAction"/>
 		<action name="reviseRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ReviseReferentIndexAction"/>
 		<action name="exportRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExportReferentIndexAction"/>
 		
@@ -104,6 +105,7 @@
          <separator/>
          <item action="loadDatatypes"/>
          <item action="importDictionary"/>
+         <item action="importRefIndexFromWS"/>
          
          <separator/>
          <item action="reviseRefIndex"/>

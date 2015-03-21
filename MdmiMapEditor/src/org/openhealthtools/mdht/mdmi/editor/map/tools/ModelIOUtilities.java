@@ -312,13 +312,11 @@ public class ModelIOUtilities {
 
                 // show errors
                 for (ModelInfo errorMsg : results.getErrors()) {
-                    selectionManager.getStatusPanel().writeValidationErrorMsg("",
-                            errorMsg);
+                    selectionManager.getStatusPanel().writeValidationErrorMsg("",  errorMsg);
                 }
             }
         } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	selectionManager.getStatusPanel().writeException(e);
 		} finally {
             cm.restoreCursor();
         }
@@ -480,8 +478,10 @@ public class ModelIOUtilities {
      */
     public static void addImportedDatatypesToTree(List<MessageGroup> newGroups, boolean copyIfExists, boolean warnIfExists) {
         MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
+        List<MessageGroup> existingGroups = entitySelector.getMessageGroups();
+        
         for (MessageGroup newGroup : newGroups) {
-            for (MessageGroup treeGroup : entitySelector.getMessageGroups()) {
+			for (MessageGroup treeGroup : existingGroups) {
                 MessageGroupNode groupNode = (MessageGroupNode) entitySelector.findNode(treeGroup);
 
                 // add all datatypes that aren't in the tree yet
@@ -691,73 +691,83 @@ public class ModelIOUtilities {
      * Datatypes will be added if necessary
      */
     public static void addImportedBusinessElementRefToTree(List<MessageGroup> newGroups, boolean copyIfExists, boolean warnIfExists) {
-        MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
-
+       
         for (MessageGroup newGroup : newGroups) {
-            for (MessageGroup treeGroup : entitySelector.getMessageGroups()) {
-                MessageGroupNode groupNode = (MessageGroupNode) entitySelector.findNode(treeGroup);
-                MdmiDomainDictionaryReference treeDictionary = treeGroup.getDomainDictionary();
-                DomainDictionaryReferenceNode dictionaryNode = (DomainDictionaryReferenceNode) entitySelector.findNode(treeDictionary);
-
-                // add all dictionary elements that aren't in the tree yet
-                Collection<MdmiBusinessElementReference> references = newGroup.getDomainDictionary().getBusinessElements();
-                for (MdmiBusinessElementReference newBizElemRef : references) {
-                    //search for element with same name or UID
-                	MdmiBusinessElementReference found = findBusinessElementReferenceByUIDorName(treeGroup.getDomainDictionary().getBusinessElements(),
-                            newBizElemRef.getUniqueIdentifier(), newBizElemRef.getName());
-
-                    if (found == null) {
-
-                        // Add to tree
-                        NewObjectInfo info = dictionaryNode.getNewObjectInformationForClass(newBizElemRef.getClass());
-
-                        EditableObjectNode childNode = info.addNewChild(newBizElemRef);
-                        childNode.setImported(true);
-                        SelectionManager.getInstance().getEntitySelector().insertNewNode(dictionaryNode,
-                                childNode);
-
-                    } else {
-
-                        if (copyIfExists) {
-                            // copy data into found object
-                            EditableObjectNode newNode = entitySelector.replaceUserObject(found, newBizElemRef);                   
-
-                            // mark as imported
-                            newNode.setImported(true);
-
-                            found = newBizElemRef;
-                        }
-                        if (warnIfExists) {
-                            // already exists - show message
-                            LinkedObject link = new LinkedObject(found, found.getName());
-                            String preMessage = ClassUtil.beautifyName(found.getClass());
-                            String postMessage = s_res.getString("ModelIOUtilities.alreadyExists"); //already exists
-                            if (copyIfExists) {
-                                postMessage = s_res.getString("ModelIOUtilities.replaceExists");//has been replaced
-                            }
-
-                            SelectionManager.getInstance().getStatusPanel().writeConsoleLink(preMessage,
-                                    link, postMessage);
-                        }
-                    }
-                    
-                    // check on datatype if we're using the imported BER
-                    if (found == null || copyIfExists) {
-
-                        // make sure datatype exists
-                        MdmiDatatype refDatatype = newBizElemRef.getReferenceDatatype();
-                        if (refDatatype != null) {
-                            MdmiDatatype foundType = addImportedDatatype(refDatatype, groupNode, copyIfExists, warnIfExists);
-                            if (foundType != refDatatype) {
-                                // datatype exists, so change the reference to the existing one
-                                newBizElemRef.setReferenceDatatype(foundType);
-                            }
-                        }
-                    }
-                }
-            }
+            Collection<MdmiBusinessElementReference> references = newGroup.getDomainDictionary().getBusinessElements();
+            
+            // add all dictionary elements that aren't in the tree yet
+            addBusinessElementsToTree(references, copyIfExists, warnIfExists);  
         }
     }
+
+    /** Add/Replace all business element references in the tree with the supplied list */
+	public static void addBusinessElementsToTree(Collection<MdmiBusinessElementReference> references,
+			boolean copyIfExists, boolean warnIfExists) {
+		
+		MdmiModelTree entitySelector = SelectionManager.getInstance().getEntitySelector();
+		// look at each message group node in the tree
+		for (MessageGroupNode groupNode : entitySelector.getMessageGroupNodes()) {
+
+			MessageGroup treeGroup = groupNode.getMessageGroup();
+			MdmiDomainDictionaryReference treeDictionary = treeGroup.getDomainDictionary();
+			DomainDictionaryReferenceNode dictionaryNode = (DomainDictionaryReferenceNode) entitySelector.findNode(treeDictionary);
+
+
+			for (MdmiBusinessElementReference newBizElemRef : references) {
+				//search for an existing element with same name or UID
+				MdmiBusinessElementReference found = findBusinessElementReferenceByUIDorName(treeDictionary.getBusinessElements(),
+						newBizElemRef.getUniqueIdentifier(), newBizElemRef.getName());
+
+				if (found == null) {
+
+					// Add to tree
+					NewObjectInfo info = dictionaryNode.getNewObjectInformationForClass(newBizElemRef.getClass());
+
+					EditableObjectNode childNode = info.addNewChild(newBizElemRef);
+					childNode.setImported(true);
+					entitySelector.insertNewNode(dictionaryNode, childNode);
+
+				} else {
+					// Existing Business Element Reference
+					if (copyIfExists) {
+						// copy data into found object
+						EditableObjectNode newNode = entitySelector.replaceUserObject(found, newBizElemRef);                   
+
+						// mark as imported
+						newNode.setImported(true);
+
+						found = newBizElemRef;
+					}
+					if (warnIfExists) {
+						// already exists - show message
+						LinkedObject link = new LinkedObject(found, found.getName());
+						String preMessage = ClassUtil.beautifyName(found.getClass());
+						String postMessage = s_res.getString("ModelIOUtilities.alreadyExists"); //already exists
+						if (copyIfExists) {
+							postMessage = s_res.getString("ModelIOUtilities.replaceExists");//has been replaced
+						}
+
+						SelectionManager.getInstance().getStatusPanel().writeConsoleLink(preMessage,
+								link, postMessage);
+					}
+				}
+
+				// check on datatype if we're using the imported BER
+				if (found == null || copyIfExists) {
+
+					// make sure datatype exists
+					MdmiDatatype refDatatype = newBizElemRef.getReferenceDatatype();
+					if (refDatatype != null) {
+						MdmiDatatype foundType = addImportedDatatype(refDatatype, groupNode, copyIfExists, warnIfExists);
+						if (foundType != refDatatype) {
+							// datatype exists, so change the reference to the existing one
+							newBizElemRef.setReferenceDatatype(foundType);
+						}
+					}
+				}
+			}
+		}
+	}
 
     // find by uid. If not found, find by name
     private static MdmiBusinessElementReference findBusinessElementReferenceByUIDorName(
