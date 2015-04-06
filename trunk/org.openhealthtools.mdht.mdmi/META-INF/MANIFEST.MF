@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %pluginName
+Bundle-SymbolicName: org.openhealthtools.mdht.mdmi;singleton:=true
+Bundle-Version: 0.7.0
+Bundle-ClassPath: .
+Bundle-Activator: org.openhealthtools.mdht.mdmi.MDMIPlugin$Implementation
+Bundle-Vendor: %providerName
+Bundle-Localization: plugin
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: org.openhealthtools.mdht.mdmi,
+ org.openhealthtools.mdht.mdmi.impl,
+ org.openhealthtools.mdht.mdmi.util
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.emf.ecore;visibility:=reexport,
+ org.eclipse.emf.ecore.xmi;visibility:=reexport
+Bundle-ActivationPolicy: lazy
