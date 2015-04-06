@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MDMI XSD QVTo
+Bundle-SymbolicName: org.openhealthtools.mdmi.qvt.xsd
+Bundle-Version: 0.01
+Bundle-Vendor: Open Health Tools

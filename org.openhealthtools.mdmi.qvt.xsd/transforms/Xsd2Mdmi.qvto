@@ -1,0 +1,356 @@
+modeltype XSD uses 'http://www.eclipse.org/xsd/2002/XSD';
+modeltype MDMI uses 'http://schema.omg.org/spec/MDMI/1.0';
+
+transformation Xsd2Mdmi( in sourceXSD  : XSD,  in domainDictionary : MDMI,  out targetMDMI : MDMI  ); 
+
+configuration property syntaxRoot : String;
+configuration property semanticRoot : String;
+configuration property mappingStyle : String;
+
+main() {
+sourceXSD.objectsOfType(XSD::XSDSchema)->map toMDMIMessageGroup(domainDictionary.rootObjects()
+											[mdmi::MessageGroup]->asSequence()->first());
+}
+
+
+ 
+mapping XSD::XSDSchema::toMDMIMessageGroup(in domainMessageGroup: mdmi::MessageGroup) : mdmi::MessageGroup {	
+
+init {
+	result := domainMessageGroup.deepclone().oclAsType(mdmi::MessageGroup);	
+
+}	
+
+
+ 
+	result.name := self.targetNamespace;
+	result.description := "MessageGroup";
+	result.defaultLocationExprLang := "XPath";
+	result.defaultConstraintExprLang :="JavaScript";
+	result.defaultRuleExprLang :="JavaScript";
+ 	result.models += self->map transformPackage();
+}
+
+
+ 
+mapping XSD::XSDSchema::transformPackage() : MessageModel {
+	elementSet := self->map createSemanticElementSet()->asSequence()->first();
+	syntaxModel := self->map createSyntaxModel(result.elementSet)->asSequence()->first();
+ 	messageModelName := self.targetNamespace;
+ 	result.source := self.targetNamespace;
+ 	result.messageModelName := 'Model Name';
+}
+
+
+mapping XSD::XSDSchema::createSemanticElementSet() : SemanticElementSet  {
+ 	semanticElements += self.elementDeclarations->select(name.equalsIgnoreCase(semanticRoot)).resolvedElementDeclaration->map createSemanticElement(result);
+}
+
+mapping XSD::XSDSchema::createSyntaxModel(in  ses : SemanticElementSet) : MessageSyntaxModel   {
+ 	var xxx : XSDElementDeclaration := self.elementDeclarations->select(syntaxRoot.equalsIgnoreCase(name))->asSequence()->first();
+  	var bbb := object MDMI::Bag  {
+ 		name := "";
+ 	};	
+ 	 xxx.type.oclAsType(XSDComplexTypeDefinition).contentType.oclAsType(XSDParticle).content.oclAsType(XSDModelGroup)->map modelGroupMappingToBag(ses,bbb);	  	 
+ 	bbb.name := xxx.name;
+ 	bbb.location := xxx.name;
+ 	bbb.minOccurs := 1;
+	bbb.maxOccurs := 1;
+	
+ 	root := bbb;
+}
+
+mapping XSD::XSDElementDeclaration::createSyntaxModelxxx(inout ses : SemanticElementSet) : MDMI::Bag {
+ 	name := self.name;
+ 		log('Starting '+self.name);
+ 		 switch { 
+		 	case (self.type = null) {
+ 
+		 	}
+		 	case (self.type.oclIsTypeOf(XSDSimpleTypeDefinition)) 
+		 		{
+ 
+		 		} 
+		 	case (self.type.oclIsTypeOf(XSDComplexTypeDefinition)) 
+		 		{
+ 
+		 		} 	
+		 	else 
+		 		{
+		 		} 
+		 	};
+		log('Ending '+self.name);
+
+}
+
+mapping XSD::XSDModelGroup::modelGroupMappingToBag(in ses : SemanticElementSet, inout parentBag : MDMI::Bag)  {
+
+  self.contents->map particleMappingToBag(ses,parentBag);
+ 
+}
+
+mapping XSD::XSDModelGroup::modelGroupMappingToBagAAA(in ses : SemanticElementSet, inout parentBag : MDMI::Bag)  {
+
+  self.contents->map particleMappingToBagAAAA(ses,parentBag);
+ 
+}
+
+mapping XSD::XSDAttributeUse::attributeMappingToLeaf(inout ses : SemanticElementSet,inout parentBag : MDMI::Bag) : LeafSyntaxTranslator {
+	result.name := parentBag.name + self.attributeDeclaration.name;
+	// Issue wiht XSD
+	result.location :=  '@'+self.attributeDeclaration.name;
+	result.minOccurs := 0;
+	result.maxOccurs := 1;
+	
+	ses.semanticElements->forEach(ee) {
+	
+						if (ee.name.equalsIgnoreCase(result.name)) then {
+					
+							result.semanticElement := ee;
+							break;
+						} endif;
+					};
+	 
+}
+
+mapping XSD::XSDParticle::particleMappingToBag(in  ses : SemanticElementSet,inout parentBag : MDMI::Bag)   {
+
+
+
+	switch {
+		case (self.content.oclIsTypeOf(XSDElementDeclaration)) {
+		if (self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclIsTypeOf(XSDSimpleTypeDefinition)) then  {	
+  		
+					var leaf := object MDMI::LeafSyntaxTranslator {
+					};	
+					leaf.name := parentBag.name + self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+					leaf.location := self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+					leaf.minOccurs := 0;
+					leaf.maxOccurs := 1;
+					
+					ses.semanticElements->forEach(ee) {
+ 						if (ee.name.equalsIgnoreCase( leaf.name)) then {
+							leaf.semanticElement := ee;
+							break;
+						} endif;
+					};
+					
+					parentBag.nodes += leaf
+ 			} else {
+ 		 
+ 					var newbag := object MDMI::Bag {
+					};	
+					newbag.name := parentBag.name + self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+					newbag.location :=  self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+					newbag.minOccurs := 0;
+					newbag.maxOccurs := 1;
+					ses.semanticElements->forEach(ee) {
+ 						if (ee.name.equalsIgnoreCase( newbag.name)) then {
+ 							newbag.semanticElement := ee;
+							break;
+						} endif;
+					};
+					
+					parentBag.nodes += newbag;
+ 	 				newbag.nodes += self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).attributeUses->map attributeMappingToLeaf(ses,newbag);
+  			 self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).content[XSDParticle]->map particleMappingToBag(ses,newbag);
+ 					parentBag.nodes += newbag;
+ 	 		} endif;		
+		};
+		case (self.content.oclIsTypeOf(XSDModelGroup)) {
+		 
+			self.content.oclAsType(XSDModelGroup).contents->map particleMappingToBag(ses,parentBag);
+		};
+		else {
+	 
+		};
+		
+	};
+}
+ 
+ 
+ 
+ 
+ mapping XSD::XSDParticle::particleMappingToBagAAAA(in  ses : SemanticElementSet,inout parentBag : MDMI::Bag)   {
+
+	switch {
+		case (self.content.oclIsTypeOf(XSDElementDeclaration)) {
+ 
+			if (self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclIsTypeOf(XSDSimpleTypeDefinition)) then  {	
+   			} else {
+ 	 				parentBag.nodes += self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).attributeUses->map attributeMappingToLeaf(ses,parentBag);
+ 	 		} endif;		
+		};
+		case (self.content.oclIsTypeOf(XSDModelGroup)) {
+		 
+			self.content.oclAsType(XSDModelGroup).contents->map particleMappingToBag(ses,parentBag);
+		};
+		else {
+	 
+		};
+		
+	};
+}
+ 
+ 
+query XSD::XSDElementDeclaration::getSemanticElement(in  ses : SemanticElementSet) :  mdmi::SemanticElement {
+	ses.semanticElements->forEach(semanticElement) {
+		if (semanticElement.name.endsWith(self.name)) then {
+			return semanticElement;
+		} endif;
+ 	};
+	return null;
+}; 
+
+mapping XSD::XSDComplexTypeDefinition::createSyntaxModel() : MDMI::Bag {
+
+}
+
+mapping XSD::XSDElementDeclaration::createSemanticElement(inout ses : SemanticElementSet) : SemanticElement {
+		result.name := self.name;
+		
+		result._datatype := targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('Container'))->asSequence()->first();	
+		
+		result.elementType := mappingStyle;
+		
+		log('start createSemanticElement   ' + result.name);
+		
+		log('start createSemanticElement   ' + self.type.toString());
+	 
+		 switch { 
+		 	case (self.type = null) {
+	
+		 	}
+		 	case (self.type.oclIsTypeOf(XSDSimpleTypeDefinition)) 
+		 		{
+		 		}; 
+		 	case (self.type.oclIsTypeOf(XSDComplexTypeDefinition)) 
+		 		{
+		 	 log('aaa');
+		 	 	result.children += self.type.oclAsType(XSDComplexTypeDefinition).contentType.oclAsType(XSDParticle).content.oclAsType(XSDModelGroup)->map modelGroupMapping(ses,result);	
+			 
+		 		result.children += self.type.oclAsType(XSDComplexTypeDefinition).attributeUses->map attributeMapping(ses,result);			
+		 		};
+		 	else 
+		 		{
+		 		};
+		 	};
+		 	
+		result.children->forEach(child) {
+			child.parent := result;
+		};
+		ses.semanticElements += result; 	
+		log('end createSemanticElement   ' + result.name);
+		
+}
+
+mapping XSD::XSDModelGroup::modelGroupMapping( inout ses : SemanticElementSet,in theParent : SemanticElement)   {
+
+	log('aaaaaaa'+self.toString());
+ 	ses.semanticElements += self.contents->map particleMapping(ses,theParent);
+}
+
+mapping XSD::XSDModelGroup::modelGroupMappingAAAA( inout ses : SemanticElementSet,in theParent : SemanticElement)   {
+ 	ses.semanticElements += self.contents->map particleMappingAAA(ses,theParent);
+}
+
+
+query XSD::XSDSimpleTypeDefinition::getDatatype() : mdmi::MDMIDatatype {
+log('Search for string');
+ return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('String'))->asSequence()->first();	
+}
+
+
+
+query XSD::XSDComplexTypeDefinition::getDatatype() : mdmi::MDMIDatatype {
+ return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('Container'))->asSequence()->first();	
+}
+
+query XSD::XSDAttributeUse::getDatatype() : mdmi::MDMIDatatype {
+ 	switch {
+		case (self.attributeDeclaration.typeDefinition.name.equalsIgnoreCase('int')) {
+			return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('Integer'))->asSequence()->first();	
+		}
+		case (self.attributeDeclaration.typeDefinition.name.equalsIgnoreCase('bit')) {
+			return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('Integer'))->asSequence()->first();	
+		}
+		case (self.attributeDeclaration.typeDefinition.name.equalsIgnoreCase('bigint')) {
+			return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('Integer'))->asSequence()->first();	
+		}
+		case (self.attributeDeclaration.typeDefinition.name.equalsIgnoreCase('date')) {
+			return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('DateTime'))->asSequence()->first();	
+		}
+		else { 
+			return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('String'))->asSequence()->first();	
+		}
+	};	
+ return targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('String'))->asSequence()->first();	
+}
+
+mapping XSD::XSDAttributeUse::attributeMapping(inout ses : SemanticElementSet,inout aaaa : SemanticElement ) : SemanticElement {
+result.name := aaaa.name + self.attributeDeclaration.name;
+result.elementType := mappingStyle;
+result._datatype := self->getDatatype()->asSequence()->first();
+ses.semanticElements += result;	
+}
+ 
+mapping XSD::XSDParticle::particleMapping(inout ses : SemanticElementSet,inout theParent : SemanticElement )  {
+log("xxxxxxxxxxxxxxxxxxx");
+log(self.content.toString());
+	switch {
+		case (self.content.oclIsTypeOf(XSDElementDeclaration)) {
+			var semanticElement :SemanticElement := object SemanticElement {
+				name := 	 theParent.name + self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+				elementType := mappingStyle;
+			};
+			semanticElement.parent := theParent;
+			ses.semanticElements += semanticElement;
+					
+			if (self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclIsTypeOf(XSDSimpleTypeDefinition)) then  {		
+					semanticElement._datatype := self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDSimpleTypeDefinition).getDatatype();	
+			} else {
+			  		semanticElement._datatype :=  self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).getDatatype();
+		 			semanticElement.children += self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).attributeUses->map attributeMapping(ses,semanticElement);			
+		 			self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).content[XSDParticle]->map particleMapping(ses,theParent);
+	 		} endif;		
+		};
+		case (self.content.oclIsTypeOf(XSDModelGroup)) {
+			self.content.oclAsType(XSDModelGroup).contents->map particleMapping(ses,theParent);
+		};
+		else {
+	
+		};
+		
+	};
+}
+
+mapping XSD::XSDParticle::particleMappingAAA(inout ses : SemanticElementSet,inout aaaa : SemanticElement )  {
+	switch {
+		case (self.content.oclIsTypeOf(XSDElementDeclaration)) {
+			var semanticElement :SemanticElement := object SemanticElement {
+				name := aaaa.name + self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+			};
+			semanticElement.parent := aaaa;
+			ses.semanticElements += semanticElement;
+						
+			if (self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclIsTypeOf(XSDSimpleTypeDefinition)) then  {		
+					semanticElement._datatype := self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDSimpleTypeDefinition).getDatatype();	
+			} else {
+			  		semanticElement._datatype :=  self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).getDatatype();
+		 			aaaa.children += self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).attributeUses->map attributeMapping(ses,semanticElement);			
+		 			self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).content[XSDParticle]->map particleMapping(ses,aaaa);
+	 		} endif;		
+		};
+		case (self.content.oclIsTypeOf(XSDModelGroup)) {
+			self.content.oclAsType(XSDModelGroup).contents->map particleMapping(ses,aaaa);
+		};
+		else {
+	
+		};
+		
+	};
+}
+
+
+
+

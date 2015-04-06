@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="project" default="default"
+	xmlns:qvto="http://www.eclipse.org/qvt/1.0.0/Operational">
+	<target name="default">
+		<qvto:transformation
+			uri="platform:/resource/org.openhealthtools.mdmi.qvt.xsd/transforms/Xsd2Mdmi.qvto">
+			<in uri="platform:/resource/EHR/EHR_Patient_ClincalCase_Labs_Immunizations_Procedures_Meds_Problems_Allergies.xsd" />
+			<in uri="platform:/resource/org.openhealthtools.mdmi.qvt.xsd/dictionary/MdmiDictionary.xmi" />
+			<out uri="platform:/resource/org.openhealthtools.mdht.mdmi/EHR.xmi" />
+			<configProperty name="semanticRoot" value="Patient" />
+			<configProperty name="syntaxRoot" value="Patients" />
+			<configProperty name="mappingStyle" value="LOCAL" />
+		</qvto:transformation>
+	</target>
+</project>

@@ -1,0 +1,52 @@
+<project name="CDA_Consol Model Transformation"  basedir="." default="transform">
+
+	<target name="transform">
+		<!--<replace file='Dictionary_Ultimate.xmi' token='>\n <datatype xmi:idref=' value='&lt;businessElement xmi:idref="'/>-->
+	
+	<!--	<replace file='BH-RI-2015April.1.xmi' token='&lt;referenceDatatype xmi:idref="' value=' referenceDatatype="'/>
+		<replace file='BH-RI-2015April.1.xmi' token='"&gt;&lt;/referenceDatatype&gt;' value='" >'/> -->
+		
+		<replace file='BH-RI-2015April.1.xmi' token='isReadonly="true"' value=' '/>
+				<replace file='BH-RI-2015April.1.xmi' token='isReadonly="false"' value=' '/>
+
+		<!--
+		<replace file='BH-RI-2015April.1.xmi' token='&lt;datatype xmi:idref="' value=' datatype="'/>
+		<replace file='BH-RI-2015April.1.xmi' token='"&gt;&lt;/datatype&gt;' value='" >'/>
+		
+		<replace file='BH-RI-2015April.1.xmi' token='&lt;referenceDatatype xmi:idref="' value=' referenceDatatype="'/>
+		<replace file='BH-RI-2015April.1.xmi' token='"&gt;&lt;/referenceDatatype&gt;' value='" >'/>
+		
+		<replace file='BH-RI-2015April.1.xmi' token='&lt;baseType xmi:idref="' value='&lt;baseType>'/>
+		<replace file='BH-RI-2015April.1.xmi' token='"&gt;&lt;/baseType&gt;' value='&lt;/baseType&gt;'/>
+		
+		<replace file='BH-RI-2015April.1.xmi' token='isReadonly="true"' value=' '/>
+		<replace file='BH-RI-2015April.1.xmi' token='isReadonly="false"' value=' '/>
+		
+		
+		<replace file='Dictionary_Ultimate.xmi' token='maxOccurs="1"&gt;' value='maxOccurs="1"'/>
+		<replace file='Dictionary_Ultimate.xmi' token='isReadonly="true"&gt;' value='isReadonly="true"'/>
+		<replace file='Dictionary_Ultimate.xmi' token='isReadonly="false"&gt;' value='isReadonly="false"'/>
+		
+		
+		--><!--<replace file='TargetMap.xmi' token='&lt;/datatype>' value='" />'/>
+		<replace file='TargetMap.xmi' token='&lt;semanticElement>' value='&lt;semanticElement xmi:idref="'/>
+		<replace file='TargetMap.xmi' token='&lt;/semanticElement>' value='" />'/>	
+
+		<replace file='TargetMap.xmi' token='&lt;referenceDatatype>' value='&lt;referenceDatatype xmi:idref="'/>
+		<replace file='TargetMap.xmi' token='&lt;/referenceDatatype>' value='" />'/>
+
+		<replace file='TargetMap.xmi' token='&lt;children>TargetMap.xmi#' value='&lt;children xmi:idref="'/>
+		<replace file='TargetMap.xmi' token='&lt;/children>' value='" />'/>
+
+		<replace file='TargetMap.xmi' token='&lt;datatype>TargetMap.xmi#' value='&lt;datatype xmi:idref="'/>
+		<replace file='TargetMap.xmi' token='&lt;/datatype>' value='" />'/>
+	
+		<replace file='TargetMap.xmi' token='&lt;syntaxNode xmi:type="mdmi:LeafSyntaxTranslator">TargetMap.xmi#' value='&lt;syntaxNode xmi:idref="'/>
+	
+		
+		<replace file='TargetMap.xmi' token='&lt;syntaxNode xmi:type="mdmi:Bag">TargetMap.xmi#' value='&lt;syntaxNode xmi:idref="'/>
+		<replace file='TargetMap.xmi' token='&lt;/syntaxNode>' value='" />'/>-->
+		
+	</target>
+
+</project>

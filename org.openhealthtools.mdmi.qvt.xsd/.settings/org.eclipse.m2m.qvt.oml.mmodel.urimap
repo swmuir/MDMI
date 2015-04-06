@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="ASCII"?>
+<uriMap:MappingContainer xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:uriMap="http:///www.eclipse.org/m2m/qvt/oml/MModelUriMap/1.0.0">
+  <mapping sourceURI="http://schema.omg.org/spec/MDMI/1.0" targetURI="platform:/resource/org.openhealthtools.mdht.mdmi/model/MDMI.ecore"/>
+</uriMap:MappingContainer>
