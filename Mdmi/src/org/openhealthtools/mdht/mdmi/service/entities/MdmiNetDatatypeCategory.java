@@ -33,5 +33,24 @@ public enum MdmiNetDatatypeCategory {
    DERIVED,
    ENUMERATED,
    STRUCTURE,
-   CHOICE
+   CHOICE;
+   
+   public static MdmiNetDatatypeCategory convert( String value ) {
+   	if( null == value )
+   		return NONE;
+   	value = value.trim().toUpperCase();
+   	if( value.equals("PRIMITIVE") )
+   		return PRIMITIVE;
+   	if( value.equals("EXTERNAL") )
+   		return EXTERNAL;
+   	if( value.equals("DERIVED") )
+   		return DERIVED;
+   	if( value.equals("ENUMERATED") )
+   		return ENUMERATED;
+   	if( value.equals("STRUCTURE") )
+   		return STRUCTURE;
+   	if( value.equals("CHOICE") )
+   		return CHOICE;
+		return NONE;
+   }
 } // MdmiDataTypeClass

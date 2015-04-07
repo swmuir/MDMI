@@ -46,7 +46,7 @@ public final class DTSPrimitive extends DTSimple {
       if( name == null )
          return null;
       for( int i = 0; i < ALL_PRIMITIVES.length; i++ ) {
-         if( ALL_PRIMITIVES[i].m_name.equals(name) ) // DO NOT USE getName()
+         if( ALL_PRIMITIVES[i].m_name.equalsIgnoreCase(name) ) // DO NOT USE getName()
             return ALL_PRIMITIVES[i];
       }
       return null;

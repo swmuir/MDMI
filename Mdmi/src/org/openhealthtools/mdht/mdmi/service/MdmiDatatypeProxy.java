@@ -179,7 +179,7 @@ public class MdmiDatatypeProxy {
       }
    }
    
-   public MdmiDatatype toModel( MdmiNetDatatype ndt ) {
+   public static MdmiDatatype toModel( MdmiNetDatatype ndt ) {
       switch( ndt.getType() ) {
          case EXTERNAL: {
             DTExternal dt = new DTExternal();
@@ -255,7 +255,7 @@ public class MdmiDatatypeProxy {
       }
    }
    
-   public MdmiNetDatatype fromModel( MdmiDatatype dt ) {
+   public static MdmiNetDatatype fromModel( MdmiDatatype dt ) {
       MdmiNetDatatype ndt = new MdmiNetDatatype();
       ndt.setName(dt.getName());
       ndt.setDescription(dt.getDescription());

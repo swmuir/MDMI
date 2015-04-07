@@ -24,8 +24,8 @@ public class MdmiNetField {
    String name       ;
    String description;
    String dataType   ;
-   int    minOccurs  ;
-   int    maxOccurs  ;
+   int    minOccurs  = 1;
+   int    maxOccurs  = 1;
    
    public String getName() {
       return name;

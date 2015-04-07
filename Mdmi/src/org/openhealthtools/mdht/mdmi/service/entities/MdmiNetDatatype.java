@@ -26,11 +26,11 @@ import javax.xml.bind.annotation.*;
 @XmlRootElement
 public class MdmiNetDatatype {
    MdmiNetDatatypeCategory       type         ;
-   String                     name         ;
-   String                     description  ;
-   String                     referenceUri ;
-   String                     baseType     ;
-   String                     restriction  ;
+   String                        name         ;
+   String                        description  ;
+   String                        referenceUri ;
+   String                        baseType     ;
+   String                        restriction  ;
    ArrayList<MdmiNetEnumLiteral> enumLiterals = new ArrayList<MdmiNetEnumLiteral>();
    ArrayList<MdmiNetField>       fields       = new ArrayList<MdmiNetField>();
 

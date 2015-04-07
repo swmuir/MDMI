@@ -203,12 +203,16 @@ public class MdmiBusinessElementProxy {
       return br;
    }
    
-   public MdmiNetBusinessElement fromModel( MdmiBusinessElementReference br ) {
+   public static MdmiNetBusinessElement fromModel( MdmiBusinessElementReference br ) {
       MdmiNetBusinessElement nbr = new MdmiNetBusinessElement();
       nbr.getNames().add(new MdmiNetBerName(br.getName(), br.getDescription()));
       nbr.setUri(br.getReference() == null ? null : br.getReference().toString());
       nbr.setUniqueId(br.getUniqueIdentifier());
       nbr.setDataType(br.getReferenceDatatype().getName());
+      nbr.setEnumValueDescrField(br.getEnumValueDescrField());
+      nbr.setEnumValueField(br.getEnumValueField());
+      nbr.setEnumValueSet(br.getEnumValueSet());
+      nbr.setEnumValueSetField(br.getEnumValueSetField());
       return nbr;
    }
 } // MdmiBusinessElementProxy
