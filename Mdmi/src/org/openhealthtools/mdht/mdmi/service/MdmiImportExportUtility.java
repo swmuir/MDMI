@@ -11,7 +11,7 @@ import org.openhealthtools.mdht.mdmi.util.*;
 import org.openhealthtools.mdht.mdmi.service.entities.*;
 
 public class MdmiImportExportUtility {
-	public static void Export( ArrayList<MdmiBusinessElementReference> bers, String fileName ) {
+	public static void Export( Collection<MdmiBusinessElementReference> bers, String fileName ) {
 		if( null == bers || bers.size() <= 0 )
 			return;
 		if( null == fileName || fileName.length() <= 0 )

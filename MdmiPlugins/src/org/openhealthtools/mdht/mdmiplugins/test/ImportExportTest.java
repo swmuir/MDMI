@@ -1,7 +1,5 @@
 package org.openhealthtools.mdht.mdmiplugins.test;
 
-import java.util.*;
-
 import org.openhealthtools.mdht.mdmi.model.*;
 import org.openhealthtools.mdht.mdmi.service.*;
 
