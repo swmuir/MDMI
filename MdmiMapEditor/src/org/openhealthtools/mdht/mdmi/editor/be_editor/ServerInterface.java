@@ -10,32 +10,31 @@ import org.openhealthtools.mdht.mdmi.model.MdmiDomainDictionaryReference;
 import org.openhealthtools.mdht.mdmi.model.MessageGroup;
 import org.openhealthtools.mdht.mdmi.service.MdmiBusinessElementProxy;
 import org.openhealthtools.mdht.mdmi.service.MdmiDatatypeProxy;
-import org.openhealthtools.mdht.mdmi.service.entities.*;
 
 /* Interface to service */
 public class ServerInterface {
-   // NOTE: this is the index number of the name and description in the array in the MdmiNetBusinessElement
-   // TODO: provide a mechanism for selecting this somehow, it is used below to create the BERs
-   private static int nameAndDescriptionIndex = 0;
+	// NOTE: this is the index number of the name and description in the array in the MdmiNetBusinessElement
+	// TODO: provide a mechanism for selecting this somehow, it is used below to create the BERs
+	private static int nameAndDescriptionIndex = 0;
 
-   /* Maximum number of elements that will be returned from the getAll methods */
+	/* Maximum number of elements that will be returned from the getAll methods */
 	public static int MAX_SEARCH = 100;
 
 	private boolean m_connected;
-	
+
 	private MessageGroup m_messageGroup;
 	private MdmiDatatypeProxy m_datatypeProxy;
 	private MdmiBusinessElementProxy m_businessElementProxy;
-	
+
 	private static ServerInterface s_instance = null;
-	
+
 	public static ServerInterface getInstance() {
 		if (s_instance == null) {
 			s_instance = new ServerInterface();
 		}
 		return s_instance;
 	}
-	
+
 	private ServerInterface() {
 	}
 
@@ -43,9 +42,9 @@ public class ServerInterface {
 		m_messageGroup = new MessageGroup();
 		m_messageGroup.setName("Message Group");
 		m_messageGroup.setDomainDictionary(new MdmiDomainDictionaryReference());
-		
-      m_datatypeProxy = new MdmiDatatypeProxy(uri, token);
-      m_businessElementProxy = new MdmiBusinessElementProxy(uri, token, m_datatypeProxy);
+
+		m_datatypeProxy = new MdmiDatatypeProxy(uri, token);
+		m_businessElementProxy = new MdmiBusinessElementProxy(uri, token, m_datatypeProxy);
 
 		m_connected = true;
 		return m_connected;
@@ -56,16 +55,16 @@ public class ServerInterface {
 		m_connected = false;
 		return true;
 	}
-	
+
 	public boolean isConnected() {
 		return m_connected;
 	}
-	
+
 	/** Get the message group */
 	public MessageGroup getMessageGroup() {
 		return m_messageGroup;
 	}
-	
+
 	/** Get first 100 datatypes. The Position object will be set up for the next batch */
 	public MdmiDatatype[] getAllDatatypes(RetrievePosition pos,
 			String searchExpr) {
@@ -74,11 +73,11 @@ public class ServerInterface {
 		int numFound = datatypes.length;
 		// increment position
 		pos.nextPos += numFound;
-		
+
 		// test each
 		if (numFound > 0 && searchExpr != null && !searchExpr.isEmpty()) {
 			Pattern pattern = Pattern.compile(toRegex(searchExpr), Pattern.CASE_INSENSITIVE);
-			
+
 			ArrayList<MdmiDatatype> matching = new ArrayList<MdmiDatatype>();
 
 			for (MdmiDatatype datatype : datatypes) {
@@ -89,18 +88,18 @@ public class ServerInterface {
 					matching.add(datatype);
 				}
 			}
-			
+
 			// TODO: look for more
 			//if (matching.size() < 100) 
-			
+
 			// convert to array
 			datatypes = matching.toArray(new MdmiDatatype[0]);
-			
+
 		}
-		
+
 		return datatypes;
 	}
-	
+
 	/** Get a single */
 	public MdmiDatatype  getDatatype(String value) {
 		try {
@@ -109,7 +108,7 @@ public class ServerInterface {
 		} catch( Exception ignoreDeleteFails ) {}
 		return null;
 	}
-	
+
 	/** add*/
 	public MdmiDatatype  addDatatype(MdmiDatatype datatype) {
 		MdmiDatatype added = m_datatypeProxy.add(m_messageGroup, datatype);
@@ -125,7 +124,7 @@ public class ServerInterface {
 		m_datatypeProxy.delete(m_messageGroup, datatype);
 	}
 
-	
+
 	/** Get 100 business element references. The Position object will be set up for the next batch */
 	public MdmiBusinessElementReference[] getAllBusinessElementReferences(RetrievePosition pos,
 			String searchExpr) {
@@ -134,11 +133,11 @@ public class ServerInterface {
 		int numFound = bers.length;
 		// increment position
 		pos.nextPos += numFound;
-		
+
 		// test each
 		if (numFound > 0 && searchExpr != null && !searchExpr.isEmpty()) {
 			Pattern pattern = Pattern.compile(toRegex(searchExpr), Pattern.CASE_INSENSITIVE);
-			
+
 			ArrayList<MdmiBusinessElementReference> matching = new ArrayList<MdmiBusinessElementReference>();
 
 			for (MdmiBusinessElementReference ber : bers) {
@@ -148,17 +147,17 @@ public class ServerInterface {
 					matching.add(ber);
 				}
 			}
-			
+
 			// TODO: look for more
 			//if (matching.size() < 100) 
-			
+
 			// convert to array
 			bers = matching.toArray(new MdmiBusinessElementReference[0]);
-			
+
 		}
 		return bers;
 	}
-	
+
 	/** Get a single */
 	public MdmiBusinessElementReference  getBusinessElementReference(String value) {
 		try {
@@ -166,18 +165,18 @@ public class ServerInterface {
 		} catch( Exception ignoreDeleteFails ) {}
 		return null;
 	}
-	
+
 	/** add*/
 	public MdmiBusinessElementReference  addBusinessElementReference(MdmiBusinessElementReference ber) {
-      return m_businessElementProxy.add(ber, m_messageGroup, nameAndDescriptionIndex);
+		return m_businessElementProxy.add(ber, m_messageGroup, nameAndDescriptionIndex);
 	}
 	/** update*/
 	public MdmiBusinessElementReference  updateBusinessElementReference(MdmiBusinessElementReference ber) {
-      return m_businessElementProxy.update(ber, m_messageGroup, nameAndDescriptionIndex);
+		return m_businessElementProxy.update(ber, m_messageGroup, nameAndDescriptionIndex);
 	}
 	/** delete*/
 	public void  deleteBusinessElementReference(MdmiBusinessElementReference ber) {
-      m_businessElementProxy.delete(ber.getUniqueIdentifier());
+		m_businessElementProxy.delete(ber.getUniqueIdentifier());
 	}
 
 	/** Convert the user-entered text into a regular expression */
@@ -213,7 +212,7 @@ public class ServerInterface {
 	public static class RetrievePosition {
 		int currPos = 0;
 		int nextPos = 0;
-		
+
 		int numFound() { return nextPos - currPos; }
 	}
 }
