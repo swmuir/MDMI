@@ -30,7 +30,10 @@ init {
 }
 
 mapping XSD::XSDSchema::walkSchema() : MessageModel {
-	elementSet := self->map createSemanticElementSet()->asSequence()->first();
+	elementSet := object SemanticElementSet {
+		
+	};
+	// self->map createSemanticElementSet()->asSequence()->first();
 	syntaxModel := self->map createSyntaxModel(result.elementSet)->asSequence()->first();
  	messageModelName := self.targetNamespace + "/" + documentRoot;
  	result.source := self.targetNamespace;
@@ -171,6 +174,16 @@ query XSD::XSDAttributeUse::getDatatype() : mdmi::MDMIDatatype {
 }
 
 
+query getDatatype(in lookingFor : String) : mdmi::MDMIDatatype {
+
+targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->forEach(ddd){
+if(ddd.typeName.equalsIgnoreCase(lookingFor)) then {
+return ddd;
+} endif;
+
+};
+return null;
+}
 
 
 
@@ -181,9 +194,25 @@ query XSD::XSDAttributeUse::getDatatype() : mdmi::MDMIDatatype {
  		minOccurs := 1;
 		maxOccurs := 1;
  	};	
+ 	
+ 	var semanticElement := object SemanticElement {
+		name:= rootBag.name;
+		elementType := mappingStyle;
+		_datatype := getDatatype('Container');
+	};
+
+	ses.semanticElements += semanticElement;
+	rootBag.semanticElement := semanticElement;
+
  	var ed : XSD::XSDElementDeclaration := self.elementDeclarations->select(name=documentRoot)->asSequence()->first();
  	ed.typeDefinition[XSDComplexTypeDefinition]->map walkSchema(ses,rootBag);
 //	self.elementDeclarations->select(name=documentRoot)->asSequence()->map walkSchema(ses,rootBag);
+
+
+
+//rootBag.semanticElement.children += newBag.semanticElement;
+
+
 	result.root := rootBag;
 }
 
@@ -199,15 +228,10 @@ mapping XSD::XSDElementDeclaration::walkSchema(inout  ses : SemanticElementSet,i
 if (self.name = null) then {
 
 if (not self.resolvedElementDeclaration.name.equalsIgnoreCase(documentRoot)  ) then {
-log('hhhhhhhhhhhhhhhhhhhhhhhhhffffff'+self.resolvedElementDeclaration.name);
-log('hhhhhhhhhhhhhhhhhhhhhhhhhffffff'+self.resolvedElementDeclaration.toString());
-
 	self.resolvedElementDeclaration->map walkSchema(ses,parentBag);
 } endif;
 }
 else {
-log('XSDElementDeclaration Name : '+self.name);
-log('circular '+self.circular.toString());
 var newBag := object MDMI::Bag {
 	name := self.name;
 	location := self.name;
@@ -217,22 +241,33 @@ var newBag := object MDMI::Bag {
 
 parentBag.nodes += newBag;
 
-	ses.semanticElements->forEach(ee) {	
+//	ses.semanticElements->forEach(ee) {	
 //	log('looking for'+parentBag.name + newBag.name);
 //	log('element is'+ee.name);
-		if (ee.name.endsWith(parentBag.name + newBag.name)) then {
-			newBag.semanticElement := ee;
+//		if (ee.name.endsWith(parentBag.name + newBag.name)) then {
+//		newBag.semanticElement := ee;
 	//		log('found');
-			break;
-		} endif;
-	};
+//			break;
+//		} endif;
+//};
 
+var semanticElement := object SemanticElement {
+	name:= self.name;
+	elementType := mappingStyle;
+	_datatype := getDatatype('Container');
+	
+};
+
+ses.semanticElements += semanticElement;
+newBag.semanticElement := semanticElement;
+
+parentBag.semanticElement.children += newBag.semanticElement;
 
 
 if (self.typeDefinition.oclIsTypeOf(XSDSimpleTypeDefinition)) then {
 	self.typeDefinition[XSDSimpleTypeDefinition]->map walkSchema(ses,newBag);
 } else{
-self.typeDefinition[XSDComplexTypeDefinition]->map walkSchema(ses,newBag);
+	self.typeDefinition[XSDComplexTypeDefinition]->map walkSchema(ses,newBag);
 } endif;
 
 
@@ -290,13 +325,26 @@ mapping XSD::XSDAttributeUse::walkSchema(inout  ses : SemanticElementSet,inout p
 	};
 
 	parentBag.nodes += newLeaf;
+	
+	var semanticElement := object SemanticElement {
+	name:= newLeaf.name;
+	elementType := mappingStyle;
+	_datatype := getDatatype('String');
+};
 
-	ses.semanticElements->forEach(ee) {	
-		if (ee.name.equalsIgnoreCase(newLeaf.name)) then {
-			newLeaf.semanticElement := ee;
-			break;
-		} endif;
-	};
+ses.semanticElements += semanticElement;
+newLeaf.semanticElement := semanticElement;
+
+parentBag.semanticElement.children += newLeaf.semanticElement;
+
+
+
+//	ses.semanticElements->forEach(ee) {	
+//		if (ee.name.equalsIgnoreCase(newLeaf.name)) then {
+//			newLeaf.semanticElement := ee;
+//			break;
+//		} endif;
+//	};
 
 }
 mapping XSD::XSDSimpleTypeDefinition::walkSchema(inout  ses : SemanticElementSet,inout parentBag : MDMI::Bag) {

@@ -3,11 +3,11 @@
 	<target name="transform">
 		<!--<replace file='Dictionary_Ultimate.xmi' token='>\n <datatype xmi:idref=' value='&lt;businessElement xmi:idref="'/>-->
 	
-	<!--	<replace file='BH-RI-2015April.1.xmi' token='&lt;referenceDatatype xmi:idref="' value=' referenceDatatype="'/>
-		<replace file='BH-RI-2015April.1.xmi' token='"&gt;&lt;/referenceDatatype&gt;' value='" >'/> -->
+		<replace file='BH-RI-2015April.10.xmi' token='&lt;referenceDatatype xmi:idref="' value=' referenceDatatype="'/>
+		<replace file='BH-RI-2015April.10.xmi' token='"&gt;&lt;/referenceDatatype&gt;' value='" >'/> 
 		
-		<replace file='BH-RI-2015April.1.xmi' token='isReadonly="true"' value=' '/>
-				<replace file='BH-RI-2015April.1.xmi' token='isReadonly="false"' value=' '/>
+		<replace file='BH-RI-2015April.10.xmi' token='isReadonly="true"' value=' '/>
+		<replace file='BH-RI-2015April.10.xmi' token='isReadonly="false"' value=' '/>
 
 		<!--
 		<replace file='BH-RI-2015April.1.xmi' token='&lt;datatype xmi:idref="' value=' datatype="'/>

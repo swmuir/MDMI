@@ -34,7 +34,10 @@ init {
 
  
 mapping XSD::XSDSchema::transformPackage() : MessageModel {
-	elementSet := self->map createSemanticElementSet()->asSequence()->first();
+//	elementSet := self->map createSemanticElementSet()->asSequence()->first();
+	elementSet := object SemanticElementSet {
+		
+	};
 	syntaxModel := self->map createSyntaxModel(result.elementSet)->asSequence()->first();
  	messageModelName := self.targetNamespace;
  	result.source := self.targetNamespace;
@@ -42,9 +45,9 @@ mapping XSD::XSDSchema::transformPackage() : MessageModel {
 }
 
 
-mapping XSD::XSDSchema::createSemanticElementSet() : SemanticElementSet  {
- 	semanticElements += self.elementDeclarations->select(name.equalsIgnoreCase(semanticRoot)).resolvedElementDeclaration->map createSemanticElement(result);
-}
+//mapping XSD::XSDSchema::createSemanticElementSet() : SemanticElementSet  {
+// 	semanticElements += self.elementDeclarations->select(name.equalsIgnoreCase(semanticRoot)).resolvedElementDeclaration->map createSemanticElement(result);
+//}
 
 mapping XSD::XSDSchema::createSyntaxModel(in  ses : SemanticElementSet) : MessageSyntaxModel   {
  	var xxx : XSDElementDeclaration := self.elementDeclarations->select(syntaxRoot.equalsIgnoreCase(name))->asSequence()->first();
@@ -96,24 +99,37 @@ mapping XSD::XSDModelGroup::modelGroupMappingToBagAAA(in ses : SemanticElementSe
 }
 
 mapping XSD::XSDAttributeUse::attributeMappingToLeaf(inout ses : SemanticElementSet,inout parentBag : MDMI::Bag) : LeafSyntaxTranslator {
-	result.name := parentBag.name + self.attributeDeclaration.name;
+	result.name := self.attributeDeclaration.name;
 	// Issue wiht XSD
 	result.location :=  '@'+self.attributeDeclaration.name;
 	result.minOccurs := 0;
 	result.maxOccurs := 1;
 	
-	ses.semanticElements->forEach(ee) {
+	log ('attribute '+self.attributeDeclaration.name);
+	log ('look for datatype '+self.attributeDeclaration.type.name);
 	
-						if (ee.name.equalsIgnoreCase(result.name)) then {
+	
+					result.semanticElement := object SemanticElement {
 					
-							result.semanticElement := ee;
-							break;
-						} endif;
+							name := self.attributeDeclaration.name;
+		
+							_datatype := targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase(self.attributeDeclaration.type.name))->asSequence()->first();	
+		
+							elementType := mappingStyle;
+						
 					};
-	 
+					
+					if (result.semanticElement._datatype = null) then {
+						result.semanticElement._datatype := targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('String'))->asSequence()->first();	
+					} endif;
+					ses.semanticElements += result.semanticElement;
+					
+					parentBag.semanticElement.children += result.semanticElement;
+	
+	
 }
 
-mapping XSD::XSDParticle::particleMappingToBag(in  ses : SemanticElementSet,inout parentBag : MDMI::Bag)   {
+mapping XSD::XSDParticle::particleMappingToBag(inout  ses : SemanticElementSet,inout parentBag : MDMI::Bag)   {
 
 
 
@@ -123,33 +139,66 @@ mapping XSD::XSDParticle::particleMappingToBag(in  ses : SemanticElementSet,inou
   		
 					var leaf := object MDMI::LeafSyntaxTranslator {
 					};	
-					leaf.name := parentBag.name + self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+					leaf.name := self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
 					leaf.location := self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
 					leaf.minOccurs := 0;
 					leaf.maxOccurs := 1;
 					
-					ses.semanticElements->forEach(ee) {
- 						if (ee.name.equalsIgnoreCase( leaf.name)) then {
-							leaf.semanticElement := ee;
-							break;
-						} endif;
+					
+					
+					leaf.semanticElement := object SemanticElement {
+					
+							name := leaf.name;
+		
+							_datatype := targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase(self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.type.name))->asSequence()->first();	
+		
+							elementType := mappingStyle;
+						
 					};
+					
+					ses.semanticElements += leaf.semanticElement;
+					
+					parentBag.semanticElement.children += leaf.semanticElement;
+					
+//					ses.semanticElements->forEach(ee) {
+// 						if (ee.name.equalsIgnoreCase( leaf.name)) then {
+//							leaf.semanticElement := ee;
+//							break;
+//						} endif;
+//					};
 					
 					parentBag.nodes += leaf
  			} else {
  		 
  					var newbag := object MDMI::Bag {
 					};	
-					newbag.name := parentBag.name + self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
+					newbag.name := self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
 					newbag.location :=  self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.name;
 					newbag.minOccurs := 0;
 					newbag.maxOccurs := 1;
-					ses.semanticElements->forEach(ee) {
- 						if (ee.name.equalsIgnoreCase( newbag.name)) then {
- 							newbag.semanticElement := ee;
-							break;
-						} endif;
+					
+										
+					newbag.semanticElement := object SemanticElement {
+					
+							name := newbag.name;
+		
+							_datatype := targetMDMI.rootObjects()[mdmi::MessageGroup].datatypes->select(typeName.equalsIgnoreCase('Container'))->asSequence()->first();	
+		
+							elementType := mappingStyle;
+						
 					};
+					
+					ses.semanticElements += newbag.semanticElement;
+					
+					parentBag.semanticElement.children += newbag.semanticElement;
+					
+					
+//					ses.semanticElements->forEach(ee) {
+// 						if (ee.name.equalsIgnoreCase( newbag.name)) then {
+//							newbag.semanticElement := ee;
+//						break;
+//						} endif;
+//				};
 					
 					parentBag.nodes += newbag;
  	 				newbag.nodes += self.content.oclAsType(XSDElementDeclaration).resolvedElementDeclaration.typeDefinition.oclAsType(XSDComplexTypeDefinition).attributeUses->map attributeMappingToLeaf(ses,newbag);
