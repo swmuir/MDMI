@@ -142,8 +142,10 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 		
 		
 		buildUI();
-		setTitle(s_res.getString("GenerateToFromElementsDialog.title"));
-		pack(new Dimension(450,300));
+		String title = MessageFormat.format(s_res.getString("GenerateToFromElementsDialog.title"), 
+				semanticElement.getName());
+		setTitle(title);
+		pack(new Dimension(550,300));
 	}
 
 	private void buildUI() {
@@ -437,7 +439,11 @@ public class GenerateToFromRelationshipRuleDialog extends BaseDialog implements 
 			if (m_ber.getName() == null || "".equals(m_ber.getName())) {
 				return ClassUtil.s_unNamedItem;
 			}
-			return m_ber.getName();
+			if (m_ber.getDescription() == null || m_ber.getDescription().isEmpty()) {
+				return m_ber.getName();
+			} else {
+				return m_ber.getName() + " (" + m_ber.getDescription() + ")";
+			}
 		}
 
 		@Override
