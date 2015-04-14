@@ -64,6 +64,7 @@ import org.openhealthtools.mdht.mdmi.model.validate.ModelInfo;
 import org.openhealthtools.mdht.mdmi.model.validate.ModelValidationResults;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.reader.MapBuilderXMIDirect;
 import org.openhealthtools.mdht.mdmi.model.xmi.direct.writer.XMIWriterDirect;
+import org.openhealthtools.mdht.mdmi.service.MdmiImportExportUtility;
 
 
 /**
@@ -80,6 +81,7 @@ public class ModelIOUtilities {
      */
     public static final String LAST_FILE_OPENED = "openFileDir";
     public static final String LAST_FILE_IMPORTED = "importFileDir";
+    public static final String LAST_XML_FILE_OPENED = "exportXMLFileDir";
     
     /**
      *  Last directory used - instance
@@ -90,23 +92,18 @@ public class ModelIOUtilities {
     public static final String CSV_Extension = ".csv";
     public static final String XSD_Extension = ".xsd";
 
-    public static final String[] SupportedExtensions = {
-            XMI_Extension,
-            CSV_Extension
-    };
-
     public static boolean fileNameEndsWith(File file, String extension) {
         return file.getName().toLowerCase().endsWith(extension);
     }
 
-    public static boolean supportedFileName(File file) {
-        for (String extension : SupportedExtensions) {
-            if (fileNameEndsWith(file, extension)) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    public static boolean supportedFileName(File file) {
+//        for (String extension : SupportedExtensions) {
+//            if (fileNameEndsWith(file, extension)) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     private static UserPreferences getUserPreferences() {
         String appName = SystemContext.getApplicationName();
@@ -620,6 +617,104 @@ public class ModelIOUtilities {
         }
     }
 
+
+    /**
+     * Import just the referent index from an XML file
+     */
+    public static void importReferentIndexFromXML() {
+        String lastFileName = getLastDirectory(LAST_XML_FILE_OPENED);
+        Frame applicationFrame = SystemContext.getApplicationFrame();
+
+        // create a file chooser
+        JFileChooser chooser = new JFileChooser(lastFileName == null ? "." : lastFileName);
+        // Select the data file, or the directory containing the data files
+        chooser.setDialogTitle(s_res.getString("ModelIOUtilities.readTitle"));
+        chooser.setFileFilter(new SupportedXMLFileFilter());
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        // prompt for a file
+        int opt = chooser.showOpenDialog(applicationFrame);
+        if (opt == JFileChooser.APPROVE_OPTION) {
+        	File file = chooser.getSelectedFile();
+        	lastFileName = file.getAbsolutePath();
+
+        	// set cursor
+        	CursorManager cm = CursorManager.getInstance(applicationFrame);
+        	cm.setWaitCursor();
+        	try {
+        		MessageGroup testMap = new MessageGroup();
+        		testMap.setName("ImportGroup");
+        		testMap.setDomainDictionary(new MdmiDomainDictionaryReference());
+
+                lastFileName = file.getAbsolutePath();
+        		MdmiImportExportUtility.Data data = MdmiImportExportUtility.Import(testMap, lastFileName, 0);
+        		if (data != null) {
+        			List<MessageGroup> newGroups = new ArrayList<MessageGroup>();
+        			newGroups.add(data.messageGroup);
+
+        			// update tree - overwrite and warn if reference exists
+        			addImportedBusinessElementRefToTree(newGroups, true, true);
+
+                    // Save file name
+                    saveLastDirectory(LAST_XML_FILE_OPENED, lastFileName);
+                    
+                    String message = data.messageGroup.getDomainDictionary().getBusinessElements().size() + 
+                    		" Business Elements imported";
+            		SelectionManager.getInstance().getStatusPanel().writeConsole(message);
+        		}
+        	} catch (Exception ex) {
+        		SelectionManager.getInstance().getStatusPanel().writeException(ex);
+        	} finally {
+        		cm.restoreCursor();
+        	}
+        }
+    }
+
+
+    /**
+     * Export just the referent index to an XML file
+     */
+    public static void exportReferentIndexToXML(MessageGroup group) {
+    	
+        //  re-use directory name
+        String lastFileName = getLastDirectory(LAST_XML_FILE_OPENED);
+
+        // create a file chooser
+        JFileChooser chooser = new JFileChooser(lastFileName);
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        // Save the Data
+        chooser.setDialogTitle(s_res.getString("ModelIOUtilities.writeTitle"));
+        chooser.setFileFilter(new SupportedXMLFileFilter());
+        chooser.setAcceptAllFileFilterUsed(false);
+
+        File file = getFileToWriteTo(lastFileName, chooser);
+        if (file == null) {
+        	return;
+        }
+        
+        // set cursor
+        Frame applicationFrame = SystemContext.getApplicationFrame();
+        CursorManager cm = CursorManager.getInstance(applicationFrame);
+        cm.setWaitCursor();
+        try {
+            lastFileName = file.getAbsolutePath();
+        	
+            MdmiImportExportUtility.Export(group.getDomainDictionary().getBusinessElements(),
+            		lastFileName);
+            
+            // Save file name
+            saveLastDirectory(LAST_XML_FILE_OPENED, lastFileName);
+            
+        } catch (Exception ex) {
+            SelectionManager.getInstance().getStatusPanel().writeException(ex);
+        } finally {
+            cm.restoreCursor();
+        }
+    }
+    
+
     /**
      * Import Syntax Model from a file; determine input format based on file extension
      */
@@ -789,13 +884,26 @@ public class ModelIOUtilities {
      * Return a file filter that allows directories and supported files
      */
     public static class SupportedFilesFilter extends FileFilter {
-        @Override
+
+    	// default
+        public static final String[] SupportedExtensions = {
+                XMI_Extension,
+                CSV_Extension
+        };
+    	
+
+		@Override
         public boolean accept(File f) {
-            if (f.isDirectory()) {
-                return true;
-            } else {
-                return supportedFileName(f);
-            }
+        	if (f.isDirectory()) {
+        		return true;
+        	} else {
+        		for (String extension : SupportedExtensions) {
+        			if (fileNameEndsWith(f, extension)) {
+        				return true;
+        			}
+        		}
+        	}
+        	return false;
         }
 
         @Override
@@ -814,6 +922,18 @@ public class ModelIOUtilities {
         @Override
         public String getDescription() {
             return "XML Schema (.xsd)";
+        }
+    }
+
+    public static class SupportedXMLFileFilter extends FileFilter {
+        @Override
+        public boolean accept(File f) {
+            return f.isDirectory() || f.getName().toLowerCase().endsWith(".xml");
+        }
+
+        @Override
+        public String getDescription() {
+            return "XML File (.xml)";
         }
     }
 }

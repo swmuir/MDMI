@@ -28,8 +28,10 @@
 		<action name="loadDatatypes" class="org.openhealthtools.mdht.mdmi.editor.map.actions.LoadDatatypesAction"/>
 		<action name="importDictionary" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportDomainDictionaryAction"/>
 		<action name="importRefIndexFromWS" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportRefIndexFromWSAction"/>
+		<action name="importRefIndexFromXML" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ImportRefIndexFromXMLAction"/>
 		<action name="reviseRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ReviseReferentIndexAction"/>
-		<action name="exportRefIndex" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExportReferentIndexAction"/>
+		<action name="exportRefIndexToCSV" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExportReferentIndexAction"/>
+		<action name="exportRefIndexToXML" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExportReferentIndexToXMLAction"/>
 		
 		<action name="exit" class="org.openhealthtools.mdht.mdmi.editor.map.actions.ExitAction"/>
 		<action name="accept" class="org.openhealthtools.mdht.mdmi.editor.map.actions.AcceptChangesAction"/>
@@ -106,10 +108,12 @@
          <item action="loadDatatypes"/>
          <item action="importDictionary"/>
          <item action="importRefIndexFromWS"/>
+         <item action="importRefIndexFromXML"/>
          
          <separator/>
          <item action="reviseRefIndex"/>
-         <item action="exportRefIndex"/>
+         <item action="exportRefIndexToCSV"/>
+         <item action="exportRefIndexToXML"/>
 		     
          <separator/>
          <item action="accept"/>
