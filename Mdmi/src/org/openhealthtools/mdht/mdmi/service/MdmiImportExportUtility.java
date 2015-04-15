@@ -131,7 +131,8 @@ public class MdmiImportExportUtility {
 	      if( null != nbn.getDescription() && 0 < nbn.getDescription().length() )
 	      	XmlUtil.setText(n, nbn.getDescription());
       }
-   	XmlUtil.addElement(root, "uri", nber.getUri());
+   	if( null != nber.getUri() && 0 < nber.getUri().length() )
+   		XmlUtil.addElement(root, "uri", nber.getUri());
    	XmlUtil.addElement(root, "uniqueId", nber.getUniqueId());
    	XmlUtil.addElement(root, "datatype", nber.getDataType());
       if( null != nber.getEnumValueDescrField() && 0 < nber.getEnumValueDescrField().length() )
@@ -196,7 +197,12 @@ public class MdmiImportExportUtility {
 	      	description = XmlUtil.getText(e);
 	      mnbe.getNames().add(new MdmiNetBerName(name, description));
       }
-   	mnbe.setUri(XmlUtil.getText(XmlUtil.getElement(root, "uri")));
+		Element e = XmlUtil.getElement(root, "uri");
+		if( null != e ) {
+			String se = XmlUtil.getText(e);
+			if( null != se && 0 < se.length() )
+		   	mnbe.setUri(se);
+		}
    	mnbe.setUniqueId(XmlUtil.getText(XmlUtil.getElement(root, "uniqueId")));
    	mnbe.setDataType(XmlUtil.getText(XmlUtil.getElement(root, "datatype")));
    	Element x = XmlUtil.getElement(root, "enumValueDescrField");
@@ -282,7 +288,8 @@ public class MdmiImportExportUtility {
       br.setName(name);
       br.setDescription(description);
       try {
-         br.setReference(new URI(nbr.getUri()));
+      	if( null != nbr.getUri() && 0 < nbr.getUri().length() )
+      		br.setReference(new URI(nbr.getUri()));
       }
       catch( Exception ex ) {
          throw new MdmiException(ex, "Invalid reference URI {0} for BER {1}.", nbr.getUri(), name);

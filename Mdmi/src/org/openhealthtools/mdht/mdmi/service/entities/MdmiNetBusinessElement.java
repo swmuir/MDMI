@@ -110,7 +110,8 @@ public class MdmiNetBusinessElement {
 	      sb.append("{name: '").append(mnbn.name).append("', description: '").append(mnbn.description).append("'}");
       }
       sb.append("]");
-      sb.append(", uri: '").append(uri).append("'");
+      if( null != uri && 0 < uri.length() )
+      	sb.append(", uri: '").append(uri).append("'");
       sb.append(", uniqueId: '").append(uniqueId).append("'");
       sb.append(", dataType: '").append(dataType).append("'");
       sb.append("}");

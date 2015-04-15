@@ -10,8 +10,8 @@ public class ImportExportTest {
          testMap.setName("TestMap");
          testMap.setDomainDictionary(new MdmiDomainDictionaryReference());
          
-         String fileNameImport = "D:\\Gabriel\\misc\\ExampleRI.xml";
-         String fileNameExport = "D:\\Gabriel\\misc\\ExampleRI_out.xml";
+         String fileNameImport = "C:\\Gabriel\\misc\\ExampleRI.xml";
+         String fileNameExport = "C:\\Gabriel\\misc\\ExampleRI_out.xml";
          MdmiImportExportUtility.Data data = MdmiImportExportUtility.Import(testMap, fileNameImport, 0);
          
          MdmiImportExportUtility.Export(data.bers, fileNameExport);

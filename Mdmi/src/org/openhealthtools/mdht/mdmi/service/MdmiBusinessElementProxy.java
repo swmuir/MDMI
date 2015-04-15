@@ -178,7 +178,8 @@ public class MdmiBusinessElementProxy {
       br.setName(name);
       br.setDescription(description);
       try {
-         br.setReference(new URI(nbr.getUri()));
+      	if( null != nbr.getUri() )
+      		br.setReference(new URI(nbr.getUri()));
       }
       catch( Exception ex ) {
          throw new MdmiException(ex, "Invalid reference URI {0} for BER {1}.", nbr.getUri(), name);
