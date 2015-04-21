@@ -527,8 +527,8 @@ public class ReferentIndexCompare extends JFrame implements ActionListener {
 	private static void writeBERsToTable(MdmiBusinessElementReference leftBER, MdmiBusinessElementReference rightBER,
 			BufferedWriter writer) throws IOException {
 
-		List<String> berLeftString = new ArrayList<>();
-		List<String> berRightString = new ArrayList<>();
+		List<String> berLeftString = new ArrayList<String>();
+		List<String> berRightString = new ArrayList<String>();
 		
 		// Convert to string array
 		if (leftBER != null) {
