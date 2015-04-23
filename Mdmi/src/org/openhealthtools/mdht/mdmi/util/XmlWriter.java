@@ -14,12 +14,26 @@
 *******************************************************************************/
 package org.openhealthtools.mdht.mdmi.util;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 
-import org.w3c.dom.*;
-import org.openhealthtools.mdht.mdmi.*;
+import org.openhealthtools.mdht.mdmi.MdmiException;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Notation;
 
 /**
  * XML DOM Document writer - used to output an XML DOM Document to a file or stream.
@@ -38,6 +52,11 @@ public final class XmlWriter {
    private int              m_lineLen   = LINE_LENGTH;
    private boolean          m_XML11;
 
+   public static String defaultEncoding = "UTF-8";
+   
+   public static void setDefaultEncoding(String encoding) {
+   	defaultEncoding = encoding;
+   }
    /**
     * Write the contents of this document to a formatted string, and return the string.
     * 
@@ -98,7 +117,7 @@ public final class XmlWriter {
     * @param fileName The output file name.
     */
    public XmlWriter( String fileName ) {
-      this(fileName, "UTF-8");
+      this(fileName, defaultEncoding);
    }
 
    /**
@@ -108,7 +127,7 @@ public final class XmlWriter {
     */
    public XmlWriter( OutputStream sout ) {
       m_fileName = "";
-      m_encoding = "UTF-8";
+      m_encoding = defaultEncoding;
       try {
          OutputStreamWriter oswOut = new OutputStreamWriter(sout, m_encoding);
          m_out = new BufferedWriter(oswOut);
@@ -125,7 +144,7 @@ public final class XmlWriter {
     */
    public XmlWriter( Writer w ) {
       m_fileName = "";
-      m_encoding = "UTF-8";
+      m_encoding = defaultEncoding;
       try {
          m_out = new BufferedWriter(w);
       }
@@ -328,7 +347,7 @@ public final class XmlWriter {
       m_out.write("<?xml version=\"1.0\" encoding=\"" + m_encoding + "\"?>\n");
 
       m_XML11 = "1.1".equals(getVersion(node));
-      DocumentType docType = ((Document)node).getDoctype();
+      DocumentType docType = node.getDoctype();
       if( docType != null ) {
          m_out.write("<!DOCTYPE ");
          m_out.write(docType.getNodeName());
@@ -396,7 +415,7 @@ public final class XmlWriter {
           */
          m_out.write(sb.toString());
          for( int i = 0; i < nAttrs; i++ ) {
-            String sa = (String)aAttrs.get(i);
+            String sa = aAttrs.get(i);
             m_out.write(sa);
          }
       }
@@ -411,7 +430,7 @@ public final class XmlWriter {
                m_out.write('\n');
                m_out.write(si);
             }
-            String sa = (String)aAttrs.get(i);
+            String sa = aAttrs.get(i);
             m_out.write(sa);
          }
       }
