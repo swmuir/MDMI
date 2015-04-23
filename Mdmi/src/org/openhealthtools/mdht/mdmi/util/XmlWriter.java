@@ -148,7 +148,21 @@ public final class XmlWriter {
       m_ownStream = true;
    }
 
-   /**
+   public XmlWriter( OutputStream sout, String encoding ) {
+      m_fileName = "";
+      m_encoding = encoding;
+      try {
+         OutputStreamWriter oswOut = new OutputStreamWriter(sout, m_encoding);
+         m_out = new BufferedWriter(oswOut);
+      }
+      catch( Exception ex ) {
+         throw new MdmiException(ex, "XML writer fails");
+      }
+
+
+   }
+
+	/**
     * Write the specified document, using defaults for indent and max line length.
     * 
     * @param doc The DOM Document to write.
