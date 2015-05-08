@@ -378,8 +378,9 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 				}
 			}
 
-			private Node lookForMatch( final String qName ) {
+			private ArrayList<Node> lookForMatch( final String qName ) {
 
+				ArrayList<Node> results = new ArrayList<Node>();
 				NodePredicate matches = null;
 				
 				for( Bag currentBag : Lists.reverse(syntaxNodes) ) {
@@ -404,10 +405,10 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 								if( start > -1 && end > -1 ) {
 									NodeList nodes = (NodeList) xPath.evaluate(path.substring(start + 1, end), domNodes.peek(), XPathConstants.NODESET);
 									if( nodes.getLength() > 0 ) {
-										return node;
+										results.add(node);
 									}
 								} else {
-									return node;
+									results.add(node);
 								}
 							}
 							catch( XPathExpressionException ex ) {
@@ -417,7 +418,7 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 						}
 					matches.pushNode(currentBag);
 				}
-				return null;
+				return results;
 			}
 
 			private String getAttributeValue( Attributes attributes, String attribute ) {
@@ -458,7 +459,12 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 					return;
 				}
 
-				Node matchingSyntaxNode = lookForMatch(qName);
+				ArrayList<Node> matchingSyntaxNodes = lookForMatch(qName);
+				Node matchingSyntaxNode  = null;
+				
+				if (!matchingSyntaxNodes.isEmpty()) {
+					matchingSyntaxNode = matchingSyntaxNodes.get(0);
+				}
 
 				if( matchingSyntaxNode != null ) {
 					YBag parentYBag = getYBagForParentNode(matchingSyntaxNode);
@@ -483,22 +489,31 @@ public class DOMSAXSyntacticParser implements ISyntacticParser {
 						yBags.push(y);
 					}
 					if( matchingSyntaxNode instanceof LeafSyntaxTranslator ) {
+						
+					
+						
 						if( matchingSyntaxNode.getLocation().contains("@") ) {
-							String[] locationSegments = matchingSyntaxNode.getLocation().split("/@");
-							if (locationSegments.length > 1) {
-							String attributeValue = getAttributeValue(attributes, locationSegments[1]);
-							if( attributeValue != null ) {
-								YLeaf aLeaf = new YLeaf((LeafSyntaxTranslator) matchingSyntaxNode, parentYBag);
-								aLeaf.setValue(attributeValue);
-								parentYBag.addYNode(aLeaf);
-							}
+							
+							/*
+							 * Loop over all the matches - this supports maps with multiple syntax nodes with 
+							 */
+							for (Node attributeMatches : matchingSyntaxNodes ) {
+								String[] locationSegments = attributeMatches.getLocation().split("/@");
+								if( locationSegments.length > 1 ) {
+									String attributeValue = getAttributeValue(attributes, locationSegments[1]);
+									if( attributeValue != null ) {
+										YLeaf aLeaf = new YLeaf((LeafSyntaxTranslator) attributeMatches, parentYBag);
+										aLeaf.setValue(attributeValue);
+										parentYBag.addYNode(aLeaf);
+									}
+								}
 							}
 							
-					
-								pushXPath(syntaxNodes.peek(), qName);
-								endTags.push(notFoundEndTagProcessor);
 						
-						
+
+							pushXPath(syntaxNodes.peek(), qName);
+							endTags.push(notFoundEndTagProcessor);
+
 						}
 						else {
 							currentYLeaf = new YLeaf((LeafSyntaxTranslator) matchingSyntaxNode, parentYBag);
